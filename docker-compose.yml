@@ -27,7 +27,8 @@ services:
 
   localstack:
     container_name: "gost-localstack_main"
-    image: localstack/localstack
+    # Pin the tested image; update only after repeating the LocalStack smoke checks.
+    image: localstack/localstack@sha256:2a81e5da4c32bb53e8d86e92050a12937f9be1915c5a4afad0931f75c112fc7e
     ports:
       - 4566:4566           # LocalStack Gateway
       - 4510-4559:4510-4559  # external services port range
@@ -35,6 +36,8 @@ services:
       - DEBUG=${DEBUG-}
       - DOCKER_HOST=unix:///var/run/docker.sock
       - AWS_DEFAULT_REGION=${AWS_REGION:-us-west-2}
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?Set LOCALSTACK_AUTH_TOKEN before starting LocalStack}
+
     networks:
       - app
     volumes:
