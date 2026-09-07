@@ -27,7 +27,7 @@ services:
 
   localstack:
     container_name: "gost-localstack_main"
-    image: localstack/localstack
+    image: localstack/localstack:3.0
     ports:
       - 4566:4566           # LocalStack Gateway
       - 4510-4559:4510-4559  # external services port range
@@ -65,14 +65,13 @@ services:
   postgres:
     container_name: gost-postgres
     hostname: postgres
-    image: 'bitnami/postgresql:13.3.0'
+    image: 'postgres:13'
     platform: linux/amd64
     networks:
       - postgres
     environment:
-      - POSTGRESQL_PASSWORD=password123
-      - POSTGRESQL_DATABASE=usdr_grants
-      - POSTGRESQL_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_USER=postgres
     ports:
         - 5432:5432
     volumes:
