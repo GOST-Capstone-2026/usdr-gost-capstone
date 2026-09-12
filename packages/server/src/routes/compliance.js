@@ -95,18 +95,29 @@ router.post(
             return sendError(req, res, 502, 'STORAGE_UNAVAILABLE', 'Could not store the uploaded document.');
         }
 
-        const document = await db.createGrantDocument({
-            agencyId: selectedAgency,
-            grantId,
-            uploadedBy: user.id,
-            filename: req.file.originalname,
-            mimeType: req.file.mimetype,
-            sizeBytes: req.file.size,
-            sha256,
-            sourceUrl,
-            storageBucket: GRANT_DOCUMENTS_BUCKET,
-            storageKey,
-        });
+        let document;
+        try {
+            document = await db.createGrantDocument({
+                agencyId: selectedAgency,
+                grantId,
+                uploadedBy: user.id,
+                filename: req.file.originalname,
+                mimeType: req.file.mimetype,
+                sizeBytes: req.file.size,
+                sha256,
+                sourceUrl,
+                storageBucket: GRANT_DOCUMENTS_BUCKET,
+                storageKey,
+            });
+        } catch (err) {
+            // Postgres error code 23505 = unique_violation. The grant_documents migration enforces
+            // one (agency_id, sha256) pair, so this means the organization already uploaded this
+            // exact file. Surface it as a clean 409 instead of the generic 500 handler in configure.js.
+            if (err.code === '23505') {
+                return sendError(req, res, 409, 'DUPLICATE_DOCUMENT', 'This organization has already uploaded this exact document.');
+            }
+            throw err;
+        }
 
         return res.status(201).json({ document: serializeDocument(document) });
     },
