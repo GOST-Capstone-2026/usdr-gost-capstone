@@ -1058,6 +1058,38 @@ async function getSingleGrantDetails({ grantId, tenantId }) {
     return enhancedResults.length ? enhancedResults[0] : null;
 }
 
+// --- F1: Grant Analysis and Compliance Checklist (grant_documents) ---
+// See docs/g32-shared-api-contracts.md, "Grant Document Contract".
+
+async function createGrantDocument({
+    agencyId, grantId, uploadedBy, filename, mimeType, sizeBytes, sha256,
+    sourceUrl, storageBucket, storageKey,
+}) {
+    const [row] = await knex(TABLES.grant_documents)
+        .insert({
+            agency_id: agencyId,
+            grant_id: grantId,
+            uploaded_by: uploadedBy,
+            filename,
+            mime_type: mimeType,
+            size_bytes: sizeBytes,
+            sha256,
+            source_url: sourceUrl || null,
+            storage_bucket: storageBucket,
+            storage_key: storageKey,
+        })
+        .returning('*');
+    return row;
+}
+
+async function getGrantDocument({ documentId, agencyId }) {
+    const row = await knex(TABLES.grant_documents)
+        .select('*')
+        .where({ id: documentId, agency_id: agencyId })
+        .first();
+    return row;
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1655,6 +1687,8 @@ function close() {
 
 module.exports = {
     knex,
+    createGrantDocument,
+    getGrantDocument,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,
