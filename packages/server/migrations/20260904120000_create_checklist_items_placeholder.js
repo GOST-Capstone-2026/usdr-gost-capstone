@@ -10,6 +10,7 @@ exports.up = function (knex) {
         table.text('description');
         table.date('due_date');
         table.text('completion_status').notNullable().defaultTo('open');
+        table.timestamp('completed_at');
         table.text('verification_status').notNullable().defaultTo('unverified');
         table.integer('verified_by');
         table.timestamp('verified_at');
