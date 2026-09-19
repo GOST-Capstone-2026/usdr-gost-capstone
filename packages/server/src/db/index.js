@@ -1063,23 +1063,38 @@ async function getSingleGrantDetails({ grantId, tenantId }) {
 
 async function createGrantDocument({
     agencyId, grantId, uploadedBy, filename, mimeType, sizeBytes, sha256,
-    sourceUrl, storageBucket, storageKey,
+    sourceUrl, storageBucket, storageKey, pageCount = null, pages = [],
 }) {
-    const [row] = await knex(TABLES.grant_documents)
-        .insert({
-            agency_id: agencyId,
-            grant_id: grantId,
-            uploaded_by: uploadedBy,
-            filename,
-            mime_type: mimeType,
-            size_bytes: sizeBytes,
-            sha256,
-            source_url: sourceUrl || null,
-            storage_bucket: storageBucket,
-            storage_key: storageKey,
-        })
-        .returning('*');
-    return row;
+    // The document row and all of its page rows are saved together or not at all.
+    return knex.transaction(async (trx) => {
+        const [row] = await trx(TABLES.grant_documents)
+            .insert({
+                agency_id: agencyId,
+                grant_id: grantId,
+                uploaded_by: uploadedBy,
+                filename,
+                mime_type: mimeType,
+                size_bytes: sizeBytes,
+                sha256,
+                page_count: pageCount,
+                source_url: sourceUrl || null,
+                storage_bucket: storageBucket,
+                storage_key: storageKey,
+            })
+            .returning('*');
+
+        if (pages.length > 0) {
+            await trx.batchInsert(TABLES.grant_document_pages, pages.map((page) => ({
+                document_id: row.id,
+                page_number: page.pageNumber,
+                // Postgres text columns reject NUL characters, which some PDFs contain.
+                text: page.text.replaceAll('\u0000', ''),
+                char_count: page.charCount,
+            })), 100);
+        }
+
+        return row;
+    });
 }
 
 async function getGrantDocument({ documentId, agencyId }) {
