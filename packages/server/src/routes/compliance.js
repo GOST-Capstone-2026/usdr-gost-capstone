@@ -8,6 +8,7 @@ const { requireUser } = require('../lib/access-helpers');
 const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-context');
 const { getS3Client } = require('../lib/gost-aws');
 const { validateGrantDocumentUpload, sha256Hex } = require('../lib/grantDocumentValidation');
+const { extractPages } = require('../lib/pdfTextExtraction');
 const db = require('../db');
 
 const router = express.Router({ mergeParams: true });
@@ -80,6 +81,17 @@ router.post(
         }
 
         const sha256 = sha256Hex(req.file.buffer);
+
+        // Read the pages before storing anything, so a PDF that cannot be read is rejected
+        // without leaving an orphaned object in S3.
+        let extracted;
+        try {
+            extracted = await extractPages(req.file.buffer);
+        } catch (err) {
+            req.log.warn({ err }, 'could not extract text from uploaded grant document');
+            return sendError(req, res, 422, 'UNPROCESSABLE_DOCUMENT', 'The uploaded PDF could not be read.');
+        }
+
         const storageKey = `${selectedAgency}/${sha256}-${req.file.originalname}`;
 
         try {
@@ -108,6 +120,8 @@ router.post(
                 sourceUrl,
                 storageBucket: GRANT_DOCUMENTS_BUCKET,
                 storageKey,
+                pageCount: extracted.pageCount,
+                pages: extracted.pages,
             });
         } catch (err) {
             // Postgres error code 23505 = unique_violation. The grant_documents migration enforces
