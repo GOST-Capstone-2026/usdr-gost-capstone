@@ -9,6 +9,7 @@ const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-contex
 const { getS3Client } = require('../lib/gost-aws');
 const { validateGrantDocumentUpload, sha256Hex } = require('../lib/grantDocumentValidation');
 const { extractPages } = require('../lib/pdfTextExtraction');
+const { assessExtractionQuality } = require('../lib/extractionQuality');
 const db = require('../db');
 
 const router = express.Router({ mergeParams: true });
@@ -91,6 +92,9 @@ router.post(
             req.log.warn({ err }, 'could not extract text from uploaded grant document');
             return sendError(req, res, 422, 'UNPROCESSABLE_DOCUMENT', 'The uploaded PDF could not be read.');
         }
+        // Flag pages with almost no text (scans) and rate the whole document. A degraded or
+        // unreadable document is still stored, so the checklist can warn instead of failing.
+        const assessment = assessExtractionQuality(extracted.pages);
 
         const storageKey = `${selectedAgency}/${sha256}-${req.file.originalname}`;
 
@@ -121,7 +125,8 @@ router.post(
                 storageBucket: GRANT_DOCUMENTS_BUCKET,
                 storageKey,
                 pageCount: extracted.pageCount,
-                pages: extracted.pages,
+                pages: assessment.pages,
+                extractionQuality: assessment.quality,
             });
         } catch (err) {
             // Postgres error code 23505 = unique_violation. The grant_documents migration enforces
