@@ -1063,7 +1063,7 @@ async function getSingleGrantDetails({ grantId, tenantId }) {
 
 async function createGrantDocument({
     agencyId, grantId, uploadedBy, filename, mimeType, sizeBytes, sha256,
-    sourceUrl, storageBucket, storageKey, pageCount = null, pages = [],
+    sourceUrl, storageBucket, storageKey, pageCount = null, pages = [], extractionQuality = 'unknown',
 }) {
     // The document row and all of its page rows are saved together or not at all.
     return knex.transaction(async (trx) => {
@@ -1077,6 +1077,7 @@ async function createGrantDocument({
                 size_bytes: sizeBytes,
                 sha256,
                 page_count: pageCount,
+                extraction_quality: extractionQuality,
                 source_url: sourceUrl || null,
                 storage_bucket: storageBucket,
                 storage_key: storageKey,
@@ -1090,6 +1091,7 @@ async function createGrantDocument({
                 // Postgres text columns reject NUL characters, which some PDFs contain.
                 text: page.text.replaceAll('\u0000', ''),
                 char_count: page.charCount,
+                is_low_text: Boolean(page.isLowText),
             })), 100);
         }
 
