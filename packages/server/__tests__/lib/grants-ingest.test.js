@@ -56,9 +56,12 @@ describe('processMessages', async () => {
             merge: sinon.stub().returnsThis(),
             where: sinon.stub().returnsThis(),
             orWhereNull: sinon.stub().returnsThis(),
-            returning: sinon.stub().resolves(),
+            returning: sinon.stub().resolves([{ grant_id: 'written' }]),
+            del: sinon.stub().resolves(),
         };
         knexStub = sinon.stub().returns(knexQuery);
+        // running the transaction callback right away with the same stub as trx
+        knexStub.transaction = sinon.stub().callsFake((fn) => fn(knexStub));
         sqsStub = { send: sinon.stub() };
         this.clockFn = (date) => sinon.useFakeTimers(new Date(date));
         this.clock = this.clockFn('2023-12-05');
@@ -68,6 +71,8 @@ describe('processMessages', async () => {
         this.clock.restore();
         sinon.restore();
     });
+
+    const tableCallCount = (tableName) => knexStub.getCalls().filter((c) => c.args[0] === tableName).length;
 
     it('should process messages successfully', async () => {
         const messages = [
@@ -144,7 +149,7 @@ describe('processMessages', async () => {
         await processMessages(knexStub, sqsStub, queueUrl, messages);
 
         sinon.assert.calledWithExactly(knexStub, 'grants');
-        sinon.assert.callCount(knexStub, messages.length);
+        expect(tableCallCount('grants')).to.equal(messages.length);
         sinon.assert.calledWith(knexQuery.insert, sinon.match({
             status: 'inbox',
             grant_id: '1',
@@ -273,7 +278,7 @@ describe('processMessages', async () => {
         await processMessages(knexStub, sqsStub, queueUrl, messages);
 
         sinon.assert.calledWithExactly(knexStub, 'grants');
-        sinon.assert.callCount(knexStub, 1);
+        expect(tableCallCount('grants')).to.equal(1);
         sinon.assert.calledWith(knexQuery.insert, sinon.match({ grant_id: '1' }));
         sinon.assert.callCount(sqsStub.send, 1);
         sinon.assert.calledWith(sqsStub.send, sinon.match({
@@ -313,12 +318,75 @@ describe('processMessages', async () => {
         await processMessages(knexStub, sqsStub, queueUrl, messages);
 
         sinon.assert.calledWithExactly(knexStub, 'grants');
-        sinon.assert.callCount(knexStub, 2);
+        expect(tableCallCount('grants')).to.equal(2);
         sinon.assert.calledWith(knexQuery.insert, sinon.match({ grant_id: '1' }));
         sinon.assert.callCount(sqsStub.send, 1);
         sinon.assert.calledWith(sqsStub.send, sinon.match({
             input: { QueueUrl: queueUrl, ReceiptHandle: messages[1].ReceiptHandle },
         }));
+    });
+
+    it('should save normalized codes when the grant is written', async () => {
+        const grantEvent = createBaseGrantEvent();
+        grantEvent.cfda_numbers = ['12.345', ' 12.345 ', '67.890', ''];
+        grantEvent.funding_instrument_types = [{ code: 'G' }, { code: 'CA' }];
+        const messages = [{
+            Body: serlializeGrantEvent(grantEvent),
+            ReceiptHandle: 'receipt-handle-1',
+        }];
+
+        await processMessages(knexStub, sqsStub, queueUrl, messages);
+
+        sinon.assert.calledOnce(knexStub.transaction);
+        sinon.assert.calledWith(knexQuery.where, { grant_id: '1' });
+        sinon.assert.calledWith(knexQuery.insert, [
+            { grant_id: '1', code: '12.345' },
+            { grant_id: '1', code: '67.890' },
+        ]);
+        sinon.assert.calledWith(knexQuery.insert, [
+            { grant_id: '1', code: '00' },
+            { grant_id: '1', code: '01' },
+            { grant_id: '1', code: '02' },
+            { grant_id: '1', code: '03' },
+        ]);
+        sinon.assert.calledWith(knexQuery.insert, [
+            { grant_id: '1', code: 'G' },
+            { grant_id: '1', code: 'CA' },
+        ]);
+        // old codes get cleared for every table, even ones with nothing new to insert
+        sinon.assert.callCount(knexQuery.del, 4);
+        expect(tableCallCount('grants_funding_activity_category_codes')).to.equal(1);
+        sinon.assert.callCount(sqsStub.send, 1);
+    });
+
+    it('should not touch codes when the revision is stale or a duplicate', async () => {
+        knexQuery.returning.resolves([]);
+        const event = serlializeGrantEvent(createBaseGrantEvent());
+        // same message delivered twice, like an sqs retry
+        const messages = [
+            { Body: event, ReceiptHandle: 'receipt-handle-1' },
+            { Body: event, ReceiptHandle: 'receipt-handle-2' },
+        ];
+
+        await processMessages(knexStub, sqsStub, queueUrl, messages);
+
+        expect(tableCallCount('grants')).to.equal(2);
+        expect(tableCallCount('grants_cfda_numbers')).to.equal(0);
+        sinon.assert.notCalled(knexQuery.del);
+        // skipped messages are still done, so they should be removed from the queue
+        sinon.assert.callCount(sqsStub.send, 2);
+    });
+
+    it('should not delete the sqs message when saving codes fails', async () => {
+        knexQuery.del.rejects(new Error('Some knex error'));
+        const messages = [{
+            Body: serlializeGrantEvent(createBaseGrantEvent()),
+            ReceiptHandle: 'receipt-handle-1',
+        }];
+
+        await processMessages(knexStub, sqsStub, queueUrl, messages);
+
+        sinon.assert.notCalled(sqsStub.send);
     });
 });
 

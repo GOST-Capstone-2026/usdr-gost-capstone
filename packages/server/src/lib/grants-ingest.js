@@ -73,24 +73,71 @@ function mapSourceDataToGrant(source) {
 
     return grant;
 }
+
+// trims, drops blanks and dedupes so we don't trip the (grant_id, code) primary key
+function uniqueCodes(values) {
+    return [...new Set(values.map((it) => String(it ?? '').trim()).filter((it) => it !== ''))];
+}
+
 /**
- * Inserts a grant record into the database, or updates an exist record with the same grant_id value.
+ * Pulls the list fields out of a source opportunity, keyed by the table they get saved to.
+ * @param { object } source The opportunity data from a grants-ingest event.
+ * @returns { Record<string, string[]> }
+ */
+function mapSourceDataToCodes(source) {
+    return {
+        grants_cfda_numbers: uniqueCodes(source.cfda_numbers || []),
+        grants_eligibility_codes: uniqueCodes((source.eligible_applicants || []).map((it) => it.code)),
+        grants_funding_instrument_codes: uniqueCodes((source.funding_instrument_types || []).map((it) => it.code)),
+        grants_funding_activity_category_codes: uniqueCodes(
+            (source.funding_activity?.categories || []).map((it) => it.code),
+        ),
+    };
+}
+
+/**
+ * Inserts a grant record into the database, or updates an exist record with the same grant_id value,
+ * along with its normalized code rows.
  *
  * So as to prevent writes from events received out-of-order, updates will only occur when
  * the revision_id value of the incoming grant object is greater than that of the extant
- * database record, or when the .
+ * database record, or when the extant record has no revision_id. Re-processing the same
+ * revision is a no-op, so redelivered SQS messages are safe to handle more than once.
+ *
+ * Everything runs in one transaction so the grant and its codes can't end up out of sync.
+ * The upsert locks the grant row, which also serializes concurrent events for the same grant.
  *
  * @param { import('knex').Knex } knex Database client for persisting grants.
  * @param { object } grant The Grant object to persist
+ * @param { Record<string, string[]> } codes Code lists keyed by table name
+ * @returns { Promise<boolean> } true if the grant was written, false if it was skipped as stale
  */
-async function upsertGrant(knex, grant) {
-    await knex('grants')
-        .insert(grant)
-        .onConflict('grant_id')
-        .merge({ ...grant, ...{ updated_at: 'now' } })
-        .where('grants.revision_id', '<', grant.revision_id)
-        .orWhereNull('grants.revision_id')
-        .returning('grant_id');
+async function upsertGrant(knex, grant, codes = {}) {
+    return knex.transaction(async (trx) => {
+        const written = await trx('grants')
+            .insert(grant)
+            .onConflict('grant_id')
+            .merge({ ...grant, ...{ updated_at: 'now' } })
+            .where('grants.revision_id', '<', grant.revision_id)
+            .orWhereNull('grants.revision_id')
+            .returning('grant_id');
+
+        // nothing came back = same or older revision, so leave the existing codes alone
+        if (!written || written.length === 0) {
+            return false;
+        }
+
+        for (const [tableName, values] of Object.entries(codes)) {
+            // replace instead of diffing, the lists are tiny
+            // eslint-disable-next-line no-await-in-loop
+            await trx(tableName).where({ grant_id: grant.grant_id }).del();
+            if (values.length > 0) {
+                // eslint-disable-next-line no-await-in-loop
+                await trx(tableName).insert(values.map((code) => ({ grant_id: grant.grant_id, code })));
+            }
+        }
+        return true;
+    });
 }
 
 async function deleteMessage(sqs, queueUrl, receiptHandle) {
@@ -118,6 +165,7 @@ async function deleteMessage(sqs, queueUrl, receiptHandle) {
 async function processMessages(knex, sqs, queueUrl, messages) {
     let grantParseErrorCount = 0;
     let grantSaveSuccessCount = 0;
+    let grantSkippedCount = 0;
     let grantSaveErrorCount = 0;
     let grantDeletionCount = 0;
 
@@ -141,8 +189,10 @@ async function processMessages(knex, sqs, queueUrl, messages) {
         }
 
         let grant;
+        let codes;
         try {
             grant = mapSourceDataToGrant(modificationEvent.versions.new);
+            codes = mapSourceDataToCodes(modificationEvent.versions.new);
         } catch (e) {
             grantParseErrorCount += 1;
             console.error('Error mapping data from grant modification event:', e);
@@ -150,8 +200,13 @@ async function processMessages(knex, sqs, queueUrl, messages) {
         }
 
         try {
-            await upsertGrant(knex, grant);
-            grantSaveSuccessCount += 1;
+            const written = await upsertGrant(knex, grant, codes);
+            if (written) {
+                grantSaveSuccessCount += 1;
+            } else {
+                // stale or duplicate event, still fine to delete the message
+                grantSkippedCount += 1;
+            }
         } catch (e) {
             grantSaveErrorCount += 1;
             console.error(`Error on insert/update row with grant_id ${grant.grant_id}:`, e);
@@ -173,6 +228,7 @@ async function processMessages(knex, sqs, queueUrl, messages) {
         console.log(
             'Finished processing messages with the following results: ',
             `Grants Saved Successfully: ${grantSaveSuccessCount}`,
+            `| Skipped (Stale/Duplicate): ${grantSkippedCount}`,
             `| Parsing Errors: ${grantParseErrorCount}`,
             `| Postgres Errors: ${grantSaveErrorCount}`,
             `| Unhandled Deletion Events: ${grantDeletionCount}`,
