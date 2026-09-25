@@ -279,6 +279,7 @@ Every AI-generated factual claim that is marked as found contains at least one s
 ```
 
 Allowed jurisdiction types are `city`, `county`, `town`, `village`, `tribalGovernment`, `specialDistrict`, and `other`. Allowed staffing levels are `limited`, `moderate`, and `substantial`. If `expectedVersion` does not match the stored version, the server returns `409 VERSION_CONFLICT`.
+Use `expectedVersion: 0` when creating the first profile. A successful creation returns `201` with version `1`; a later update supplies the current version and returns `200` with the next version.
 
 ### Profile response
 

@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const history = require('connect-history-api-fallback');
 const { resolve } = require('path');
+const { randomUUID } = require('crypto');
 const { log, createLoggerMiddleware } = require('./lib/logging');
 const { configureApiRoutes: configureArpaReporterApiRoutes } = require('./arpa_reporter/configure');
 const { requestProviderMiddleware } = require('./arpa_reporter/use-request');
@@ -17,6 +18,7 @@ function configureApiRoutes(app) {
     app.use('/api/organizations/:organizationId/agencies', require('./routes/agencies'));
     app.use('/api/organizations/:organizationId/tenants', require('./routes/tenants'));
     app.use('/api/organizations/:organizationId/grants', require('./routes/grants'));
+    app.use('/api/organizations/:organizationId/compliance/profile', require('./routes/complianceProfile'));
     app.use('/api/organizations/:organizationId/compliance', require('./routes/compliance'));
     app.use('/api/organizations/:organizationId/grants-saved-search', require('./routes/grantsSavedSearch'));
     app.use('/api/organizations/:organizationId/eligibility-codes', require('./routes/eligibilityCodes'));
@@ -32,6 +34,21 @@ function configureApp(app, options = {}) {
     app.use(cookieParser(process.env.COOKIE_SECRET));
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
+    // Body parsing runs before routers, so handle malformed compliance-profile JSON here.
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
+        if (!/^\/api\/organizations\/[^/]+\/compliance\/profile\/?$/.test(req.path)) return next(err);
+        const tooLarge = err.status === 413;
+        return res.status(tooLarge ? 413 : 400).json({
+            error: {
+                code: tooLarge ? 'REQUEST_TOO_LARGE' : 'VALIDATION_ERROR',
+                message: tooLarge ? 'The request is too large.' : 'The request body is invalid.',
+                retryable: false,
+                requestId: randomUUID(),
+                details: [],
+            },
+        });
+    });
     app.use(requestProviderMiddleware);
 
     configureApiRoutes(app);
