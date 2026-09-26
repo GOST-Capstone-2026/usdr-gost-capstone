@@ -1058,6 +1058,53 @@ async function getSingleGrantDetails({ grantId, tenantId }) {
     return enhancedResults.length ? enhancedResults[0] : null;
 }
 
+// --- F1: Grant Analysis and Compliance Checklist (grant_documents) ---
+// See docs/g32-shared-api-contracts.md, "Grant Document Contract".
+
+async function createGrantDocument({
+    agencyId, grantId, uploadedBy, filename, mimeType, sizeBytes, sha256,
+    sourceUrl, storageBucket, storageKey, pageCount = null, pages = [],
+}) {
+    // The document row and all of its page rows are saved together or not at all.
+    return knex.transaction(async (trx) => {
+        const [row] = await trx(TABLES.grant_documents)
+            .insert({
+                agency_id: agencyId,
+                grant_id: grantId,
+                uploaded_by: uploadedBy,
+                filename,
+                mime_type: mimeType,
+                size_bytes: sizeBytes,
+                sha256,
+                page_count: pageCount,
+                source_url: sourceUrl || null,
+                storage_bucket: storageBucket,
+                storage_key: storageKey,
+            })
+            .returning('*');
+
+        if (pages.length > 0) {
+            await trx.batchInsert(TABLES.grant_document_pages, pages.map((page) => ({
+                document_id: row.id,
+                page_number: page.pageNumber,
+                // Postgres text columns reject NUL characters, which some PDFs contain.
+                text: page.text.replaceAll('\u0000', ''),
+                char_count: page.charCount,
+            })), 100);
+        }
+
+        return row;
+    });
+}
+
+async function getGrantDocument({ documentId, agencyId }) {
+    const row = await knex(TABLES.grant_documents)
+        .select('*')
+        .where({ id: documentId, agency_id: agencyId })
+        .first();
+    return row;
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1686,6 +1733,8 @@ function close() {
 
 module.exports = {
     knex,
+    createGrantDocument,
+    getGrantDocument,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,

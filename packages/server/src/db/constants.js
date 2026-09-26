@@ -16,5 +16,7 @@ module.exports = {
         grants_saved_searches: 'grants_saved_searches',
         grant_followers: 'grant_followers',
         checklist_items_placeholder: 'checklist_items_placeholder',
+        grant_documents: 'grant_documents',
+        grant_document_pages: 'grant_document_pages',
     },
 };
