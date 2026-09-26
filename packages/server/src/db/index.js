@@ -1727,6 +1727,34 @@ async function getDeadlineChecklistItems({ agencyId, from, through }) {
     return query;
 }
 
+async function updateDeadlineChecklistItem({
+    id, agencyId, dueDate, completionStatus,
+}) {
+    const updates = {
+        is_user_edited: true,
+        updated_at: new Date(),
+    };
+
+    if (dueDate !== undefined) {
+        updates.due_date = dueDate;
+        updates.verification_status = 'unverified';
+        updates.verified_by = null;
+        updates.verified_at = null;
+    }
+
+    if (completionStatus !== undefined) {
+        updates.completion_status = completionStatus;
+        updates.completed_at = completionStatus === 'completed' ? new Date() : null;
+    }
+
+    const [row] = await knex(TABLES.checklist_items_placeholder)
+        .where({ id, agency_id: agencyId })
+        .update(updates)
+        .returning('*');
+
+    return row || null;
+}
+
 function close() {
     return knex.destroy();
 }
@@ -1804,4 +1832,5 @@ module.exports = {
     close,
     validateSearchFilters,
     getDeadlineChecklistItems,
+    updateDeadlineChecklistItem,
 };
