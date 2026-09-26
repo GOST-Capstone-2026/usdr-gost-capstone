@@ -9,6 +9,9 @@ const TIME_ZONE = 'America/New_York';
 const DUE_SOON_WINDOW_DAYS = 7;
 const ALLOWED_STATUSES = ['upcoming', 'dueSoon', 'overdue', 'completed'];
 const DEFAULT_PER_PAGE = 25;
+const ALLOWED_COMPLETION_STATUSES = ['notStarted', 'inProgress', 'completed', 'notApplicable'];
+const ALLOWED_PATCH_FIELDS = ['dueDate', 'completionStatus'];
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function sendError(req, res, status, code, message, details) {
     return res.status(status).json({
@@ -116,6 +119,67 @@ router.get('/deadlines', requireUser, async (req, res) => {
             currentPage: page, perPage: size, total, lastPage,
         },
     });
+});
+
+router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const checklistItemId = Number(req.params.checklistItemId);
+
+    if (!Number.isInteger(checklistItemId) || checklistItemId < 1) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
+            { field: 'checklistItemId', issue: 'must be a positive integer' },
+        ]);
+    }
+
+    const body = req.body || {};
+    const bodyFields = Object.keys(body);
+    const unknownFields = bodyFields.filter((field) => !ALLOWED_PATCH_FIELDS.includes(field));
+
+    if (unknownFields.length > 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', unknownFields.map((field) => ({ field, issue: 'unsupported field' })));
+    }
+
+    if (bodyFields.length === 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
+            { field: 'body', issue: 'must include dueDate and/or completionStatus' },
+        ]);
+    }
+
+    const { dueDate, completionStatus } = body;
+    const details = [];
+
+    if (dueDate !== undefined
+        && (dueDate === null || typeof dueDate !== 'string' || !ISO_DATE_PATTERN.test(dueDate) || !DateTime.fromISO(dueDate).isValid)) {
+        details.push({ field: 'dueDate', issue: 'must be a valid YYYY-MM-DD date' });
+    }
+
+    if (completionStatus !== undefined && !ALLOWED_COMPLETION_STATUSES.includes(completionStatus)) {
+        details.push({ field: 'completionStatus', issue: `must be one of ${ALLOWED_COMPLETION_STATUSES.join(', ')}` });
+    }
+
+    if (details.length > 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', details);
+    }
+
+    const updated = await db.updateDeadlineChecklistItem({
+        id: checklistItemId,
+        agencyId: selectedAgency,
+        dueDate,
+        completionStatus,
+    });
+
+    if (!updated) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Checklist item not found.');
+    }
+
+    const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
+    const deadline = serializeDeadline(updated, computeStatus({
+        completionStatus: updated.completion_status,
+        dueDate: updated.due_date,
+        today,
+    }));
+
+    return res.json({ deadline });
 });
 
 module.exports = router;

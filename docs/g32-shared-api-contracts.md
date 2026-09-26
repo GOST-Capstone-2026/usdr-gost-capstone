@@ -567,6 +567,49 @@ Supported query parameters are `from`, `through`, `status`, `currentPage`, and `
 
 The dashboard and calendar call the same endpoint so they cannot calculate conflicting statuses.
 
+### Deadline correction and completion request
+
+`PATCH /api/organizations/:organizationId/compliance/deadlines/:checklistItemId` accepts only `dueDate` and/or `completionStatus`; any other field is rejected as an unknown field, and the request body must include at least one of them.
+
+```json
+{
+  "dueDate": "2026-12-31",
+  "completionStatus": "completed"
+}
+```
+
+- `dueDate` must be a `YYYY-MM-DD` string; `null` is not accepted (a checklist item with no known due date stays in "Review Needed" until an actual date can be supplied).
+- Correcting `dueDate` resets `verificationStatus` to `unverified` and clears `verifiedBy`/`verifiedAt`, since a previously verified date is no longer trustworthy until a person re-confirms it.
+- `completionStatus` must be one of `notStarted`, `inProgress`, `completed`, or `notApplicable`. The server sets `completedAt` when the value becomes `completed`, and clears it when the value moves away from `completed`.
+- `verificationStatus`, `verifiedBy`, `verifiedAt`, and other checklist-item fields are not settable here; verifying or rejecting an item is done through Section 6.3's `PATCH /checklist-items/:itemId`.
+- A `checklistItemId` outside the caller's organization, or one that does not exist, returns `404 NOT_FOUND`.
+
+### Deadline correction and completion response
+
+A single resource is returned directly under its resource name, per the standard success shape:
+
+```json
+{
+  "deadline": {
+    "checklistItemId": 104,
+    "grantId": 335255,
+    "documentId": 27,
+    "title": "Quarterly performance report",
+    "dueDate": "2026-12-31",
+    "status": "completed",
+    "completionStatus": "completed",
+    "completedAt": "2026-12-30T19:00:00.000Z",
+    "verificationStatus": "unverified",
+    "verifiedBy": null,
+    "verifiedAt": null,
+    "source": {
+      "pageNumber": 14,
+      "excerpt": "Quarterly performance reports are due within 30 days..."
+    }
+  }
+}
+```
+
 ## External Adapter Contracts
 
 External clients are server-side modules, not browser APIs.
