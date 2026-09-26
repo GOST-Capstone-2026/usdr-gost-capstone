@@ -1696,6 +1696,37 @@ async function deleteSavedSearch(searchId, userId) {
     return rowsDeleted === 1;
 }
 
+/**
+ * Returns verified checklist items with a due date for one organization, for the
+ * Portfolio and Deadline Tracker subsystem's read API (M-03).
+ *
+ * Reads checklist_items_placeholder for now. When the real checklist_items table
+ * (owned by the Grant Analysis and Compliance Checklist subsystem) lands, this
+ * function is what changes — callers of getDeadlineChecklistItems() do not.
+ *
+ * @param {Object} args
+ * @param {number} args.agencyId
+ * @param {string} [args.from] - YYYY-MM-DD, inclusive lower bound on due_date
+ * @param {string} [args.through] - YYYY-MM-DD, inclusive upper bound on due_date
+ * @return {Promise<Array>}
+ */
+async function getDeadlineChecklistItems({ agencyId, from, through }) {
+    const query = knex(TABLES.checklist_items_placeholder)
+        .where('agency_id', agencyId)
+        .whereNotNull('due_date')
+        .andWhere('verification_status', 'verified')
+        .orderBy('due_date', 'asc');
+
+    if (from) {
+        query.andWhere('due_date', '>=', from);
+    }
+    if (through) {
+        query.andWhere('due_date', '<=', through);
+    }
+
+    return query;
+}
+
 function close() {
     return knex.destroy();
 }
@@ -1772,4 +1803,5 @@ module.exports = {
     getAllRows,
     close,
     validateSearchFilters,
+    getDeadlineChecklistItems,
 };
