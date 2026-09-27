@@ -158,6 +158,7 @@ Required fields:
 | `409` | `VERSION_CONFLICT` | No | Optimistic version does not match the stored version |
 | `409` | `DUPLICATE_OPERATION` | No | Equivalent active work already exists; return a safe reference when authorized |
 | `413` | `FILE_TOO_LARGE` | No | Upload exceeds the configured byte or page limit |
+| `413` | `REQUEST_TOO_LARGE` | No | A non-file API request exceeds the configured body-size limit |
 | `415` | `UNSUPPORTED_FILE_TYPE` | No | Upload is not an accepted PDF type or signature |
 | `422` | `UNPROCESSABLE_DOCUMENT` | No | Valid PDF cannot be reliably extracted or validated without different input |
 | `429` | `RATE_LIMITED` | Yes | Local or provider rate limit; include a safe retry delay when known |
