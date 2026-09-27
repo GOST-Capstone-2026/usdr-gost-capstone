@@ -2,8 +2,27 @@ import {
   describe, beforeEach, it, expect, vi,
 } from 'vitest';
 import { getFeatureFlags } from '@/helpers/featureFlags/utils';
+import { grantComplianceEnabled, organizationProfilesEnabled } from '@/helpers/featureFlags';
 
 describe('featureFlags', () => {
+  describe('G32 organization profile flags', () => {
+    beforeEach(() => {
+      window.sessionStorage.removeItem('featureFlags');
+    });
+
+    it('requires both the master and profile flags to be boolean true', () => {
+      window.APP_CONFIG = { featureFlags: { grantComplianceEnabled: true, organizationProfilesEnabled: true } };
+      expect(grantComplianceEnabled()).toBe(true);
+      expect(organizationProfilesEnabled()).toBe(true);
+      window.APP_CONFIG.featureFlags.grantComplianceEnabled = false;
+      expect(organizationProfilesEnabled()).toBe(false);
+      window.APP_CONFIG.featureFlags.grantComplianceEnabled = true;
+      window.APP_CONFIG.featureFlags.organizationProfilesEnabled = 'true';
+      expect(organizationProfilesEnabled()).toBe(false);
+      window.APP_CONFIG.featureFlags.organizationProfilesEnabled = null;
+      expect(organizationProfilesEnabled()).toBe(false);
+    });
+  });
   describe('helpers', () => {
     describe('getFeatureFlags()', () => {
       describe('Defaults to empty object', () => {

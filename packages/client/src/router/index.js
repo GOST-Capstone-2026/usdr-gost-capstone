@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import BaseLayout from '@/components/BaseLayout.vue';
 import {
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
+  organizationProfilesEnabled,
 } from '@/helpers/featureFlags';
 import LoginView from '@/views/LoginView.vue';
 
@@ -160,6 +161,15 @@ export const routes = [
           hideLayoutTabs: true,
         },
       },
+      {
+        path: '/compliance/profile',
+        name: 'complianceProfile',
+        component: () => import('@/views/OrganizationProfileView.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresOrganizationProfilesEnabled: true,
+        },
+      },
     ],
   },
   {
@@ -195,6 +205,7 @@ router.beforeEach((to, from, next) => {
     (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())
     || (to.meta.requiresNewGrantsDetailPageEnabled && !newGrantsDetailPageEnabled())
     || (to.meta.requiresShareTerminologyEnabled && !shareTerminologyEnabled())
+    || (to.meta.requiresOrganizationProfilesEnabled && !organizationProfilesEnabled())
   ) {
     if (authenticated) {
       next({ name: 'grants' });

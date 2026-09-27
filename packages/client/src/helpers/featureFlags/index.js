@@ -40,3 +40,11 @@ export function grantsLoginEnabled() {
 export function arpaLoginEnabled() {
   return getFeatureFlags().arpaLoginEnabled === true;
 }
+
+export function grantComplianceEnabled() {
+  return getFeatureFlags().grantComplianceEnabled === true;
+}
+
+export function organizationProfilesEnabled() {
+  return grantComplianceEnabled() && getFeatureFlags().organizationProfilesEnabled === true;
+}
