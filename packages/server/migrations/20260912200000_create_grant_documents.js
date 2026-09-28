@@ -19,7 +19,8 @@ exports.up = function (knex) {
         table.text('sha256').notNullable();
         table.integer('page_count');
         table.text('source_url');
-        // unknown | readable | degraded | unreadable — set by the analysis worker (AN-06/AN-07), not at upload time
+        // unknown | readable | degraded | unreadable — computed at upload time (AN-06) from the
+        // extracted pages; 'unknown' only remains if extraction itself failed before this ran.
         table.text('extraction_quality').notNullable().defaultTo('unknown');
 
         // Where the PDF bytes actually live. Never returned to the browser.

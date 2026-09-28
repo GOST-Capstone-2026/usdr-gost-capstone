@@ -34,6 +34,17 @@ describe('assessExtractionQuality', () => {
         expect(assessExtractionQuality(pagesWithLowText(20, 1)).quality).to.equal('readable');
     });
 
+    it('does not degrade a short document over a single blank page', () => {
+        const result = assessExtractionQuality(pagesWithLowText(5, 1));
+        expect(result.quality).to.equal('readable');
+        expect(result.lowTextPages).to.deep.equal([1]);
+    });
+
+    it('still flags a short document as degraded once more than one page is low text', () => {
+        const result = assessExtractionQuality(pagesWithLowText(5, 2));
+        expect(result.quality).to.equal('degraded');
+    });
+
     it('rates a document with some scanned pages as degraded and lists them', () => {
         const result = assessExtractionQuality(pagesWithLowText(10, 3));
         expect(result.quality).to.equal('degraded');

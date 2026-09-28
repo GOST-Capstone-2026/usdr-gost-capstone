@@ -11,6 +11,12 @@ const MIN_PAGE_CHARS = 50;
 const DEGRADED_RATIO = 0.1;
 const UNREADABLE_RATIO = 0.9;
 
+// Every document gets this many "free" low-text pages before the ratio above even applies. Real
+// documents almost always have at least one cover, signature, or divider page under the char
+// limit, and without this grace a short document (say 5 pages) gets pushed into "degraded" by
+// that single normal page alone, since 1 out of 5 is already 20%.
+const LOW_TEXT_GRACE_PAGES = 1;
+
 /**
  * @param {Array<{pageNumber: number, text: string, charCount: number}>} pages from extractPages()
  * @returns {{quality: 'readable'|'degraded'|'unreadable', lowTextPages: number[],
@@ -20,7 +26,8 @@ function assessExtractionQuality(pages) {
     const assessed = pages.map((page) => ({ ...page, isLowText: page.charCount < MIN_PAGE_CHARS }));
     const lowTextPages = assessed.filter((page) => page.isLowText).map((page) => page.pageNumber);
 
-    const ratio = assessed.length === 0 ? 1 : lowTextPages.length / assessed.length;
+    const gracedLowTextCount = Math.max(0, lowTextPages.length - LOW_TEXT_GRACE_PAGES);
+    const ratio = assessed.length === 0 ? 1 : gracedLowTextCount / assessed.length;
     let quality = 'readable';
     if (ratio >= UNREADABLE_RATIO) {
         quality = 'unreadable';
@@ -36,4 +43,5 @@ module.exports = {
     MIN_PAGE_CHARS,
     DEGRADED_RATIO,
     UNREADABLE_RATIO,
+    LOW_TEXT_GRACE_PAGES,
 };
