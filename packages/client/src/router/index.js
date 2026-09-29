@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import BaseLayout from '@/components/BaseLayout.vue';
 import {
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
+  complianceDeadlinesEnabled,
 } from '@/helpers/featureFlags';
 import LoginView from '@/views/LoginView.vue';
 
@@ -195,6 +196,7 @@ router.beforeEach((to, from, next) => {
     (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())
     || (to.meta.requiresNewGrantsDetailPageEnabled && !newGrantsDetailPageEnabled())
     || (to.meta.requiresShareTerminologyEnabled && !shareTerminologyEnabled())
+    || (to.meta.requiresComplianceDeadlinesEnabled && !complianceDeadlinesEnabled())
   ) {
     if (authenticated) {
       next({ name: 'grants' });
