@@ -221,7 +221,7 @@ Checklist completion status is separate:
 
 `isUserEdited` records whether a person changed AI-generated content. It does not imply verification. The server sets `verifiedBy` and `verifiedAt` from the authenticated session when status becomes `verified` or `rejected`.
 
-Only an item with `verificationStatus: "verified"` and a non-null `dueDate` appears in the published deadline feed.
+Only an item with `verificationStatus: "verified"` and a non-null `dueDate` appears in the published deadline portfolio. Unverified or undated items are returned separately for review, and rejected items are excluded (see Deadline Contract).
 
 ## Source Traceability Contract
 
@@ -533,16 +533,40 @@ The server sets `isUserEdited`, `verifiedBy`, `verifiedAt`, `updatedAt`, and the
 
 ## Deadline Contract
 
-Deadlines are a read and update view over verified `checklist_items`; there is no duplicate deadline table.
+Deadlines are a read and update view over non-rejected `checklist_items`; there is no duplicate deadline table. Only verified, dated items form the published portfolio. Unverified or undated items are returned in a separate `reviewNeeded` group so they stay visible without counting as trusted deadlines. Rejected items are excluded from both groups.
 
 ### Endpoints
 
 | Method | Route | Result |
 | --- | --- | --- |
-| `GET` | `/api/organizations/:organizationId/compliance/deadlines` | Return verified checklist items with non-null due dates |
+| `GET` | `/api/organizations/:organizationId/compliance/deadlines` | Return non-rejected checklist items, grouped into `portfolio` and `reviewNeeded` |
 | `PATCH` | `/api/organizations/:organizationId/compliance/deadlines/:checklistItemId` | Correct the underlying due date or completion status |
 
-Supported query parameters are `from`, `through`, `status`, `currentPage`, and `perPage`. Allowed calculated statuses are `upcoming`, `dueSoon`, `overdue`, and `completed`. The server calculates status from `dueDate`, `completionStatus`, the current date, and an organization-configured warning window that defaults to seven days.
+Supported query parameters are `from`, `through`, `status`, `currentPage`, and `perPage`. `from` and `through` bound `dueDate`; undated items are always returned because they cannot be placed in a range. `currentPage` and `perPage` apply to each group independently. The server calculates status at request time from `dueDate`, `completionStatus`, `completedAt`, `verificationStatus`, the current date in Eastern Time (America/New_York), and an organization-configured warning window that defaults to seven days.
+
+| Group | Membership | Calculated statuses |
+| --- | --- | --- |
+| `portfolio` | `verificationStatus` is `verified` and `dueDate` is not null | `overdue`, `dueToday`, `dueSoon`, `upcoming`, `completed`, `completedLate` |
+| `reviewNeeded` | `verificationStatus` is `unverified`, or `dueDate` is null | `overdueUnverified`, `dueTodayUnverified`, `dueSoonUnverified`, `upcomingUnverified`, `completedUnverified`, `completedLateUnverified`, or `reviewNeeded` when there is no `dueDate` |
+
+A completed item (`completionStatus` of `completed` or `notApplicable`) is `completedLate` when its `completedAt` date in Eastern Time is after `dueDate`, and `completed` otherwise. An incomplete item is `overdue` when `dueDate` is before today, `dueToday` when it is today, `dueSoon` when it falls within the warning window, and `upcoming` after that. `verificationStatus` is still returned as its own field on every item.
+
+### Deadline collection response
+
+```json
+{
+  "data": {
+    "portfolio": [ { "checklistItemId": 104, "status": "upcoming", "verificationStatus": "verified" } ],
+    "reviewNeeded": [ { "checklistItemId": 118, "status": "reviewNeeded", "dueDate": null, "verificationStatus": "unverified" } ]
+  },
+  "pagination": {
+    "portfolio": { "currentPage": 1, "perPage": 25, "total": 1, "lastPage": 1 },
+    "reviewNeeded": { "currentPage": 1, "perPage": 25, "total": 1, "lastPage": 1 }
+  }
+}
+```
+
+Each array element is a full deadline response item, abbreviated above.
 
 ### Deadline response item
 
@@ -596,7 +620,7 @@ A single resource is returned directly under its resource name, per the standard
     "documentId": 27,
     "title": "Quarterly performance report",
     "dueDate": "2026-12-31",
-    "status": "completed",
+    "status": "completedUnverified",
     "completionStatus": "completed",
     "completedAt": "2026-12-30T19:00:00.000Z",
     "verificationStatus": "unverified",
@@ -681,7 +705,7 @@ The adapter returns parsed structured data plus provider metadata. A domain serv
 | Processing run | `ai_processing_runs` | Allison with all subsystem owners |
 | Grant brief | `grant_briefs` or a versioned structured result linked to `grant_documents` | Anthony |
 | Checklist item | `checklist_items` | Anthony |
-| Published deadline | Read view over verified `checklist_items` | Manuel; no duplicate table |
+| Published deadline | Read view over non-rejected `checklist_items`, grouped into verified `portfolio` and `reviewNeeded` | Manuel; no duplicate table |
 
 Every new structure includes organization ownership directly or through a required foreign-key path that can be constrained in all reads and writes. Migrations and repositories must not rely on the browser to supply tenant ownership.
 
@@ -716,7 +740,7 @@ Changes to a shared field, enum, state transition, or route require a pull-reque
 3. New collection responses retain GOST's `{ data, pagination }` convention.
 4. Long operations use `queued`, `processing`, `reviewRequired`, `completed`, and `failed`.
 5. Human verification and checklist completion use separate fields and enums.
-6. Verified checklist dates are the single source for the portfolio and calendar.
+6. Verified checklist dates are the single source for the portfolio and calendar; unverified or undated items are returned by the same endpoint in a separate `reviewNeeded` group.
 7. Source references use one-based page numbers and exact extracted excerpts.
 8. Retries create new processing-run records and preserve prior completed results and failures.
 9. External services are accessed only through server-side adapters.

@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const { DateTime } = require('luxon');
 const { getSessionCookie, makeTestServer, knex } = require('./utils');
 
 describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', () => {
@@ -30,46 +31,161 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
     });
 
     context('GET /compliance/deadlines', () => {
-        it('returns only verified checklist items that have a due date', async () => {
+        const getDeadlines = async (query) => {
+            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, query);
+            return response.json();
+        };
+        const findByTitle = (items, title) => items.find((i) => i.title === title);
+
+        it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
             expect(response.status).to.equal(200);
 
-            const json = await response.json();
-            expect(json.data.length).to.equal(4);
-            json.data.forEach((item) => {
+            const { data, pagination } = await response.json();
+            expect(data.portfolio.length).to.equal(4);
+            data.portfolio.forEach((item) => {
                 expect(item.verificationStatus).to.equal('verified');
                 expect(item.dueDate).to.not.equal(null);
             });
+            expect(data.reviewNeeded.length).to.equal(3);
+            data.reviewNeeded.forEach((item) => {
+                expect(item.verificationStatus !== 'verified' || item.dueDate === null).to.equal(true);
+            });
+            expect(pagination.portfolio.total).to.equal(4);
+            expect(pagination.reviewNeeded.total).to.equal(3);
         });
 
         it('computes overdue for a past-due, incomplete item', async () => {
-            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
-            const json = await response.json();
-            const item = json.data.find((i) => i.title === 'Submit quarterly financial status report');
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.portfolio, 'Submit quarterly financial status report');
             expect(item.status).to.equal('overdue');
         });
 
         it('computes upcoming for a far-future, incomplete item', async () => {
-            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
-            const json = await response.json();
-            const item = json.data.find((i) => i.title === 'Complete annual performance report');
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.portfolio, 'Complete annual performance report');
             expect(item.status).to.equal('upcoming');
         });
 
-        it('marks a completed item finished before its due date as on time', async () => {
-            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
-            const json = await response.json();
-            const item = json.data.find((i) => i.title === 'Submit annual audit certification');
+        it('marks a completed item finished before its due date as completed', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.portfolio, 'Submit annual audit certification');
             expect(item.status).to.equal('completed');
             expect(new Date(item.completedAt) < new Date(item.dueDate)).to.equal(true);
         });
 
-        it('marks a completed item finished after its due date as late', async () => {
-            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
-            const json = await response.json();
-            const item = json.data.find((i) => i.title === 'Submit close-out financial report');
-            expect(item.status).to.equal('completed');
+        it('marks a completed item finished after its due date as completedLate', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.portfolio, 'Submit close-out financial report');
+            expect(item.status).to.equal('completedLate');
             expect(new Date(item.completedAt) > new Date(item.dueDate)).to.equal(true);
+        });
+
+        it('returns an unverified item due soon in reviewNeeded as dueSoonUnverified', async () => {
+            const { data } = await getDeadlines();
+            expect(findByTitle(data.portfolio, 'Submit updated subrecipient monitoring plan')).to.equal(undefined);
+            const item = findByTitle(data.reviewNeeded, 'Submit updated subrecipient monitoring plan');
+            expect(item.status).to.equal('dueSoonUnverified');
+            expect(item.verificationStatus).to.equal('unverified');
+        });
+
+        it('returns an unverified item beyond the warning window in reviewNeeded as upcomingUnverified', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.reviewNeeded, 'Complete civil rights compliance self-assessment');
+            expect(item.status).to.equal('upcomingUnverified');
+        });
+
+        it('returns an undated item in reviewNeeded with status reviewNeeded', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.reviewNeeded, 'Maintain records supporting ongoing grant obligations');
+            expect(item.status).to.equal('reviewNeeded');
+            expect(item.dueDate).to.equal(null);
+        });
+
+        it('keeps undated items when a date range is requested', async () => {
+            const { data } = await getDeadlines({ from: '2000-01-01', through: '2000-12-31' });
+            expect(data.portfolio.length).to.equal(0);
+            expect(data.reviewNeeded.map((i) => i.status)).to.deep.equal(['reviewNeeded']);
+        });
+
+        context('with additional status cases', () => {
+            const todayEt = DateTime.now().setZone('America/New_York');
+            const extraRows = [
+                {
+                    description: 'Due today verified test item',
+                    due_date: todayEt.toISODate(),
+                    verification_status: 'verified',
+                },
+                {
+                    description: 'Due today unverified test item',
+                    due_date: todayEt.toISODate(),
+                    verification_status: 'unverified',
+                },
+                {
+                    description: 'Overdue unverified test item',
+                    due_date: todayEt.minus({ days: 3 }).toISODate(),
+                    verification_status: 'unverified',
+                },
+                {
+                    description: 'Completed late unverified test item',
+                    due_date: todayEt.minus({ days: 6 }).toISODate(),
+                    completion_status: 'completed',
+                    completed_at: todayEt.minus({ days: 2 }).toJSDate(),
+                    verification_status: 'unverified',
+                },
+                {
+                    description: 'Rejected test item',
+                    due_date: todayEt.plus({ days: 4 }).toISODate(),
+                    verification_status: 'rejected',
+                },
+                {
+                    description: 'Rejected undated test item',
+                    due_date: null,
+                    verification_status: 'rejected',
+                },
+            ];
+            let extraIds;
+
+            before(async () => {
+                const inserted = await knex('checklist_items_placeholder').insert(extraRows.map((row) => ({
+                    agency_id: usdrAgencyId,
+                    category: 'Compliance',
+                    completion_status: 'notStarted',
+                    ...row,
+                }))).returning('id');
+                extraIds = inserted.map((row) => row.id);
+            });
+
+            after(async () => {
+                await knex('checklist_items_placeholder').whereIn('id', extraIds).del();
+            });
+
+            it('computes dueToday for a verified item due today in Eastern Time', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.portfolio, 'Due today verified test item').status).to.equal('dueToday');
+            });
+
+            it('computes dueTodayUnverified for an unverified item due today', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.reviewNeeded, 'Due today unverified test item').status).to.equal('dueTodayUnverified');
+            });
+
+            it('computes overdueUnverified for an unverified past-due item', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.reviewNeeded, 'Overdue unverified test item').status).to.equal('overdueUnverified');
+            });
+
+            it('computes completedLateUnverified for an unverified item completed after its due date', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.reviewNeeded, 'Completed late unverified test item').status).to.equal('completedLateUnverified');
+            });
+
+            it('excludes rejected items from both groups', async () => {
+                const { data } = await getDeadlines();
+                const titles = [...data.portfolio, ...data.reviewNeeded].map((i) => i.title);
+                expect(titles).to.not.include('Rejected test item');
+                expect(titles).to.not.include('Rejected undated test item');
+            });
         });
 
         it('rejects a request for an organization outside the user\'s tenant', async () => {
@@ -87,9 +203,17 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         it('filters results by status when requested', async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { status: 'overdue' });
             expect(response.status).to.equal(200);
-            const json = await response.json();
-            expect(json.data.length > 0).to.equal(true);
-            expect(json.data.every((item) => item.status === 'overdue')).to.equal(true);
+            const { data } = await response.json();
+            expect(data.portfolio.length > 0).to.equal(true);
+            expect(data.portfolio.every((item) => item.status === 'overdue')).to.equal(true);
+            expect(data.reviewNeeded.length).to.equal(0);
+        });
+
+        it('filters the reviewNeeded group by a review status', async () => {
+            const { data } = await getDeadlines({ status: 'reviewNeeded' });
+            expect(data.portfolio.length).to.equal(0);
+            expect(data.reviewNeeded.length).to.equal(1);
+            expect(data.reviewNeeded[0].status).to.equal('reviewNeeded');
         });
 
         it('rejects an unauthenticated request', async () => {
@@ -115,7 +239,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         before(async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
             const json = await response.json();
-            anyChecklistItemId = json.data[0].checklistItemId;
+            anyChecklistItemId = json.data.portfolio[0].checklistItemId;
         });
 
         it('corrects a verified item\'s due date and resets it to unverified', async () => {
@@ -149,7 +273,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
             const { deadline } = await response.json();
             expect(deadline.completionStatus).to.equal('completed');
-            expect(deadline.status).to.equal('completed');
+            expect(deadline.status).to.equal('completedUnverified');
             expect(deadline.completedAt).to.not.equal(null);
         });
 
@@ -245,11 +369,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             const { deadline: patched } = await patchResponse.json();
             expect(patched.verificationStatus).to.equal('verified');
             expect(patched.completionStatus).to.equal('completed');
+            expect(patched.status).to.equal('completedLate');
             expect(patched.completedAt).to.not.equal(null);
 
-            const getResponse = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { status: 'completed' });
+            const getResponse = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { status: 'completedLate' });
             const { data } = await getResponse.json();
-            const fetched = data.find((item) => item.checklistItemId === id);
+            const fetched = data.portfolio.find((item) => item.checklistItemId === id);
             expect(fetched).to.not.equal(undefined);
             expect(fetched.verificationStatus).to.equal('verified');
             expect(fetched.completionStatus).to.equal('completed');
@@ -257,7 +382,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(fetched.completedAt).to.equal(patched.completedAt);
         });
 
-        it('correcting a due date removes the item from the published feed until re-verified', async () => {
+        it('correcting a due date moves the item from portfolio to reviewNeeded until re-verified', async () => {
             const id = await findIdByDescription('Submit annual audit certification');
 
             const patchResponse = await patchDeadline(usdrAgencyId, id, { dueDate: '2032-03-01' });
@@ -267,7 +392,9 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
             const getResponse = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
             const { data } = await getResponse.json();
-            expect(data.find((item) => item.checklistItemId === id)).to.equal(undefined);
+            expect(data.portfolio.find((item) => item.checklistItemId === id)).to.equal(undefined);
+            const moved = data.reviewNeeded.find((item) => item.checklistItemId === id);
+            expect(moved.status).to.equal(patched.status);
         });
 
         context('cross-organization access to a real checklist item', () => {

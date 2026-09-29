@@ -7,7 +7,9 @@ const router = express.Router({ mergeParams: true });
 
 const TIME_ZONE = 'America/New_York';
 const DUE_SOON_WINDOW_DAYS = 7;
-const ALLOWED_STATUSES = ['upcoming', 'dueSoon', 'overdue', 'completed'];
+const PORTFOLIO_STATUSES = ['overdue', 'dueToday', 'dueSoon', 'upcoming', 'completed', 'completedLate'];
+const REVIEW_NEEDED_STATUSES = [...PORTFOLIO_STATUSES.map((status) => `${status}Unverified`), 'reviewNeeded'];
+const ALLOWED_STATUSES = [...PORTFOLIO_STATUSES, ...REVIEW_NEEDED_STATUSES];
 const DEFAULT_PER_PAGE = 25;
 const ALLOWED_COMPLETION_STATUSES = ['notStarted', 'inProgress', 'completed', 'notApplicable'];
 const ALLOWED_PATCH_FIELDS = ['dueDate', 'completionStatus'];
@@ -25,22 +27,60 @@ function sendError(req, res, status, code, message, details) {
     });
 }
 
+function computeDateStatus({
+    completionStatus, completedAt, dueDate, today,
+}) {
+    const due = DateTime.fromISO(dueDate, { zone: TIME_ZONE }).startOf('day');
 
-function computeStatus({ completionStatus, dueDate, today }) {
     if (completionStatus === 'completed' || completionStatus === 'notApplicable') {
-        return 'completed';
+        const completedDay = completedAt
+            ? DateTime.fromJSDate(completedAt).setZone(TIME_ZONE).startOf('day')
+            : null;
+        return completedDay && completedDay > due ? 'completedLate' : 'completed';
     }
 
-    const due = DateTime.fromISO(dueDate, { zone: TIME_ZONE }).startOf('day');
     const dueSoonCutoff = today.plus({ days: DUE_SOON_WINDOW_DAYS });
 
     if (due < today) {
         return 'overdue';
     }
+    if (due.hasSame(today, 'day')) {
+        return 'dueToday';
+    }
     if (due <= dueSoonCutoff) {
         return 'dueSoon';
     }
     return 'upcoming';
+}
+
+function isPortfolioItem(row) {
+    return row.verification_status === 'verified' && row.due_date !== null;
+}
+
+function computeStatus(row, today) {
+    if (row.due_date === null) {
+        return 'reviewNeeded';
+    }
+
+    const dateStatus = computeDateStatus({
+        completionStatus: row.completion_status,
+        completedAt: row.completed_at,
+        dueDate: row.due_date,
+        today,
+    });
+
+    return isPortfolioItem(row) ? dateStatus : `${dateStatus}Unverified`;
+}
+
+function paginate(items, page, size) {
+    const total = items.length;
+    const start = (page - 1) * size;
+    return {
+        items: items.slice(start, start + size),
+        pagination: {
+            currentPage: page, perPage: size, total, lastPage: Math.max(1, Math.ceil(total / size)),
+        },
+    };
 }
 
 function toIsoOrNull(dateValue) {
@@ -65,8 +105,9 @@ function serializeDeadline(row, status) {
 }
 
 // GET /api/organizations/:organizationId/compliance/deadlines
-// Returns verified checklist items with non-null due dates for the authenticated
-// user's organization, each annotated with a real-time computed status.
+// Returns the authenticated user's organization's deadline items in two groups:
+// portfolio (verified and dated) and reviewNeeded (unverified or undated), each
+// annotated with a real-time computed status. Rejected items are excluded.
 router.get('/deadlines', requireUser, async (req, res) => {
     const { selectedAgency } = req.session;
     const {
@@ -98,25 +139,27 @@ router.get('/deadlines', requireUser, async (req, res) => {
     const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
 
     // Status is computed in application code, not SQL
-    let items = rows.map((row) => serializeDeadline(row, computeStatus({
-        completionStatus: row.completion_status,
-        dueDate: row.due_date,
-        today,
-    })));
+    const portfolioItems = [];
+    const reviewNeededItems = [];
+    rows.forEach((row) => {
+        const item = serializeDeadline(row, computeStatus(row, today));
+        if (status && item.status !== status) {
+            return;
+        }
+        (isPortfolioItem(row) ? portfolioItems : reviewNeededItems).push(item);
+    });
 
-    if (status) {
-        items = items.filter((item) => item.status === status);
-    }
-
-    const total = items.length;
-    const lastPage = Math.max(1, Math.ceil(total / size));
-    const start = (page - 1) * size;
-    const pageItems = items.slice(start, start + size);
+    const portfolio = paginate(portfolioItems, page, size);
+    const reviewNeeded = paginate(reviewNeededItems, page, size);
 
     return res.json({
-        data: pageItems,
+        data: {
+            portfolio: portfolio.items,
+            reviewNeeded: reviewNeeded.items,
+        },
         pagination: {
-            currentPage: page, perPage: size, total, lastPage,
+            portfolio: portfolio.pagination,
+            reviewNeeded: reviewNeeded.pagination,
         },
     });
 });
@@ -173,11 +216,7 @@ router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
     }
 
     const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
-    const deadline = serializeDeadline(updated, computeStatus({
-        completionStatus: updated.completion_status,
-        dueDate: updated.due_date,
-        today,
-    }));
+    const deadline = serializeDeadline(updated, computeStatus(updated, today));
 
     return res.json({ deadline });
 });
