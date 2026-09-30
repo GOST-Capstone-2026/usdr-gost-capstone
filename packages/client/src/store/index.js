@@ -7,6 +7,7 @@ import agencies from '@/store/modules/agencies';
 import organization from '@/store/modules/organization';
 import tenants from '@/store/modules/tenants';
 import alerts from '@/store/modules/alerts';
+import deadlines from '@/store/modules/deadlines';
 
 const debug = import.meta.env.NODE_ENV !== 'production';
 
@@ -20,5 +21,6 @@ export default createStore({
     organization,
     tenants,
     alerts,
+    deadlines,
   },
 });
