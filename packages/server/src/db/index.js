@@ -1107,6 +1107,73 @@ async function getGrantDocument({ documentId, agencyId }) {
     return row;
 }
 
+// Saves what an analysis run found: the page count and quality rating on the document itself,
+// plus one row per page (AN-05/AN-06 shape). Called once processing finishes, separately from
+// createGrantDocument, since AN-08 moved processing out of the upload request (see AN-08 pull
+// request description for why: the upload/analysis-runs contract expects upload to return fast).
+async function saveDocumentAnalysisResults({
+    documentId, pageCount, pages = [], extractionQuality,
+}) {
+    return knex.transaction(async (trx) => {
+        await trx(TABLES.grant_documents)
+            .where({ id: documentId })
+            .update({ page_count: pageCount, extraction_quality: extractionQuality });
+
+        // Clear any page rows from a previous analysis run on this document (e.g. a retry after
+        // a failure), so re-running analysis replaces the old page set instead of colliding with it.
+        await trx(TABLES.grant_document_pages).where({ document_id: documentId }).del();
+
+        if (pages.length > 0) {
+            await trx.batchInsert(TABLES.grant_document_pages, pages.map((page) => ({
+                document_id: documentId,
+                page_number: page.pageNumber,
+                // Postgres text columns reject NUL characters, which some PDFs contain.
+                text: page.text.replaceAll('\u0000', ''),
+                char_count: page.charCount,
+                is_low_text: Boolean(page.isLowText),
+            })), 100);
+        }
+    });
+}
+
+async function createAnalysisRun({ documentId }) {
+    const [row] = await knex(TABLES.analysis_runs)
+        .insert({ document_id: documentId, status: 'queued' })
+        .returning('*');
+    return row;
+}
+
+// Scoped through grant_documents.agency_id, so one organization can't poll another's run by id.
+async function getAnalysisRun({ runId, agencyId }) {
+    const row = await knex(TABLES.analysis_runs)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.analysis_runs}.document_id`)
+        .where({
+            [`${TABLES.analysis_runs}.id`]: runId,
+            [`${TABLES.grant_documents}.agency_id`]: agencyId,
+        })
+        .select(`${TABLES.analysis_runs}.*`)
+        .first();
+    return row;
+}
+
+async function startAnalysisRun({ runId }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'processing', started_at: knex.fn.now() });
+}
+
+async function completeAnalysisRun({ runId, chunkCount }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'completed', completed_at: knex.fn.now(), chunk_count: chunkCount });
+}
+
+async function failAnalysisRun({ runId, errorMessage }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'failed', error_message: errorMessage, completed_at: knex.fn.now() });
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1737,6 +1804,12 @@ module.exports = {
     knex,
     createGrantDocument,
     getGrantDocument,
+    saveDocumentAnalysisResults,
+    createAnalysisRun,
+    getAnalysisRun,
+    startAnalysisRun,
+    completeAnalysisRun,
+    failAnalysisRun,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,

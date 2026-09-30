@@ -8,8 +8,7 @@ const { requireUser } = require('../lib/access-helpers');
 const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-context');
 const { getS3Client } = require('../lib/gost-aws');
 const { validateGrantDocumentUpload, sha256Hex } = require('../lib/grantDocumentValidation');
-const { extractPages } = require('../lib/pdfTextExtraction');
-const { assessExtractionQuality } = require('../lib/extractionQuality');
+const { runAnalysis } = require('../lib/analysisRuns');
 const db = require('../db');
 
 const router = express.Router({ mergeParams: true });
@@ -43,6 +42,19 @@ function serializeDocument(row) {
         extractionQuality: row.extraction_quality,
         uploadedBy: row.uploaded_by,
         uploadedAt: row.uploaded_at,
+    };
+}
+
+function serializeAnalysisRun(row) {
+    return {
+        id: row.id,
+        documentId: row.document_id,
+        status: row.status,
+        errorMessage: row.error_message,
+        chunkCount: row.chunk_count,
+        createdAt: row.created_at,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
     };
 }
 
@@ -82,20 +94,6 @@ router.post(
         }
 
         const sha256 = sha256Hex(req.file.buffer);
-
-        // Read the pages before storing anything, so a PDF that cannot be read is rejected
-        // without leaving an orphaned object in S3.
-        let extracted;
-        try {
-            extracted = await extractPages(req.file.buffer);
-        } catch (err) {
-            req.log.warn({ err }, 'could not extract text from uploaded grant document');
-            return sendError(req, res, 422, 'UNPROCESSABLE_DOCUMENT', 'The uploaded PDF could not be read.');
-        }
-        // Flag pages with almost no text (scans) and rate the whole document. A degraded or
-        // unreadable document is still stored, so the checklist can warn instead of failing.
-        const assessment = assessExtractionQuality(extracted.pages);
-
         const storageKey = `${selectedAgency}/${sha256}-${req.file.originalname}`;
 
         try {
@@ -124,9 +122,9 @@ router.post(
                 sourceUrl,
                 storageBucket: GRANT_DOCUMENTS_BUCKET,
                 storageKey,
-                pageCount: extracted.pageCount,
-                pages: assessment.pages,
-                extractionQuality: assessment.quality,
+                // pageCount and extractionQuality start unset. A POST to .../analysis-runs
+                // (AN-08) does the actual reading and fills these in, so upload itself stays
+                // fast instead of making the browser wait on processing a 100+ page PDF.
             });
         } catch (err) {
             // Postgres error code 23505 = unique_violation. The grant_documents migration enforces
@@ -155,6 +153,47 @@ router.get('/documents/:documentId', requireUser, async (req, res) => {
     }
 
     return res.json({ document: serializeDocument(document) });
+});
+
+// POST /api/organizations/:organizationId/compliance/documents/:documentId/analysis-runs
+// Starts processing (extract, rate quality, chunk for AI) and returns immediately; poll
+// GET .../analysis-runs/:runId for progress instead of waiting on this request.
+router.post('/documents/:documentId/analysis-runs', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const document = await db.getGrantDocument({
+        documentId: req.params.documentId,
+        agencyId: selectedAgency,
+    });
+
+    if (!document) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Document not found.');
+    }
+
+    const analysisRun = await db.createAnalysisRun({ documentId: document.id });
+
+    // Deliberately not awaited: the point of this endpoint is that the caller does not wait for
+    // processing to finish. runAnalysis reports its own success/failure into the analysis_runs
+    // row, so there is nothing more to do with its result here.
+    runAnalysis(analysisRun, document).catch((err) => {
+        req.log.error({ err, analysisRunId: analysisRun.id }, 'unhandled error starting analysis run');
+    });
+
+    return res.status(202).json({ analysisRun: serializeAnalysisRun(analysisRun) });
+});
+
+// GET /api/organizations/:organizationId/compliance/analysis-runs/:runId
+router.get('/analysis-runs/:runId', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const analysisRun = await db.getAnalysisRun({
+        runId: req.params.runId,
+        agencyId: selectedAgency,
+    });
+
+    if (!analysisRun) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Analysis run not found.');
+    }
+
+    return res.json({ analysisRun: serializeAnalysisRun(analysisRun) });
 });
 
 module.exports = router;
