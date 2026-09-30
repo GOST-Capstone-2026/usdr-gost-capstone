@@ -63,6 +63,15 @@ export const routes = [
         },
       },
       {
+        path: '/compliance/deadlines',
+        name: 'complianceDeadlines',
+        component: () => import('@/views/ComplianceDeadlinesView.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresComplianceDeadlinesEnabled: true,
+        },
+      },
+      {
         path: '/RecentActivity',
         name: 'RecentActivity',
         component: () => import('@/views/RecentActivityView.vue'),
