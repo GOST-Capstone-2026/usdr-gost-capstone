@@ -66,6 +66,7 @@
             empty-text="No deadlines in this section."
             small
             striped
+            fixed
           >
             <template #cell(dueDate)="{ item }">
               {{ item.dueDate ? formatDate(item.dueDate) : 'No due date' }}
@@ -107,6 +108,7 @@
             empty-text="No completed deadlines."
             small
             striped
+            fixed
           >
             <template #cell(dueDate)="{ item }">
               {{ formatDate(item.dueDate) }}
@@ -160,16 +162,16 @@ export default {
       loadError: false,
       showCompleted: false,
       fields: [
-        { key: 'title', label: 'Obligation' },
-        { key: 'dueDate', label: 'Due date' },
-        { key: 'status', label: 'Status' },
-        { key: 'verification', label: 'Verification' },
+        { key: 'title', label: 'Obligation', thStyle: { width: '45%' } },
+        { key: 'dueDate', label: 'Due date', thStyle: { width: '18%' } },
+        { key: 'status', label: 'Status', thStyle: { width: '20%' } },
+        { key: 'verification', label: 'Verification', thStyle: { width: '17%' } },
       ],
       completedFields: [
-        { key: 'title', label: 'Obligation' },
-        { key: 'dueDate', label: 'Due date' },
-        { key: 'completedAt', label: 'Completed' },
-        { key: 'status', label: 'Status' },
+        { key: 'title', label: 'Obligation', thStyle: { width: '45%' } },
+        { key: 'dueDate', label: 'Due date', thStyle: { width: '18%' } },
+        { key: 'completedAt', label: 'Completed', thStyle: { width: '20%' } },
+        { key: 'status', label: 'Status', thStyle: { width: '17%' } },
       ],
     };
   },
