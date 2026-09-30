@@ -1162,10 +1162,10 @@ async function startAnalysisRun({ runId }) {
         .update({ status: 'processing', started_at: knex.fn.now() });
 }
 
-async function completeAnalysisRun({ runId }) {
+async function completeAnalysisRun({ runId, chunkCount }) {
     return knex(TABLES.analysis_runs)
         .where({ id: runId })
-        .update({ status: 'completed', completed_at: knex.fn.now() });
+        .update({ status: 'completed', completed_at: knex.fn.now(), chunk_count: chunkCount });
 }
 
 async function failAnalysisRun({ runId, errorMessage }) {

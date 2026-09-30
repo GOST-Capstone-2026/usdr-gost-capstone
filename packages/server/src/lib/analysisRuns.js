@@ -60,7 +60,7 @@ async function runAnalysis(analysisRun, document) {
         log.info({
             documentId: document.id, analysisRunId: analysisRun.id, chunkCount: chunks.length,
         }, 'analysis run completed');
-        await db.completeAnalysisRun({ runId: analysisRun.id });
+        await db.completeAnalysisRun({ runId: analysisRun.id, chunkCount: chunks.length });
     } catch (err) {
         log.error({ err, documentId: document.id, analysisRunId: analysisRun.id }, 'analysis run failed');
         await db.failAnalysisRun({ runId: analysisRun.id, errorMessage: err.message });

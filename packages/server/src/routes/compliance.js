@@ -51,6 +51,7 @@ function serializeAnalysisRun(row) {
         documentId: row.document_id,
         status: row.status,
         errorMessage: row.error_message,
+        chunkCount: row.chunk_count,
         createdAt: row.created_at,
         startedAt: row.started_at,
         completedAt: row.completed_at,

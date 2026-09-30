@@ -66,6 +66,7 @@ describe('grant document analysis-runs API', () => {
         expect(finished.status).to.equal('completed');
         expect(finished.startedAt).to.not.equal(null);
         expect(finished.completedAt).to.not.equal(null);
+        expect(finished.chunkCount).to.be.a('number').greaterThan(0);
 
         const documentResponse = await server.get(`${baseUrl}/documents/${documentId}`).set('Cookie', cookie);
         expect(documentResponse.body.document.pageCount).to.equal(2);
