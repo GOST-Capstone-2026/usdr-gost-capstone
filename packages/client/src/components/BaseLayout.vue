@@ -141,6 +141,13 @@
           Dashboard
         </b-nav-item>
         <b-nav-item
+          v-if="complianceDeadlinesEnabled"
+          to="/compliance/deadlines"
+          active-class="active"
+        >
+          Deadlines
+        </b-nav-item>
+        <b-nav-item
           v-if="userRole === 'admin'"
           to="/users"
           active-class="active"
@@ -180,7 +187,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { newTerminologyEnabled } from '@/helpers/featureFlags';
+import { newTerminologyEnabled, complianceDeadlinesEnabled } from '@/helpers/featureFlags';
 import AlertBox from '@/arpa_reporter/components/AlertBox.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
 import logo from '@/assets/usdr_logo_standard_wide.svg';
@@ -209,6 +216,9 @@ export default {
     },
     newTerminologyEnabled() {
       return newTerminologyEnabled();
+    },
+    complianceDeadlinesEnabled() {
+      return complianceDeadlinesEnabled();
     },
     showTabs() {
       return !(this.$route.meta.hideLayoutTabs === true);
