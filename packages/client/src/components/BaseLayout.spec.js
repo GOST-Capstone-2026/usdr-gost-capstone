@@ -4,10 +4,12 @@ import {
 import { shallowMount } from '@vue/test-utils';
 import { createStore } from 'vuex';
 import BaseLayout from '@/components/BaseLayout.vue';
+import { organizationProfilesEnabled } from '@/helpers/featureFlags';
 
 vi.mock('@/helpers/featureFlags', async (importOriginal) => ({
   ...await importOriginal(),
   newTerminologyEnabled: () => true,
+  organizationProfilesEnabled: vi.fn(() => false),
 }));
 
 let store;
@@ -31,6 +33,25 @@ const noOpGetters = {
 };
 
 describe('BaseLayout.vue', () => {
+  it('shows the organization profile only when enabled for an authorized team', () => {
+    vi.mocked(organizationProfilesEnabled).mockReturnValue(true);
+    const profileStore = createStore({
+      getters: {
+        ...noOpGetters,
+        'users/userRole': () => 'staff',
+        'users/selectedAgencyId': () => '4',
+      },
+    });
+    const profileWrapper = shallowMount(BaseLayout, {
+      global: {
+        plugins: [profileStore],
+        mocks: { $route: defaultRoute },
+        stubs,
+      },
+    });
+    expect(profileWrapper.text()).toContain('Organization Profile');
+    vi.mocked(organizationProfilesEnabled).mockReturnValue(false);
+  });
   describe('when Layout view is loaded', () => {
     beforeEach(() => {
       store = createStore({

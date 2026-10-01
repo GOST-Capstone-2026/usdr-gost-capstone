@@ -32,6 +32,8 @@ window.APP_CONFIG.featureFlags = {
   arpaTransitionMessageEnabled: true,
   grantsLoginEnabled: true,
   arpaLoginEnabled: true,
+  grantComplianceEnabled: false,
+  organizationProfilesEnabled: false,
 };
 
 // Setting a GOOGLE_TAG_ID enables Google Analytics.
