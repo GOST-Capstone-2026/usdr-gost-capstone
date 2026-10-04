@@ -9,6 +9,7 @@
     "npm": "please-use-yarn"
   },
   "scripts": {
+    "ai:check": "node src/scripts/aiProviderCheck.js",
     "consume-grants": "node src/scripts/consumeGrantModifications.js",
     "coverage": "nyc yarn test",
     "create_tenant": "node src/db/tenant_creation.js",
@@ -29,6 +30,7 @@
     "serve": "nodemon src",
     "start:dev": "nodemon src",
     "start": "node src",
+    "test:ai": "NODE_ENV=test LOG_LEVEL=silent mocha __tests__/lib/ai-provider.test.js",
     "test:agencyimport": "NODE_ENV=test SUPPRESS_EMAIL=true mocha --exit --bail --require __tests__/api/fixtures.js __tests__/db/agencyImporter._test_.js",
     "test:apis": "NODE_ENV=test SUPPRESS_EMAIL=true mocha --exit --bail --require __tests__/api/fixtures.js __tests__/api/*.test.js",
     "test:arpa": "NODE_ENV=test __tests__/run_arpa_reporter_tests.sh",
