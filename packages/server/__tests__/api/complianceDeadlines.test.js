@@ -424,5 +424,45 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 expect(row.completion_status).to.equal('notStarted');
             });
         });
+
+        context('a rejected checklist item', () => {
+            let rejectedItemId;
+
+            before(async () => {
+                const [row] = await knex('checklist_items_placeholder').insert({
+                    agency_id: usdrAgencyId,
+                    category: 'Compliance',
+                    description: 'Rejected patch test item',
+                    due_date: '2031-04-01',
+                    completion_status: 'notStarted',
+                    verification_status: 'rejected',
+                }).returning('*');
+                rejectedItemId = row.id;
+            });
+
+            after(async () => {
+                await knex('checklist_items_placeholder').where({ id: rejectedItemId }).del();
+            });
+
+            it('returns 404 and keeps the item rejected when its due date is corrected', async () => {
+                const response = await patchDeadline(usdrAgencyId, rejectedItemId, { dueDate: '2031-05-01' });
+                expect(response.status).to.equal(404);
+                const json = await response.json();
+                expect(json.error.code).to.equal('NOT_FOUND');
+
+                const row = await knex('checklist_items_placeholder').where({ id: rejectedItemId }).first();
+                expect(row.verification_status).to.equal('rejected');
+                expect(row.due_date).to.equal('2031-04-01');
+            });
+
+            it('returns 404 and leaves the item unchanged when its completion status is updated', async () => {
+                const response = await patchDeadline(usdrAgencyId, rejectedItemId, { completionStatus: 'completed' });
+                expect(response.status).to.equal(404);
+
+                const row = await knex('checklist_items_placeholder').where({ id: rejectedItemId }).first();
+                expect(row.completion_status).to.equal('notStarted');
+                expect(row.completed_at).to.equal(null);
+            });
+        });
     });
 });

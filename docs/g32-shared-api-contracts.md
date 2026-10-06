@@ -606,7 +606,7 @@ The dashboard and calendar call the same endpoint so they cannot calculate confl
 - Correcting `dueDate` resets `verificationStatus` to `unverified` and clears `verifiedBy`/`verifiedAt`, since a previously verified date is no longer trustworthy until a person re-confirms it.
 - `completionStatus` must be one of `notStarted`, `inProgress`, `completed`, or `notApplicable`. The server sets `completedAt` when the value becomes `completed`, and clears it when the value moves away from `completed`.
 - `verificationStatus`, `verifiedBy`, `verifiedAt`, and other checklist-item fields are not settable here; verifying or rejecting an item is done through Section 6.3's `PATCH /checklist-items/:itemId`.
-- A `checklistItemId` outside the caller's organization, or one that does not exist, returns `404 NOT_FOUND`.
+- A `checklistItemId` outside the caller's organization, one that does not exist, or one whose `verificationStatus` is `rejected` returns `404 NOT_FOUND` and changes nothing. Rejected items are outside the deadline view, so this route cannot reverse a rejection.
 
 ### Deadline correction and completion response
 

@@ -1756,6 +1756,7 @@ async function updateDeadlineChecklistItem({
 
     const [row] = await knex(TABLES.checklist_items_placeholder)
         .where({ id, agency_id: agencyId })
+        .whereNot('verification_status', 'rejected')
         .update(updates)
         .returning('*');
 
