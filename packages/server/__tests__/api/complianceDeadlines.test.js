@@ -143,6 +143,18 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                     due_date: null,
                     verification_status: 'rejected',
                 },
+                {
+                    description: 'Not applicable verified test item',
+                    due_date: todayEt.minus({ days: 5 }).toISODate(),
+                    completion_status: 'notApplicable',
+                    verification_status: 'verified',
+                },
+                {
+                    description: 'Not applicable unverified test item',
+                    due_date: todayEt.minus({ days: 5 }).toISODate(),
+                    completion_status: 'notApplicable',
+                    verification_status: 'unverified',
+                },
             ];
             let extraIds;
 
@@ -185,6 +197,22 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 const titles = [...data.portfolio, ...data.reviewNeeded].map((i) => i.title);
                 expect(titles).to.not.include('Rejected test item');
                 expect(titles).to.not.include('Rejected undated test item');
+            });
+
+            it('computes notApplicable, not overdue or completed, for a past-due verified item marked not applicable', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.portfolio, 'Not applicable verified test item').status).to.equal('notApplicable');
+            });
+
+            it('computes notApplicableUnverified for an unverified item marked not applicable', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.reviewNeeded, 'Not applicable unverified test item').status).to.equal('notApplicableUnverified');
+            });
+
+            it('accepts notApplicable as a status filter', async () => {
+                const { data } = await getDeadlines({ status: 'notApplicable' });
+                expect(data.portfolio.map((i) => i.title)).to.deep.equal(['Not applicable verified test item']);
+                expect(data.reviewNeeded.length).to.equal(0);
             });
         });
 
@@ -463,6 +491,18 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 expect(row.completion_status).to.equal('notStarted');
                 expect(row.completed_at).to.equal(null);
             });
+        });
+
+        it('marks an item not applicable without stamping completedAt', async () => {
+            const id = await findIdByDescription('Complete civil rights compliance self-assessment');
+
+            const response = await patchDeadline(usdrAgencyId, id, { completionStatus: 'notApplicable' });
+            expect(response.status).to.equal(200);
+
+            const { deadline } = await response.json();
+            expect(deadline.completionStatus).to.equal('notApplicable');
+            expect(deadline.status).to.equal('notApplicableUnverified');
+            expect(deadline.completedAt).to.equal(null);
         });
     });
 });

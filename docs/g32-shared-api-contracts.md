@@ -546,10 +546,10 @@ Supported query parameters are `from`, `through`, `status`, `currentPage`, and `
 
 | Group | Membership | Calculated statuses |
 | --- | --- | --- |
-| `portfolio` | `verificationStatus` is `verified` and `dueDate` is not null | `overdue`, `dueToday`, `dueSoon`, `upcoming`, `completed`, `completedLate` |
-| `reviewNeeded` | `verificationStatus` is `unverified`, or `dueDate` is null | `overdueUnverified`, `dueTodayUnverified`, `dueSoonUnverified`, `upcomingUnverified`, `completedUnverified`, `completedLateUnverified`, or `reviewNeeded` when there is no `dueDate` |
+| `portfolio` | `verificationStatus` is `verified` and `dueDate` is not null | `overdue`, `dueToday`, `dueSoon`, `upcoming`, `completed`, `completedLate`, `notApplicable` |
+| `reviewNeeded` | `verificationStatus` is `unverified`, or `dueDate` is null | `overdueUnverified`, `dueTodayUnverified`, `dueSoonUnverified`, `upcomingUnverified`, `completedUnverified`, `completedLateUnverified`, `notApplicableUnverified`, or `reviewNeeded` when there is no `dueDate` |
 
-A completed item (`completionStatus` of `completed` or `notApplicable`) is `completedLate` when its `completedAt` date in Eastern Time is after `dueDate`, and `completed` otherwise. An incomplete item is `overdue` when `dueDate` is before today, `dueToday` when it is today, `dueSoon` when it falls within the warning window, and `upcoming` after that. `verificationStatus` is still returned as its own field on every item.
+An item with `completionStatus` of `notApplicable` is `notApplicable` regardless of its dates, so it is never treated as overdue or as completed work. A completed item (`completionStatus` of `completed`) is `completedLate` when its `completedAt` date in Eastern Time is after `dueDate`, and `completed` otherwise. An incomplete item is `overdue` when `dueDate` is before today, `dueToday` when it is today, `dueSoon` when it falls within the warning window, and `upcoming` after that. `verificationStatus` is still returned as its own field on every item.
 
 ### Deadline collection response
 

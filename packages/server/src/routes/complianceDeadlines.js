@@ -7,7 +7,7 @@ const router = express.Router({ mergeParams: true });
 
 const TIME_ZONE = 'America/New_York';
 const DUE_SOON_WINDOW_DAYS = 7;
-const PORTFOLIO_STATUSES = ['overdue', 'dueToday', 'dueSoon', 'upcoming', 'completed', 'completedLate'];
+const PORTFOLIO_STATUSES = ['overdue', 'dueToday', 'dueSoon', 'upcoming', 'completed', 'completedLate', 'notApplicable'];
 const REVIEW_NEEDED_STATUSES = [...PORTFOLIO_STATUSES.map((status) => `${status}Unverified`), 'reviewNeeded'];
 const ALLOWED_STATUSES = [...PORTFOLIO_STATUSES, ...REVIEW_NEEDED_STATUSES];
 const DEFAULT_PER_PAGE = 25;
@@ -32,7 +32,11 @@ function computeDateStatus({
 }) {
     const due = DateTime.fromISO(dueDate, { zone: TIME_ZONE }).startOf('day');
 
-    if (completionStatus === 'completed' || completionStatus === 'notApplicable') {
+    if (completionStatus === 'notApplicable') {
+        return 'notApplicable';
+    }
+
+    if (completionStatus === 'completed') {
         const completedDay = completedAt
             ? DateTime.fromJSDate(completedAt).setZone(TIME_ZONE).startOf('day')
             : null;

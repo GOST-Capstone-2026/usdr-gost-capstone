@@ -96,8 +96,9 @@
             size="sm"
             @click="showCompleted = !showCompleted"
           >
-            {{ showCompleted ? 'Hide' : 'Show' }} completed ({{ completedItems.length }})
+            {{ showCompleted ? 'Hide' : 'Show' }} closed ({{ completedItems.length }})
           </b-button>
+          <span class="text-muted small ml-2">Completed or marked not applicable.</span>
           <b-table
             v-if="showCompleted"
             class="mt-2"
@@ -105,7 +106,7 @@
             :fields="completedFields"
             primary-key="checklistItemId"
             show-empty
-            empty-text="No completed deadlines."
+            empty-text="No closed deadlines."
             small
             striped
             fixed
@@ -114,7 +115,13 @@
               {{ formatDate(item.dueDate) }}
             </template>
             <template #cell(completedAt)="{ item }">
-              {{ item.completedAt ? formatDateTime(item.completedAt) : 'Not recorded' }}
+              <span
+                v-if="item.completionStatus === 'notApplicable'"
+                class="text-muted"
+              >N/A</span>
+              <template v-else>
+                {{ item.completedAt ? formatDateTime(item.completedAt) : 'Not recorded' }}
+              </template>
             </template>
             <template #cell(status)="{ item }">
               <b-badge :variant="statusVariant(item.status)">
@@ -145,6 +152,8 @@ const STATUS_DISPLAY = {
   completedUnverified: { label: 'Complete Unverified', variant: 'success' },
   completedLate: { label: 'Complete (Was Overdue)', variant: 'success' },
   completedLateUnverified: { label: 'Complete Unverified (Was Overdue)', variant: 'success' },
+  notApplicable: { label: 'Not Applicable', variant: 'secondary' },
+  notApplicableUnverified: { label: 'Not Applicable Unverified', variant: 'secondary' },
   reviewNeeded: { label: 'Review Needed', variant: 'secondary' },
 };
 
@@ -197,7 +206,7 @@ export default {
       ];
     },
     completedItems() {
-      return this.portfolio.filter((item) => item.status === 'completed' || item.status === 'completedLate');
+      return this.portfolio.filter((item) => ['completed', 'completedLate', 'notApplicable'].includes(item.status));
     },
     isTruncated() {
       if (!this.pagination) {

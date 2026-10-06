@@ -158,7 +158,8 @@ describe('ComplianceDeadlinesView.vue', () => {
     it('hides completed items until requested, then shows on-time and late labels', async () => {
       const completed = section('completed');
       expect(completed.findAll('[data-testid="deadline-row"]')).toHaveLength(0);
-      expect(completed.text()).toContain('Show completed (2)');
+      expect(completed.text()).toContain('Show closed (2)');
+      expect(completed.text()).toContain('Completed or marked not applicable.');
 
       await completed.get('button').trigger('click');
 
@@ -190,6 +191,37 @@ describe('ComplianceDeadlinesView.vue', () => {
       });
       expect(rowTitles('upcoming')).toEqual(['Server says upcoming']);
       expect(rowTitles('overdue')).toEqual([]);
+    });
+  });
+
+  describe('when an item is not applicable', () => {
+    beforeEach(async () => {
+      await mountView({
+        portfolioItems: [makeItem({
+          title: 'Waived report', dueDate: '2000-01-01', status: 'notApplicable', completionStatus: 'notApplicable',
+        })],
+        reviewNeededItems: [],
+      });
+    });
+
+    it('keeps it out of the active sections', () => {
+      ['overdue', 'dueToday', 'dueSoon', 'upcoming'].forEach((key) => {
+        expect(rowTitles(key)).toEqual([]);
+      });
+    });
+
+    it('lists it with completed items under a Not Applicable label', async () => {
+      const completed = section('completed');
+      expect(completed.text()).toContain('Show closed (1)');
+
+      await completed.get('button').trigger('click');
+
+      expect(rowTitles('completed')).toEqual(['Waived report']);
+      const rowText = section('completed').get('[data-testid="deadline-row"]').text();
+      expect(rowText).toContain('Not Applicable');
+      expect(rowText).toContain('N/A');
+      expect(rowText).not.toContain('Complete');
+      expect(rowText).not.toContain('Not recorded');
     });
   });
 
