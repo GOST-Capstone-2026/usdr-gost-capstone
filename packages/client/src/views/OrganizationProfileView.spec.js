@@ -37,6 +37,34 @@ describe('OrganizationProfileView', () => {
     vi.clearAllMocks();
   });
 
+  it('loads and saves the seeded organization with numeric ID zero', async () => {
+    vi.mocked(fetchApi.get).mockResolvedValue({ profile: sampleProfile });
+    vi.mocked(fetchApi.put).mockResolvedValue({ profile: { ...sampleProfile, version: 4 } });
+    const wrapper = mount(OrganizationProfileView, { global: { plugins: [profileStore(0)] } });
+    await flushPromises();
+    expect(fetchApi.get).toHaveBeenCalledWith('/api/organizations/0/compliance/profile');
+    expect(wrapper.find('form').exists()).toBe(true);
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+    expect(fetchApi.put).toHaveBeenCalledWith(
+      '/api/organizations/0/compliance/profile',
+      expect.objectContaining({ expectedVersion: 3 }),
+    );
+    expect(wrapper.text()).toContain('Organization profile saved.');
+    wrapper.unmount();
+  });
+
+  it.each([null, undefined, ''])('does not load a profile without a selected team (%s)', async (agencyId) => {
+    const store = profileStore();
+    store.commit('setAgencyId', agencyId);
+    const wrapper = mount(OrganizationProfileView, { global: { plugins: [store] } });
+    await flushPromises();
+    expect(fetchApi.get).not.toHaveBeenCalled();
+    expect(wrapper.find('form').exists()).toBe(false);
+    expect(wrapper.text()).toContain('Select a team');
+    wrapper.unmount();
+  });
+
   it('loads the selected organization and saves edits with its profile version', async () => {
     vi.mocked(fetchApi.get).mockResolvedValue({ profile: sampleProfile });
     vi.mocked(fetchApi.put).mockResolvedValue({ profile: { ...sampleProfile, version: 4 } });

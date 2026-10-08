@@ -13,7 +13,7 @@
     </div>
 
     <p
-      v-if="!selectedAgencyId"
+      v-if="!hasSelectedAgency"
       role="alert"
     >
       Select a team before editing its organization profile.
@@ -347,6 +347,9 @@ export default {
       selectedAgencyId: 'users/selectedAgencyId',
       selectedTeam: 'users/selectedAgency',
     }),
+    hasSelectedAgency() {
+      return ![null, undefined, ''].includes(this.selectedAgencyId);
+    },
   },
   watch: {
     selectedAgencyId() {
@@ -367,7 +370,7 @@ export default {
       this.validationErrors = [];
       this.versionConflict = false;
       this.saved = false;
-      if (!this.selectedAgencyId) {
+      if (!this.hasSelectedAgency) {
         this.loading = false;
         return;
       }

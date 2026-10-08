@@ -221,7 +221,7 @@ export default {
     showOrganizationProfile() {
       return organizationProfilesEnabled()
         && ['admin', 'staff'].includes(this.userRole)
-        && Boolean(this.selectedAgencyId);
+        && ![null, undefined, ''].includes(this.selectedAgencyId);
     },
     showTabs() {
       return !(this.$route.meta.hideLayoutTabs === true);

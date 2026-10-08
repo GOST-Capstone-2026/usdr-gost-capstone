@@ -33,13 +33,13 @@ const noOpGetters = {
 };
 
 describe('BaseLayout.vue', () => {
-  it('shows the organization profile only when enabled for an authorized team', () => {
+  it.each(['4', 0])('shows the organization profile for authorized team %s when enabled', (agencyId) => {
     vi.mocked(organizationProfilesEnabled).mockReturnValue(true);
     const profileStore = createStore({
       getters: {
         ...noOpGetters,
         'users/userRole': () => 'staff',
-        'users/selectedAgencyId': () => '4',
+        'users/selectedAgencyId': () => agencyId,
       },
     });
     const profileWrapper = shallowMount(BaseLayout, {
