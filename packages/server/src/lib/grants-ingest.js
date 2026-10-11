@@ -237,6 +237,9 @@ async function processMessages(knex, sqs, queueUrl, messages) {
 }
 
 module.exports = {
+    mapSourceDataToCodes,
+    mapSourceDataToGrant,
     processMessages,
     receiveNextMessageBatch,
+    upsertGrant,
 };
