@@ -170,6 +170,17 @@ export const routes = [
           requiresOrganizationProfilesEnabled: true,
         },
       },
+      {
+        // AN-08 demo-prep page for the Oct 13 first demo. Not linked from navigation; the real,
+        // full-featured checklist UI is AN-15's job later. Reachable by URL for the demo walkthrough.
+        path: '/grant-document-demo',
+        name: 'grantDocumentDemo',
+        component: () => import('@/views/GrantDocumentDemoView.vue'),
+        meta: {
+          requiresAuth: true,
+          hideLayoutTabs: true,
+        },
+      },
     ],
   },
   {
