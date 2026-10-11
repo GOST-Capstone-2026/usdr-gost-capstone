@@ -12,13 +12,22 @@
 
       <section style="margin-top: 2rem;">
         <h4>1. Upload a document</h4>
-        <!--
-          No grant picker here: in the real app, this page would already be reached from a
-          specific grant's own page, so the grant it belongs to travels along automatically. This
-          demo page always attaches to one fixed sample grant (see grantId below) since it is not
-          wired into that navigation yet.
-        -->
         <b-form @submit.prevent="uploadDocument">
+          <b-form-group
+            label="Grant opportunity ID"
+            label-for="grant-opportunity-id"
+            description="Use the ID of the local opportunity that corresponds to this notice."
+          >
+            <input
+              id="grant-opportunity-id"
+              v-model.trim="grantId"
+              class="form-control"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]+"
+              required
+            >
+          </b-form-group>
           <b-form-group
             label="PDF file"
             label-for="pdf-file-input"
@@ -34,7 +43,7 @@
           <b-button
             type="submit"
             variant="primary"
-            :disabled="uploading || !selectedFile"
+            :disabled="uploading || !selectedFile || !validGrantId"
           >
             <b-spinner
               v-if="uploading"
@@ -132,9 +141,8 @@ export default {
         { text: 'Home', to: 'grants' },
         { text: 'Grant Document Analysis (Demo)', href: '#' },
       ],
-      // Fixed to the HUD PRO Housing FOA used throughout this project's testing. The real app
-      // would set this automatically from whichever grant's page the upload happened on.
-      grantId: '335255',
+      // The seeded 335255 record is an NSF fellowship, not the HUD notice. Select an explicit ID.
+      grantId: '',
       selectedFile: null,
       uploading: false,
       startingAnalysis: false,
@@ -148,6 +156,9 @@ export default {
     ...mapGetters({
       selectedAgencyId: 'users/selectedAgencyId',
     }),
+    validGrantId() {
+      return /^[0-9]+$/.test(this.grantId);
+    },
     isRunActive() {
       return this.analysisRun
         && ['queued', 'processing'].includes(this.analysisRun.status);
@@ -169,6 +180,10 @@ export default {
       [this.selectedFile] = event.target.files;
     },
     async uploadDocument() {
+      if (!this.validGrantId || !this.selectedFile) {
+        this.errorMessage = 'Select a PDF and enter its matching local grant opportunity ID.';
+        return;
+      }
       this.errorMessage = null;
       this.document = null;
       this.analysisRun = null;
