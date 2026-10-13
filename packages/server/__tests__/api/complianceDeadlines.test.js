@@ -155,6 +155,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                     completion_status: 'notApplicable',
                     verification_status: 'unverified',
                 },
+                {
+                    description: 'Not applicable undated test item',
+                    due_date: null,
+                    completion_status: 'notApplicable',
+                    verification_status: 'verified',
+                },
             ];
             let extraIds;
 
@@ -213,6 +219,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 const { data } = await getDeadlines({ status: 'notApplicable' });
                 expect(data.portfolio.map((i) => i.title)).to.deep.equal(['Not applicable verified test item']);
                 expect(data.reviewNeeded.length).to.equal(0);
+            });
+
+            it('keeps an undated item marked not applicable in reviewNeeded with status reviewNeeded', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.portfolio, 'Not applicable undated test item')).to.equal(undefined);
+                expect(findByTitle(data.reviewNeeded, 'Not applicable undated test item').status).to.equal('reviewNeeded');
             });
         });
 
