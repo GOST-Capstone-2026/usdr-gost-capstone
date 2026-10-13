@@ -194,6 +194,36 @@ describe('ComplianceDeadlinesView.vue', () => {
     });
   });
 
+  describe('switching between list and calendar', () => {
+    beforeEach(async () => {
+      await mountView();
+    });
+
+    it('opens in the list view', () => {
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="calendar-month"]').exists()).toBe(false);
+      expect(wrapper.get('[data-testid="view-list"]').attributes('aria-pressed')).toBe('true');
+    });
+
+    it('shows the calendar in place of the list sections when Calendar is selected', async () => {
+      await wrapper.get('[data-testid="view-calendar"]').trigger('click');
+
+      expect(wrapper.find('[data-testid="calendar-month"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="deadline-section-completed"]').exists()).toBe(false);
+      expect(wrapper.get('[data-testid="view-calendar"]').attributes('aria-pressed')).toBe('true');
+      expect(fetchDeadlines).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns to the list sections when List is selected', async () => {
+      await wrapper.get('[data-testid="view-calendar"]').trigger('click');
+      await wrapper.get('[data-testid="view-list"]').trigger('click');
+
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="calendar-month"]').exists()).toBe(false);
+    });
+  });
+
   describe('when an item is not applicable', () => {
     beforeEach(async () => {
       await mountView({
