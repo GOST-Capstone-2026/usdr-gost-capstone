@@ -1766,8 +1766,10 @@ async function deleteSavedSearch(searchId, userId) {
 }
 
 /**
- * Returns verified checklist items with a due date for one organization, for the
- * Portfolio and Deadline Tracker subsystem's read API (M-03).
+ * Returns every non-rejected deadline-bearing checklist item for one organization,
+ * including unverified and undated items, for the Portfolio and Deadline Tracker
+ * subsystem's read API (M-03). Undated items are returned even when from/through
+ * are given.
  *
  * Reads checklist_items_placeholder for now. When the real checklist_items table
  * (owned by the Grant Analysis and Compliance Checklist subsystem) lands, this
@@ -1782,15 +1784,20 @@ async function deleteSavedSearch(searchId, userId) {
 async function getDeadlineChecklistItems({ agencyId, from, through }) {
     const query = knex(TABLES.checklist_items_placeholder)
         .where('agency_id', agencyId)
-        .whereNotNull('due_date')
-        .andWhere('verification_status', 'verified')
-        .orderBy('due_date', 'asc');
+        .whereNot('verification_status', 'rejected')
+        .orderByRaw('due_date asc nulls last, id asc');
 
-    if (from) {
-        query.andWhere('due_date', '>=', from);
-    }
-    if (through) {
-        query.andWhere('due_date', '<=', through);
+    if (from || through) {
+        query.andWhere((dateScope) => {
+            dateScope.whereNull('due_date').orWhere((range) => {
+                if (from) {
+                    range.where('due_date', '>=', from);
+                }
+                if (through) {
+                    range.where('due_date', '<=', through);
+                }
+            });
+        });
     }
 
     return query;
@@ -1818,6 +1825,7 @@ async function updateDeadlineChecklistItem({
 
     const [row] = await knex(TABLES.checklist_items_placeholder)
         .where({ id, agency_id: agencyId })
+        .whereNot('verification_status', 'rejected')
         .update(updates)
         .returning('*');
 

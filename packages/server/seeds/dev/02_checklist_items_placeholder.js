@@ -49,7 +49,7 @@ const checklistItems = [
         description: 'Submit close-out financial report',
         due_date: dstr(moment().subtract(20, 'days')),
         completion_status: 'completed',
-        completed_at: moment().subtract(19, 'days').toDate(),
+        completed_at: moment().subtract(18, 'days').toDate(),
         verification_status: 'verified',
         verified_by: 1,
         verified_at: moment().subtract(18, 'days').toDate(),

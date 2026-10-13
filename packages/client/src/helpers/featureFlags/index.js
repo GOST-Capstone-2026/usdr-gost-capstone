@@ -40,3 +40,19 @@ export function grantsLoginEnabled() {
 export function arpaLoginEnabled() {
   return getFeatureFlags().arpaLoginEnabled === true;
 }
+
+export function grantComplianceEnabled() {
+  return getFeatureFlags().grantComplianceEnabled === true;
+}
+
+export function grantDocumentAnalysisEnabled() {
+  return grantComplianceEnabled() && getFeatureFlags().grantDocumentAnalysisEnabled === true;
+}
+
+export function complianceChecklistsEnabled() {
+  return grantDocumentAnalysisEnabled() && getFeatureFlags().complianceChecklistsEnabled === true;
+}
+
+export function complianceDeadlinesEnabled() {
+  return complianceChecklistsEnabled() && getFeatureFlags().complianceDeadlinesEnabled === true;
+}
