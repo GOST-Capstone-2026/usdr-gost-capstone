@@ -1174,6 +1174,38 @@ async function failAnalysisRun({ runId, errorMessage }) {
         .update({ status: 'failed', error_message: errorMessage, completed_at: knex.fn.now() });
 }
 
+// Saves one grant-brief result (AN-09 schema, docs/g32-shared-api-contracts.md "Grant Brief
+// Contract"). `brief` is shaped like grantBriefSchema.js's createEmptyBrief(), filled in or not.
+async function createGrantBrief({ documentId, runId, brief }) {
+    const [row] = await knex(TABLES.grant_briefs)
+        .insert({
+            document_id: documentId,
+            run_id: runId,
+            purpose: JSON.stringify(brief.purpose),
+            eligibility: JSON.stringify(brief.eligibility),
+            funding_range: JSON.stringify(brief.fundingRange),
+            key_dates: JSON.stringify(brief.keyDates),
+            cost_share: JSON.stringify(brief.costShare),
+            key_requirements: JSON.stringify(brief.keyRequirements),
+            not_found_fields: JSON.stringify(brief.notFoundFields),
+            verification_status: brief.verificationStatus,
+            model: brief.model,
+            prompt_version: brief.promptVersion,
+            generated_at: brief.generatedAt,
+        })
+        .returning('*');
+    return row;
+}
+
+// The newest brief for a document, if one has been generated yet.
+async function getLatestGrantBrief({ documentId }) {
+    const row = await knex(TABLES.grant_briefs)
+        .where({ document_id: documentId })
+        .orderBy('id', 'desc')
+        .first();
+    return row;
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1846,6 +1878,8 @@ module.exports = {
     startAnalysisRun,
     completeAnalysisRun,
     failAnalysisRun,
+    createGrantBrief,
+    getLatestGrantBrief,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,
