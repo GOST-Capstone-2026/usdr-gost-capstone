@@ -40,6 +40,13 @@ function toIsoOrNull(dateValue) {
     return dateValue ? DateTime.fromJSDate(dateValue).toUTC().toISO() : null;
 }
 
+function serializeSource(row) {
+    if (row.source_page_number === null || row.source_excerpt === null) {
+        return null;
+    }
+    return { pageNumber: row.source_page_number, excerpt: row.source_excerpt };
+}
+
 function serializeDeadline(row, status) {
     return {
         checklistItemId: row.id,
@@ -53,7 +60,7 @@ function serializeDeadline(row, status) {
         verificationStatus: row.verification_status,
         verifiedBy: row.verified_by,
         verifiedAt: toIsoOrNull(row.verified_at),
-        source: null,
+        source: serializeSource(row),
     };
 }
 

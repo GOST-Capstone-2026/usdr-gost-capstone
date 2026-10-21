@@ -101,12 +101,18 @@
             <div class="small font-weight-bold">
               {{ day.day }}
             </div>
-            <div
+            <button
               v-for="item in itemsByDate[day.iso] || []"
               :key="item.checklistItemId"
+              type="button"
               class="deadline-calendar-item"
-              :class="{ 'deadline-calendar-item-unverified': item.verificationStatus !== 'verified' }"
+              :class="{
+                'deadline-calendar-item-unverified': item.verificationStatus !== 'verified',
+                'deadline-calendar-item-selected': item.checklistItemId === selectedItemId,
+              }"
+              :aria-pressed="item.checklistItemId === selectedItemId ? 'true' : 'false'"
               data-testid="calendar-item"
+              @click="selectItem(item)"
             >
               <b-badge :variant="statusVariant(item.status)">
                 {{ statusLabel(item.status) }}
@@ -117,11 +123,40 @@
               >
                 {{ item.title }}
               </div>
-            </div>
+            </button>
           </td>
         </tr>
       </tbody>
     </table>
+
+    <div
+      v-if="selectedItem"
+      class="card card-body p-2 mb-2"
+      data-testid="calendar-details"
+    >
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="font-weight-bold">
+            {{ selectedItem.title }}
+          </div>
+          <div class="small text-muted mb-1">
+            Due {{ formatDate(selectedItem.dueDate) }}
+            <b-badge :variant="statusVariant(selectedItem.status)">
+              {{ statusLabel(selectedItem.status) }}
+            </b-badge>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          data-testid="calendar-details-close"
+          @click="selectedItemId = null"
+        >
+          Close
+        </button>
+      </div>
+      <deadline-details :item="selectedItem" />
+    </div>
 
     <p
       v-if="undatedCount > 0"
@@ -136,6 +171,8 @@
 <script>
 import { DateTime } from 'luxon';
 import { statusLabel, statusVariant, isClosedStatus } from '@/helpers/deadlineStatus';
+import { formatDate } from '@/helpers/dates';
+import DeadlineDetails from '@/components/DeadlineDetails.vue';
 
 const TIME_ZONE = 'America/New_York';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -145,6 +182,9 @@ function currentMonthStart() {
 }
 
 export default {
+  components: {
+    DeadlineDetails,
+  },
   props: {
     portfolio: {
       type: Array,
@@ -161,6 +201,7 @@ export default {
       showUnverified: false,
       showClosed: false,
       weekdays: WEEKDAYS,
+      selectedItemId: null,
     };
   },
   computed: {
@@ -192,6 +233,9 @@ export default {
       });
       return byDate;
     },
+    selectedItem() {
+      return this.visibleItems.find((item) => item.checklistItemId === this.selectedItemId) || null;
+    },
     undatedCount() {
       return this.reviewNeeded.filter((item) => !item.dueDate).length;
     },
@@ -211,6 +255,10 @@ export default {
     goToToday() {
       this.monthStart = currentMonthStart();
     },
+    selectItem(item) {
+      this.selectedItemId = this.selectedItemId === item.checklistItemId ? null : item.checklistItemId;
+    },
+    formatDate,
     statusLabel,
     statusVariant,
   },
@@ -233,7 +281,18 @@ export default {
   box-shadow: inset 0 0 0 2px #007bff;
 }
 .deadline-calendar-item {
+  display: block;
+  width: 100%;
   margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: inherit;
+}
+.deadline-calendar-item-selected {
+  outline: 2px solid #007bff;
+  outline-offset: 1px;
 }
 .deadline-calendar-item-unverified {
   border-left: 3px dashed #6c757d;

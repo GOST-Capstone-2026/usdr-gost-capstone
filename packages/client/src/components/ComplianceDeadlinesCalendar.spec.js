@@ -164,6 +164,67 @@ describe('ComplianceDeadlinesCalendar.vue', () => {
     expect(wrapper.find('[data-testid="calendar-undated-note"]').exists()).toBe(false);
   });
 
+  describe('selecting a deadline', () => {
+    const sourcedPortfolio = [
+      makeItem({
+        checklistItemId: 21,
+        title: 'Quarterly report',
+        dueDate: '2026-10-20',
+        verifiedAt: '2026-10-01T15:00:00.000Z',
+        source: { pageNumber: 14, excerpt: 'Quarterly reports are due within 30 days.' },
+      }),
+    ];
+
+    it('shows no details panel until a deadline is clicked', () => {
+      mountCalendar({ portfolio: sourcedPortfolio });
+      expect(wrapper.find('[data-testid="calendar-details"]').exists()).toBe(false);
+    });
+
+    it('shows the source and verification state of the clicked deadline', async () => {
+      mountCalendar({ portfolio: sourcedPortfolio });
+      await day('2026-10-20').get('[data-testid="calendar-item"]').trigger('click');
+
+      const details = wrapper.get('[data-testid="calendar-details"]');
+      expect(details.text()).toContain('Quarterly report');
+      expect(details.get('[data-testid="deadline-source"]').text())
+        .toBe('Page 14: "Quarterly reports are due within 30 days."');
+      expect(details.get('[data-testid="deadline-verification"]').text()).toBe('Verified on Oct 1, 2026');
+      expect(day('2026-10-20').get('[data-testid="calendar-item"]').attributes('aria-pressed')).toBe('true');
+    });
+
+    it('shows Source not found and Not yet verified for an unverified deadline without a source', async () => {
+      mountCalendar();
+      await wrapper.get('[data-testid="calendar-show-unverified"]').setValue(true);
+      await day('2026-10-15').get('[data-testid="calendar-item"]').trigger('click');
+
+      const details = wrapper.get('[data-testid="calendar-details"]');
+      expect(details.get('[data-testid="deadline-source"]').text()).toBe('Source not found');
+      expect(details.get('[data-testid="deadline-verification"]').text()).toBe('Not yet verified');
+    });
+
+    it('closes the panel with Close or by clicking the deadline again', async () => {
+      mountCalendar({ portfolio: sourcedPortfolio });
+      const item = day('2026-10-20').get('[data-testid="calendar-item"]');
+
+      await item.trigger('click');
+      await wrapper.get('[data-testid="calendar-details-close"]').trigger('click');
+      expect(wrapper.find('[data-testid="calendar-details"]').exists()).toBe(false);
+
+      await item.trigger('click');
+      await item.trigger('click');
+      expect(wrapper.find('[data-testid="calendar-details"]').exists()).toBe(false);
+    });
+
+    it('hides the panel when the selected deadline is filtered out', async () => {
+      mountCalendar();
+      await wrapper.get('[data-testid="calendar-show-unverified"]').setValue(true);
+      await day('2026-10-15').get('[data-testid="calendar-item"]').trigger('click');
+      await wrapper.get('[data-testid="calendar-show-unverified"]').setValue(false);
+
+      expect(wrapper.find('[data-testid="calendar-details"]').exists()).toBe(false);
+    });
+  });
+
   describe('edge cases', () => {
     it('renders a month that fits in exactly four weeks', () => {
       vi.setSystemTime(new Date('2026-02-10T16:00:00Z'));
