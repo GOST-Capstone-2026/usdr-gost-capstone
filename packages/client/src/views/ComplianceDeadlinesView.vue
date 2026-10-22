@@ -38,98 +38,167 @@
         </b-alert>
 
         <div
-          v-for="section in sections"
-          :key="section.key"
-          class="mb-4"
-          :data-testid="`deadline-section-${section.key}`"
+          class="btn-group btn-group-sm mb-3"
+          role="group"
+          aria-label="Deadline view"
         >
-          <h3 class="h5">
-            {{ section.title }}
-            <b-badge
-              pill
-              variant="light"
-            >
-              {{ section.items.length }}
-            </b-badge>
-          </h3>
-          <p
-            v-if="section.description"
-            class="text-muted small mb-2"
+          <button
+            type="button"
+            class="btn"
+            :class="viewMode === 'list' ? 'btn-primary' : 'btn-outline-primary'"
+            :aria-pressed="viewMode === 'list'"
+            data-testid="view-list"
+            @click="viewMode = 'list'"
           >
-            {{ section.description }}
-          </p>
-          <b-table
-            :items="section.items"
-            :fields="fields"
-            primary-key="checklistItemId"
-            show-empty
-            empty-text="No deadlines in this section."
-            small
-            striped
-            fixed
+            List
+          </button>
+          <button
+            type="button"
+            class="btn"
+            :class="viewMode === 'calendar' ? 'btn-primary' : 'btn-outline-primary'"
+            :aria-pressed="viewMode === 'calendar'"
+            data-testid="view-calendar"
+            @click="viewMode = 'calendar'"
           >
-            <template #cell(dueDate)="{ item }">
-              {{ item.dueDate ? formatDate(item.dueDate) : 'No due date' }}
-            </template>
-            <template #cell(status)="{ item }">
-              <b-badge :variant="statusVariant(item.status)">
-                {{ statusLabel(item.status) }}
-              </b-badge>
-            </template>
-            <template #cell(verification)="{ item }">
-              <b-badge :variant="item.verificationStatus === 'verified' ? 'success' : 'warning'">
-                {{ item.verificationStatus === 'verified' ? 'Verified' : 'Unverified' }}
-              </b-badge>
-              <div
-                v-if="item.verificationStatus === 'verified' && item.verifiedAt"
-                class="text-muted small"
-              >
-                {{ formatDateTime(item.verifiedAt) }}
-              </div>
-            </template>
-          </b-table>
+            Calendar
+          </button>
         </div>
 
-        <div data-testid="deadline-section-completed">
-          <b-button
-            variant="outline-secondary"
-            size="sm"
-            @click="showCompleted = !showCompleted"
+        <compliance-deadlines-calendar
+          v-if="viewMode === 'calendar'"
+          :portfolio="portfolio"
+          :review-needed="reviewNeeded"
+        />
+
+        <template v-else>
+          <div
+            v-for="section in sections"
+            :key="section.key"
+            class="mb-4"
+            :data-testid="`deadline-section-${section.key}`"
           >
-            {{ showCompleted ? 'Hide' : 'Show' }} closed ({{ completedItems.length }})
-          </b-button>
-          <span class="text-muted small ml-2">Completed or marked not applicable.</span>
-          <b-table
-            v-if="showCompleted"
-            class="mt-2"
-            :items="completedItems"
-            :fields="completedFields"
-            primary-key="checklistItemId"
-            show-empty
-            empty-text="No closed deadlines."
-            small
-            striped
-            fixed
-          >
-            <template #cell(dueDate)="{ item }">
-              {{ formatDate(item.dueDate) }}
-            </template>
-            <template #cell(completedAt)="{ item }">
-              <span
-                v-if="item.completionStatus === 'notApplicable'"
-                class="text-muted"
-              >N/A</span>
-              <template v-else>
-                {{ item.completedAt ? formatDateTime(item.completedAt) : 'Not recorded' }}
-              </template>
-            </template>
-            <template #cell(status)="{ item }">
-              <b-badge :variant="statusVariant(item.status)">
-                {{ statusLabel(item.status) }}
+            <h3 class="h5">
+              {{ section.title }}
+              <b-badge
+                pill
+                variant="light"
+              >
+                {{ section.items.length }}
               </b-badge>
-            </template>
-          </b-table>
-        </div>
+            </h3>
+            <p
+              v-if="section.description"
+              class="text-muted small mb-2"
+            >
+              {{ section.description }}
+            </p>
+            <b-table
+              :items="section.items"
+              :fields="fields"
+              primary-key="checklistItemId"
+              show-empty
+              empty-text="No deadlines in this section."
+              small
+              striped
+              fixed
+            >
+              <template #cell(title)="{ item }">
+                <span data-testid="deadline-title">{{ item.title }}</span>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 ml-1 align-baseline"
+                  :aria-expanded="isExpanded(item) ? 'true' : 'false'"
+                  data-testid="toggle-details"
+                  @click="toggleDetails(item)"
+                >
+                  {{ isExpanded(item) ? 'Hide details' : 'Details' }}
+                </button>
+                <deadline-details
+                  v-if="isExpanded(item)"
+                  class="mt-1"
+                  :item="item"
+                />
+              </template>
+              <template #cell(dueDate)="{ item }">
+                {{ item.dueDate ? formatDate(item.dueDate) : 'No due date' }}
+              </template>
+              <template #cell(status)="{ item }">
+                <b-badge :variant="statusVariant(item.status)">
+                  {{ statusLabel(item.status) }}
+                </b-badge>
+              </template>
+              <template #cell(verification)="{ item }">
+                <b-badge :variant="item.verificationStatus === 'verified' ? 'success' : 'warning'">
+                  {{ item.verificationStatus === 'verified' ? 'Verified' : 'Unverified' }}
+                </b-badge>
+                <div
+                  v-if="item.verificationStatus === 'verified' && item.verifiedAt"
+                  class="text-muted small"
+                >
+                  {{ formatDateTime(item.verifiedAt) }}
+                </div>
+              </template>
+            </b-table>
+          </div>
+
+          <div data-testid="deadline-section-completed">
+            <b-button
+              variant="outline-secondary"
+              size="sm"
+              @click="showCompleted = !showCompleted"
+            >
+              {{ showCompleted ? 'Hide' : 'Show' }} closed ({{ completedItems.length }})
+            </b-button>
+            <span class="text-muted small ml-2">Completed or marked not applicable.</span>
+            <b-table
+              v-if="showCompleted"
+              class="mt-2"
+              :items="completedItems"
+              :fields="completedFields"
+              primary-key="checklistItemId"
+              show-empty
+              empty-text="No closed deadlines."
+              small
+              striped
+              fixed
+            >
+              <template #cell(title)="{ item }">
+                <span data-testid="deadline-title">{{ item.title }}</span>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 ml-1 align-baseline"
+                  :aria-expanded="isExpanded(item) ? 'true' : 'false'"
+                  data-testid="toggle-details"
+                  @click="toggleDetails(item)"
+                >
+                  {{ isExpanded(item) ? 'Hide details' : 'Details' }}
+                </button>
+                <deadline-details
+                  v-if="isExpanded(item)"
+                  class="mt-1"
+                  :item="item"
+                />
+              </template>
+              <template #cell(dueDate)="{ item }">
+                {{ formatDate(item.dueDate) }}
+              </template>
+              <template #cell(completedAt)="{ item }">
+                <span
+                  v-if="item.completionStatus === 'notApplicable'"
+                  class="text-muted"
+                >N/A</span>
+                <template v-else>
+                  {{ item.completedAt ? formatDateTime(item.completedAt) : 'Not recorded' }}
+                </template>
+              </template>
+              <template #cell(status)="{ item }">
+                <b-badge :variant="statusVariant(item.status)">
+                  {{ statusLabel(item.status) }}
+                </b-badge>
+              </template>
+            </b-table>
+          </div>
+        </template>
       </template>
     </b-card>
   </section>
@@ -138,24 +207,9 @@
 <script>
 import { mapActions, mapGetters } from 'vuex';
 import { formatDate, formatDateTime } from '@/helpers/dates';
-
-const STATUS_DISPLAY = {
-  overdue: { label: 'Overdue', variant: 'danger' },
-  overdueUnverified: { label: 'Overdue Unverified', variant: 'danger' },
-  dueToday: { label: 'Due Today', variant: 'warning' },
-  dueTodayUnverified: { label: 'Due Today Unverified', variant: 'warning' },
-  dueSoon: { label: 'Due Soon', variant: 'warning' },
-  dueSoonUnverified: { label: 'Due Soon Unverified', variant: 'warning' },
-  upcoming: { label: 'Upcoming', variant: 'info' },
-  upcomingUnverified: { label: 'Upcoming Unverified', variant: 'info' },
-  completed: { label: 'Complete', variant: 'success' },
-  completedUnverified: { label: 'Complete Unverified', variant: 'success' },
-  completedLate: { label: 'Complete (Was Overdue)', variant: 'success' },
-  completedLateUnverified: { label: 'Complete Unverified (Was Overdue)', variant: 'success' },
-  notApplicable: { label: 'Not Applicable', variant: 'secondary' },
-  notApplicableUnverified: { label: 'Not Applicable Unverified', variant: 'secondary' },
-  reviewNeeded: { label: 'Review Needed', variant: 'secondary' },
-};
+import { CLOSED_STATUSES, statusLabel, statusVariant } from '@/helpers/deadlineStatus';
+import ComplianceDeadlinesCalendar from '@/components/ComplianceDeadlinesCalendar.vue';
+import DeadlineDetails from '@/components/DeadlineDetails.vue';
 
 const PORTFOLIO_SECTIONS = [
   { key: 'overdue', title: 'Overdue' },
@@ -165,11 +219,17 @@ const PORTFOLIO_SECTIONS = [
 ];
 
 export default {
+  components: {
+    ComplianceDeadlinesCalendar,
+    DeadlineDetails,
+  },
   data() {
     return {
       loading: true,
       loadError: false,
       showCompleted: false,
+      viewMode: 'list',
+      expandedIds: [],
       fields: [
         { key: 'title', label: 'Obligation', thStyle: { width: '45%' } },
         { key: 'dueDate', label: 'Due date', thStyle: { width: '18%' } },
@@ -206,7 +266,7 @@ export default {
       ];
     },
     completedItems() {
-      return this.portfolio.filter((item) => ['completed', 'completedLate', 'notApplicable'].includes(item.status));
+      return this.portfolio.filter((item) => CLOSED_STATUSES.includes(item.status));
     },
     isTruncated() {
       if (!this.pagination) {
@@ -239,12 +299,16 @@ export default {
         this.loading = false;
       }
     },
-    statusLabel(status) {
-      return (STATUS_DISPLAY[status] || { label: status }).label;
+    isExpanded(item) {
+      return this.expandedIds.includes(item.checklistItemId);
     },
-    statusVariant(status) {
-      return (STATUS_DISPLAY[status] || { variant: 'secondary' }).variant;
+    toggleDetails(item) {
+      this.expandedIds = this.isExpanded(item)
+        ? this.expandedIds.filter((id) => id !== item.checklistItemId)
+        : [...this.expandedIds, item.checklistItemId];
     },
+    statusLabel,
+    statusVariant,
     formatDate,
     formatDateTime,
   },
