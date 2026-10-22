@@ -105,6 +105,63 @@ describe('ai-audit', () => {
             expect(result.audit.id).to.be.null;
         });
 
+        it('records the prompt version when the caller gives one', async () => {
+            await generateTextAudited(
+                { ...context, promptVersion: 'grant_summary_v1' }, { prompt: 'hi' }, { knex, provider, now },
+            );
+            expect(savedRecord().prompt_version).to.equal('grant_summary_v1');
+        });
+
+        it('leaves prompt version and validation empty when the caller gives neither', async () => {
+            await generateTextAudited(context, { prompt: 'hi' }, { knex, provider, now });
+            expect(savedRecord()).to.include({ prompt_version: null, validation_status: null });
+        });
+
+        it('records "passed" when the output passes the validation check', async () => {
+            const validate = sinon.stub().returns(true);
+            const result = await generateTextAudited(context, { prompt: 'hi' }, {
+                knex, provider, now, validate,
+            });
+
+            expect(validate.firstCall.args[0]).to.equal('a short summary');
+            expect(savedRecord()).to.include({ status: 'success', validation_status: 'passed', error_code: null });
+            expect(result.text).to.equal('a short summary');
+        });
+
+        it('records malformed output as a failed validation and throws invalid_output', async () => {
+            // the usual real check: output was supposed to be json and isn't
+            const validate = (text) => Boolean(JSON.parse(text));
+
+            let thrown;
+            try {
+                await generateTextAudited(context, { prompt: 'hi' }, {
+                    knex, provider, now, validate,
+                });
+            } catch (err) {
+                thrown = err;
+            }
+
+            expect(thrown).to.be.instanceOf(AiProviderError);
+            expect(thrown.code).to.equal('invalid_output');
+            // the call itself worked, so tokens and the output hash still get recorded
+            expect(savedRecord()).to.include({
+                status: 'error', error_code: 'invalid_output', validation_status: 'failed', total_tokens: 18,
+            });
+            expect(savedRecord().output_sha256).to.match(/^[0-9a-f]{64}$/);
+        });
+
+        it('does not run validation when the provider call itself failed', async () => {
+            provider.generateText.rejects(new AiProviderError('timed out', { code: 'timeout' }));
+            const validate = sinon.stub().returns(true);
+
+            await generateTextAudited(context, { prompt: 'hi' }, {
+                knex, provider, now, validate,
+            }).catch(() => {});
+
+            expect(validate.called).to.be.false;
+            expect(savedRecord()).to.include({ error_code: 'timeout', validation_status: null });
+        });
+
         it('refuses to run without a task, so nothing goes unlabeled', async () => {
             let thrown;
             try {
