@@ -88,6 +88,29 @@ export function post(url, body) {
     });
 }
 
+// Unlike post(), does not JSON-encode the body or set Content-Type: the browser sets the
+// multipart boundary itself when given a FormData body, so setting headers here would break it.
+export function postFormData(url, formData) {
+  const options = {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  };
+  return fetch(apiURL(url), options).then((r) => {
+    if (r.ok) {
+      return r.json();
+    }
+    return r
+      .text()
+      .then((text) => {
+        const err = new Error(text || r.statusText);
+        err.response = r;
+
+        return Promise.reject(err);
+      });
+  });
+}
+
 export function put(url, body) {
   const options = {
     method: 'PUT',

@@ -4,6 +4,7 @@ import BaseLayout from '@/components/BaseLayout.vue';
 import {
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
   organizationProfilesEnabled,
+  complianceDeadlinesEnabled,
 } from '@/helpers/featureFlags';
 import LoginView from '@/views/LoginView.vue';
 
@@ -60,6 +61,15 @@ export const routes = [
         component: () => import('@/views/DashboardView.vue'),
         meta: {
           requiresAuth: true,
+        },
+      },
+      {
+        path: '/compliance/deadlines',
+        name: 'complianceDeadlines',
+        component: () => import('@/views/ComplianceDeadlinesView.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresComplianceDeadlinesEnabled: true,
         },
       },
       {
@@ -170,6 +180,17 @@ export const routes = [
           requiresOrganizationProfilesEnabled: true,
         },
       },
+      {
+        // AN-08 demo-prep page for the Oct 13 first demo. Not linked from navigation; the real,
+        // full-featured checklist UI is AN-15's job later. Reachable by URL for the demo walkthrough.
+        path: '/grant-document-demo',
+        name: 'grantDocumentDemo',
+        component: () => import('@/views/GrantDocumentDemoView.vue'),
+        meta: {
+          requiresAuth: true,
+          hideLayoutTabs: true,
+        },
+      },
     ],
   },
   {
@@ -206,6 +227,7 @@ router.beforeEach((to, from, next) => {
     || (to.meta.requiresNewGrantsDetailPageEnabled && !newGrantsDetailPageEnabled())
     || (to.meta.requiresShareTerminologyEnabled && !shareTerminologyEnabled())
     || (to.meta.requiresOrganizationProfilesEnabled && !organizationProfilesEnabled())
+    || (to.meta.requiresComplianceDeadlinesEnabled && !complianceDeadlinesEnabled())
   ) {
     if (authenticated) {
       next({ name: 'grants' });

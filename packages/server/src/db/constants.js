@@ -18,5 +18,7 @@ module.exports = {
         checklist_items_placeholder: 'checklist_items_placeholder',
         grant_documents: 'grant_documents',
         grant_document_pages: 'grant_document_pages',
+        analysis_runs: 'analysis_runs',
+        grant_briefs: 'grant_briefs',
     },
 };

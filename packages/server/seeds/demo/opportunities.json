@@ -1,0 +1,1107 @@
+{
+  "source": "grants.gov public api (search2 + fetchOpportunity)",
+  "fetched_on": "2026-10-10",
+  "opportunities": [
+    {
+      "demo": {
+        "topic": "transportation",
+        "source_url": "https://www.grants.gov/search-results-detail/364009"
+      },
+      "opportunity": {
+        "id": "364009",
+        "number": "FHWA-WCPP-26-002",
+        "title": "Fiscal Year 2026 Wildlife Crossings Pilot Program",
+        "description": "The purpose of the WCPP is to provide funding to eligible entities for projects seeking to improve safety of the traveling public by reducing the number of wildlife-vehicle collisions (WVC) and, in doing so, improve habitat connectivity for terrestrial and aquatic species.\nThis NOFO will award approximately $80 million in Fiscal Year (FY) 2026 funding via cost reimbursable grants. DOT may also award any remaining and available funds from previous fiscal years under this opportunity.\n\nThe actual amount available to be awarded under this notice will be subject to the availability of funds.\n\nNOTE: The information under 'Award' on this page requires the specification of a minimum and maximum dollar value for anticipated awards due to Grants.gov system requirements. However, as stated in the NOFO, there are no minimum or maximum award sizes.",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-09-30",
+          "close": {
+            "date": "2026-11-16",
+            "explanation": "No Explanation"
+          },
+          "archive_date": "2026-12-16"
+        }
+      },
+      "agency": {
+        "code": "DOT-FHWA",
+        "name": "DOT Federal Highway Administration "
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "20.290"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "T",
+            "name": "Transportation"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "80000000",
+        "floor": "0",
+        "expected_number_of_awards": "8"
+      },
+      "grantor": {
+        "name": "DOT Federal Highway Administration",
+        "phone": "202-366-4004"
+      }
+    },
+    {
+      "demo": {
+        "topic": "public safety",
+        "source_url": "https://www.grants.gov/search-results-detail/364037"
+      },
+      "opportunity": {
+        "id": "364037",
+        "number": "O-BJA-2026-172770",
+        "title": "BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism",
+        "description": "This is a notice of funding opportunity (NOFO) for the BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism. This opportunity will support state, local, and tribal government efforts to reduce wasteful spending and inefficient uses of funds across justice system operations and redirect that funding to target crime and other public safety and/or justice system challenges. Applicants should propose projects that address one or more urgent local justice system challenge. Applicants should use existing data and information to identify the specific challenges they will focus on and how they will refocus resources on the strategies and populations most likely to reduce crime. Jurisdictions may consider addressing challenges across the judicial system, including those related to law enforcement, prosecution, sentencing, jails and prisons, probation, and parole.",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-10-07",
+          "close": {
+            "date": "2026-11-20"
+          }
+        }
+      },
+      "agency": {
+        "code": "USDOJ-OJP-BJA",
+        "name": "Bureau of Justice Assistance"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": false,
+      "cfda_numbers": [
+        "16.827"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "LJL",
+            "name": "Law, Justice and Legal Services"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "4000000",
+        "floor": "0"
+      },
+      "grantor": {
+        "name": "Bureau of Justice Assistance",
+        "phone": "202-514-9354"
+      }
+    },
+    {
+      "demo": {
+        "topic": "public safety",
+        "source_url": "https://www.grants.gov/search-results-detail/364035"
+      },
+      "opportunity": {
+        "id": "364035",
+        "number": "O-OJJDP-2026-172735",
+        "title": "OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities",
+        "description": "This is a notice of funding opportunity (NOFO) for the OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities program. This opportunity will support the development, improvement, and/or implementation of emergency planning activities for state, Tribal, county, and local juvenile justice residential facilities. Emergency planning activities should prepare facilities to prioritize the safety and well-being of youth and staff, keep families informed, continue operations, and reduce risk to the facility during and after an emergency. The goal of the program is to help facilities improve their ability to respond to and recover from these incidents. For the purposes of this program, emergency is defined as an incident\u2014natural, technological, or nonnatural\u2014that requires a response to protect life and property.",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-10-07",
+          "close": {
+            "date": "2026-11-16"
+          }
+        }
+      },
+      "agency": {
+        "code": "USDOJ-OJP-OJJDP",
+        "name": "Office of Juvenile Justice Delinquency Prevention "
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": false,
+      "cfda_numbers": [
+        "16.823"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "LJL",
+            "name": "Law, Justice and Legal Services"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "250000",
+        "floor": "0",
+        "estimated_total_program_funding": "432833",
+        "expected_number_of_awards": "2"
+      },
+      "grantor": {
+        "name": "Office of Juvenile Justice Delinquency Prevention",
+        "phone": "0000000000"
+      }
+    },
+    {
+      "demo": {
+        "topic": "housing",
+        "source_url": "https://www.grants.gov/search-results-detail/363696"
+      },
+      "opportunity": {
+        "id": "363696",
+        "number": "AC-08-28-26",
+        "title": "Fiscal Year (FY) 2027 AmeriCorps State and National Competitive Grants",
+        "description": "<p>AmeriCorps improves lives, strengthens communities, and fosters civic engagement through service and volunteering. AmeriCorps brings people together to tackle some of the country\u2019s most pressing challenges through national service and volunteerism. AmeriCorps members serve with organizations dedicated to the improvement of communities and those serving. AmeriCorps grants are awarded to eligible organizations that engage AmeriCorps members in evidence-based or evidence-informed interventions to strengthen communities. An AmeriCorps member is a person who does community service through AmeriCorps. Members may receive a living allowance and other benefits. After successful completion of their service, members earn a Segal AmeriCorps Education Award they can use to pay for higher education expenses or apply to qualified student loans.</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-08-28",
+          "close": {
+            "date": "2027-01-13"
+          },
+          "archive_date": "2027-01-14"
+        }
+      },
+      "agency": {
+        "code": "AC",
+        "name": "AmeriCorps"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "94.006"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "13",
+          "name": "Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "06",
+          "name": "Public and State controlled institutions of higher education"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "11",
+          "name": "Native American tribal organizations (other than Federally recognized tribal governments)"
+        },
+        {
+          "code": "20",
+          "name": "Private institutions of higher education"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "CD",
+            "name": "Community Development"
+          },
+          {
+            "code": "DPR",
+            "name": "Disaster Prevention and Relief"
+          },
+          {
+            "code": "ED",
+            "name": "Education"
+          },
+          {
+            "code": "ELT",
+            "name": "Employment, Labor and Training"
+          },
+          {
+            "code": "ENV",
+            "name": "Environment"
+          },
+          {
+            "code": "FN",
+            "name": "Food and Nutrition"
+          },
+          {
+            "code": "HL",
+            "name": "Health"
+          },
+          {
+            "code": "HO",
+            "name": "Housing"
+          },
+          {
+            "code": "O",
+            "name": "Other (see text field entitled \"Explanation of Other Category of Funding Activity\" for clarification)"
+          }
+        ]
+      },
+      "award": {},
+      "grantor": {
+        "name": "Rebecca Curtis Grantor",
+        "phone": "202-815-4986"
+      }
+    },
+    {
+      "demo": {
+        "topic": "community dev",
+        "source_url": "https://www.grants.gov/search-results-detail/361418"
+      },
+      "opportunity": {
+        "id": "361418",
+        "number": "USDA-FS-2026-GLRI-CFP",
+        "title": "Great Lakes Restoration Initiative: Community Forest and Open Space Conservation Program",
+        "description": "<p>Federally recognized Indian Tribes, local government entities, and nonprofit organizations that are qualified to acquire and manage land may apply for up to $1,000,000 for the fee simple acquisition of private forest land in portions of the Lake Superior Basin of Michigan and Wisconsin. Projects submitted for funding consideration must be forested properties at least five acres in size that are threatened by conversion to non-forest uses and that provide community benefits including economic, environmental, educational, and recreational benefits. An additional focus of this opportunity is to protect, enhance and increase resilience of habitats necessary for sustaining native aquatic and terrestrial species important to the Lake Superior ecosystem. Competitive proposals will be those that demonstrate exceptional public benefits, meaningful community engagement, and strategic contributions to terrestrial habitat connectivity within the defined Terrestrial Habitat Connectivity Pilot Area.</p><p><br></p><p>For additional information and requirements, please refer to the Notice of Funding Opportunity document linked in both the \"Related Documents\" tab and the \"Instructions\" link located in the \"Package\" tab.</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-07-22",
+          "close": {
+            "date": "2026-12-08",
+            "explanation": "11:59PM Eastern Time"
+          },
+          "archive_date": "2027-01-07"
+        }
+      },
+      "agency": {
+        "code": "USDA-FS",
+        "name": "Forest Service"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "10.689"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "CD",
+            "name": "Community Development"
+          },
+          {
+            "code": "ENV",
+            "name": "Environment"
+          },
+          {
+            "code": "NR",
+            "name": "Natural Resources"
+          },
+          {
+            "code": "RT",
+            "name": "Recreation and Tourism"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "1000000",
+        "estimated_total_program_funding": "3500000",
+        "expected_number_of_awards": "6"
+      },
+      "grantor": {
+        "name": "Liam M Krause Grantor",
+        "phone": "4142384843"
+      }
+    },
+    {
+      "demo": {
+        "topic": "environment",
+        "source_url": "https://www.grants.gov/search-results-detail/362034"
+      },
+      "opportunity": {
+        "id": "362034",
+        "number": "NOAA-NMFS-AK-2026-33268",
+        "title": "2026 Alaska Marine Education and Training Mini-Grant Program",
+        "description": "<p>This announcement supports Executive Order 14276, Restoring America\u2019s Seafood Competitiveness, by soliciting projects that support: workforce development for marine-related professions in marine science, aquaculture/mariculture, and maritime operations; enhancing seafood safety and management through training in seafood best practices, marketing, and fishery management; technological innovation in fishing practices; outreach and education for consumers on quality and sustainability of wild caught fish or products farmed through aquaculture/mariculture; enhanced regionally-specific management of fishery resources based on local knowledge; and strengthening the seafood supply chain through partnerships with industry, researchers, and community organizations to build relationships that increase the sustainability and competitiveness of the marine community in Alaska. Proposed projects must be conducted in Alaska.&nbsp;</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-04-23",
+          "close": {
+            "date": "2028-05-01"
+          },
+          "archive_date": "2028-05-31"
+        }
+      },
+      "agency": {
+        "code": "DOC-DOCNOAAERA",
+        "name": "DOC NOAA - ERA Production"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": false,
+      "cfda_numbers": [
+        "11.455"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "20",
+          "name": "Private institutions of higher education"
+        },
+        {
+          "code": "13",
+          "name": "Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "06",
+          "name": "Public and State controlled institutions of higher education"
+        },
+        {
+          "code": "23",
+          "name": "Small businesses"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "22",
+          "name": "For profit organizations other than small businesses"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "11",
+          "name": "Native American tribal organizations (other than Federally recognized tribal governments)"
+        },
+        {
+          "code": "21",
+          "name": "Individuals"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "CA",
+          "name": "Cooperative Agreement"
+        },
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "AG",
+            "name": "Agriculture"
+          },
+          {
+            "code": "BC",
+            "name": "Business and Commerce"
+          },
+          {
+            "code": "ED",
+            "name": "Education"
+          },
+          {
+            "code": "ENV",
+            "name": "Environment"
+          },
+          {
+            "code": "FN",
+            "name": "Food and Nutrition"
+          },
+          {
+            "code": "NR",
+            "name": "Natural Resources"
+          },
+          {
+            "code": "ST",
+            "name": "Science and Technology and other Research and Development"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "75000",
+        "floor": "15000",
+        "estimated_total_program_funding": "600000"
+      },
+      "grantor": {
+        "name": "Keisha Trent Grantor",
+        "phone": "3016281449"
+      }
+    },
+    {
+      "demo": {
+        "topic": "environment",
+        "source_url": "https://www.grants.gov/search-results-detail/363856"
+      },
+      "opportunity": {
+        "id": "363856",
+        "number": "F26AS00030",
+        "title": "F26AS00030 Cooperative Endangered Species Conservation Fund: Recovery Land Acquisition Grant Program",
+        "description": "First awarded in fiscal year (FY) 2001, Recovery Land Acquisition grants promote State and Federal cooperation in listed species conservation by leveraging funds to acquire specific parcels of land, through fee simple or conservation easement, in support of U.S. Fish and Wildlife Service (FWS)-approved recovery plans and outlines. The Endangered Species Act (ESA) conveys the importance of recovery plans as a central organizing tool for guiding the recovery process by requiring their development for every listed species.",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-09-14",
+          "close": {
+            "date": "2026-11-20",
+            "explanation": "Electronically submitted applications must be submitted no later than 11:59 PM, ET, on the listed application due date.This program requires the submission of applications online through GrantSolutions.gov as applicants will receive an acknowledgment"
+          },
+          "archive_date": "2026-11-27"
+        }
+      },
+      "agency": {
+        "code": "DOI-FWS",
+        "name": "Fish and Wildlife Service"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "15.615"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "00",
+          "name": "State governments"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "ENV",
+            "name": "Environment"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "14162000",
+        "floor": "10000",
+        "estimated_total_program_funding": "14162000",
+        "expected_number_of_awards": "15"
+      },
+      "grantor": {
+        "name": "Fish and Wildlife Service",
+        "phone": "22041-3803"
+      }
+    },
+    {
+      "demo": {
+        "topic": "disaster relief",
+        "source_url": "https://www.grants.gov/search-results-detail/363151"
+      },
+      "opportunity": {
+        "id": "363151",
+        "number": "DHS-26-MT-144-000-99",
+        "title": "Fiscal Year 2026 Flood Mitigation Assistance Swift Current",
+        "description": "<p>FMA Swift Current aims to better align the delivery of FMA flood mitigation funding to the disaster survivor experience. The FMA grant program makes federal funds available to states, U.S. territories, federally recognized Indian/Native American Tribal Governments,&nbsp;and local governments to reduce or eliminate the risk of repetitive flood damage to buildings and structures insured under the National Flood Insurance Program (NFIP), and within NFIP-participating communities. FMA funds a variety of flood mitigation activities that are designed to reduce flood risk to NFIP policyholders in an effort to reduce the NFIP\u2019s financial exposure.&nbsp;</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-07-14",
+          "close": {
+            "date": "2028-01-31"
+          },
+          "archive_date": "2028-03-01"
+        }
+      },
+      "agency": {
+        "code": "DHS-DHS",
+        "name": "Department of Homeland Security - FEMA"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "97.144"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "DPR",
+            "name": "Disaster Prevention and Relief"
+          },
+          {
+            "code": "O",
+            "name": "Other (see text field entitled \"Explanation of Other Category of Funding Activity\" for clarification)"
+          }
+        ]
+      },
+      "award": {
+        "estimated_total_program_funding": "600000000"
+      },
+      "grantor": {
+        "name": "Lanita Taylor Grantor",
+        "phone": "2027061418"
+      }
+    },
+    {
+      "demo": {
+        "topic": "health",
+        "source_url": "https://www.grants.gov/search-results-detail/355417"
+      },
+      "opportunity": {
+        "id": "355417",
+        "number": "RFA-OH-25-002",
+        "title": "Occupational Safety and Health Education and Research Centers (T42)",
+        "description": "<p>The National Institute for Occupational Safety and Health (NIOSH), Centers for Disease Control and Prevention (CDC), invites grant applications for Education and Research Centers (ERCs) that are focused on occupational safety and health training. NIOSH is mandated to provide an adequate supply of qualified personnel to carry out the purposes of the Occupational Safety and Health Act, and the ERCs are one of the primary means for meeting this mandate. ERCs are academic institutions that provide high-quality interdisciplinary graduate and post-graduate training, research training, continuing education, and outreach in the core occupational safety and health disciplines of industrial hygiene, occupational health nursing, occupational medicine, and occupational safety, as well as allied disciplines. Research and research training are integral components of ERCs, with ERC faculty and NIOSH trainees conducting research on issues related to the NIOSH National Occupational Research Agenda (NORA) and emerging issues to advance the field of occupational safety and health. NIOSH ERCs have regional presence to further diversify the occupational safety and health profession through their core values, mission statements, and outputs. ERCs serve as resources for our nation's workforce through continuing education, outreach and strong collaboration with professional associations, worker advocacy groups, businesses, industries, and public health agencies. ERCs work with other institutions and organizations, including Minority Serving Institutions and other NIOSH supported training programs to have a positive impact on worker health, safety, and well-being.</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2024-10-07",
+          "close": {
+            "date": "2028-10-26",
+            "explanation": "Electronically submitted applications must be submitted no later than 11:59 pm ET on the listed application due date."
+          },
+          "archive_date": "2028-11-25"
+        }
+      },
+      "agency": {
+        "code": "HHS-CDC-HHSCDCERA",
+        "name": "Centers for Disease Control and Prevention - ERA"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": false,
+      "cfda_numbers": [
+        "93.262"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "06",
+          "name": "Public and State controlled institutions of higher education"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "05",
+          "name": "Independent school districts"
+        },
+        {
+          "code": "99",
+          "name": "Unrestricted (i.e., open to any type of entity above), subject to any clarification in text field entitled \"Additional Information on Eligibility\""
+        },
+        {
+          "code": "22",
+          "name": "For profit organizations other than small businesses"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "11",
+          "name": "Native American tribal organizations (other than Federally recognized tribal governments)"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "08",
+          "name": "Public housing authorities/Indian housing authorities"
+        },
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "23",
+          "name": "Small businesses"
+        },
+        {
+          "code": "13",
+          "name": "Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "20",
+          "name": "Private institutions of higher education"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "G",
+          "name": "Grant"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "HL",
+            "name": "Health"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "9000000",
+        "floor": "4500000",
+        "estimated_total_program_funding": "32000000",
+        "expected_number_of_awards": "18"
+      },
+      "grantor": {
+        "name": "Linton C Browning Grants Management Specialist",
+        "phone": "770-488-2756"
+      }
+    },
+    {
+      "demo": {
+        "topic": "energy",
+        "source_url": "https://www.grants.gov/search-results-detail/363815"
+      },
+      "opportunity": {
+        "id": "363815",
+        "number": "DE-FOA-0003647",
+        "title": "Accelerating Scale-up and Pre-piloting of Emerging Chemical Technologies (ASPECT)",
+        "description": "Modification 000002:\n\nUpdated Appendix A and the definition of \u201cConstruction and demolition waste\u201d, also denoted as \u201cC&D Waste\u201d, to align with the programmatic authorizing statute for the Alternative Fuels and Feedstocks Office listed in NOFO Part 1, Section III.G. Statutory Authority.\n\n\u2022 \u201cConstruction and demolition waste,\u201d for the purposes of this NOFO and consistent with the statutory authorities1, refers to waste organic materials from buildings, roads and bridges, and other sectors, but not included in municipal solid waste. It includes wood waste materials, including waste pallets, crates, dunnage, manufacturing and construction wood wastes (other than pressure-treated, chemically-treated, or painted wood wastes), and landscape or right-of-way tree trimmings.\n\nUpdated Section III.D. Key Requirements and Section III.F. Applications Specifically Not of Interest to specify that target chemicals should have global annual markets or potential markets of at least 1 million metric tons.\n\u2022 Previously this metric was given as U.S. production of at least 1 million metric tons.\n\nModification 000001:\n\nMoved the application content requirement for Letter(s) of Commitment (LOCs) from Stage 2 to Stage 1.\n\n\u2022 Added a clause in Section III.D indicating that LOCs are to be submitted with Stage 1 applications.\n\n\u2022 Updated the summary table in Section IV.D.2 to reflect the above (added Stage 1 LOC requirement)\n\n\u2022 Updated the summary table in Section IV.E.1 to reflect the above (added \u201c(as needed, in addition to Stage 1 submittals)\u201d).\n\nDOE CMEI is dedicated to securing America\u2019s energy future by reinforcing domestic critical mineral supply chains, driving next-generation energy technology and manufacturing research, and promoting affordable, consumer-friendly solutions. CMEI\u2019s AFFO is issuing this ASPECT NOFO, DE-FOA-0003647, to support research, development, and pre-pilot testing of innovative technologies that produce chemicals from alternative and waste feedstocks, mobilizing America\u2019s abundant alternative feedstocks resources.\n \nThe goal of this Notice of Funding Opportunity (NOFO) is to advance promising chemical technologies that utilize alternative feedstocks through multiple levels of maturity and, in some cases, to pre-pilot scale. To accomplish this, the NOFO is divided into two topic areas, each divided into two subtopic areas designed to provide different on-ramps for technologies at different stages of development.\n \nTopic Area 1 supports the progression of technologies in the R&D phase. Subtopic Area 1a supports advancing early-stage research to bench scale. Subtopic Area 1b is intended to move projects closer to pre-pilot scale, to a point where critical unit operations must be further developed and demonstrated.\n \nTopic Area 2 provides an on-ramp for technologies ready to move from R&D to full pre-pilot scale and operations. Projects applying to Topic Area 2 should aim to advance their technology to design, construct, and operate pre-pilot scale facilities. Both subtopic areas have the same goal\u2014to move technologies into integrated pre-pilot systems and operate them\u2014but allow for two different points of entry. Subtopic Area 2a targets preliminary pre-pilot scale testing of critical unit operations before engineering and design can commence for the entire system while Subtopic Area 2b projects will involve technologies that are ready for design and construction of an integrated pre-pilot facility.\n\nPlease see the full NOFO document at eere-exchange.energy.gov.\n\nQuestions regarding the NOFO must be submitted to ASPECT@doe.gov.\n\nThe required Concept Paper due date for this NOFO is 10/09/2026 at 5PM ET. The Full Application due date for this NOFO is 12/01/2026 at 5PM ET.\n\nAs stated in the Notice of Intent (search DE-FOA-0003646 in eXCHANGE), a Teaming Partner List has been compiled to encourage collaboration and facilitate the formation of new project teams. Visit: TPL-0000073 Teaming Partner List for DE-FOA-0003646 NOI to Publish DE-FOA-0003647\n\nThe eXCHANGE system is currently designed to enforce hard deadlines for Concept Paper and Full Application submissions. The APPLY and SUBMIT buttons automatically disable at the defined submission deadlines. The intention of this design is to consistently enforce a standard deadline for all applicants.\n\nApplicants that experience issues with submissions PRIOR to the NOFO Deadline: In the event that an Applicant experiences technical difficulties with a submission, the Applicant should contact the eXCHANGE helpdesk for assistance (exchangehelp@hq.doe.gov). The eXCHANGE helpdesk and/or the EERE eXCHANGE System Administrators (eXCHANGE@ee.doe.gov) will assist the Applicant in resolving all issues.\n\nApplicants that experience issues with submissions that result in a late submission: In the event that an Applicant experiences technical difficulties with a submission that results in a late submission, the Applicant should contact the eXCHANGE helpdesk for assistance (exchangehelp@hq.doe.gov). The eXCHANGE helpdesk and/or the EERE eXCHANGE System Administrators (eXCHANGE@ee.doe.gov) will assist the Applicant in resolving all issues (including finalizing the submission on behalf of, and with the Applicant's concurrence). DOE will only accept late applications when the Applicant has a) encountered technical difficulties beyond their control; b) has contacted the eXCHANGE helpdesk for assistance; and c) has submitted the application through eXCHANGE within 24 hours of the NOFO's posted deadline.",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-09-04",
+          "close": {
+            "date": "2026-12-01"
+          },
+          "archive_date": "2026-12-31"
+        }
+      },
+      "agency": {
+        "code": "DOE-GFO",
+        "name": "Golden Field Office"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "81.087"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "11",
+          "name": "Native American tribal organizations (other than Federally recognized tribal governments)"
+        },
+        {
+          "code": "22",
+          "name": "For profit organizations other than small businesses"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        },
+        {
+          "code": "21",
+          "name": "Individuals"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "06",
+          "name": "Public and State controlled institutions of higher education"
+        },
+        {
+          "code": "20",
+          "name": "Private institutions of higher education"
+        },
+        {
+          "code": "05",
+          "name": "Independent school districts"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "23",
+          "name": "Small businesses"
+        },
+        {
+          "code": "08",
+          "name": "Public housing authorities/Indian housing authorities"
+        },
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "13",
+          "name": "Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "25",
+          "name": "Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "CA",
+          "name": "Cooperative Agreement"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "EN",
+            "name": "Energy"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "20000000",
+        "floor": "2000000",
+        "estimated_total_program_funding": "58000000",
+        "expected_number_of_awards": "10"
+      },
+      "grantor": {
+        "name": "Golden Field Office",
+        "phone": "2022871878"
+      }
+    },
+    {
+      "demo": {
+        "topic": "energy",
+        "source_url": "https://www.grants.gov/search-results-detail/364026"
+      },
+      "opportunity": {
+        "id": "364026",
+        "number": "DE-FOA-0003577",
+        "title": "Silicon Carbide Cladding Lead Test Rod Development-Phase 1",
+        "description": "<p>Silicon Carbide Cladding Lead Test Rod Development-Phase 1Research, development, and fabrication of Silicon Carbide cladding specimens for research reactor insertion, irradiation, and post-irradiation examinations by 2030. The objective of this program is to advance the scientific and technological maturity of silicon carbide cladding for nuclear fuel rods for future use in commercial light water reactors.</p>",
+        "category": {
+          "code": "D",
+          "name": "Discretionary"
+        },
+        "milestones": {
+          "post_date": "2026-10-05",
+          "close": {
+            "date": "2026-12-07"
+          },
+          "archive_date": "2027-01-06"
+        }
+      },
+      "agency": {
+        "code": "DOE-ID",
+        "name": "Idaho Field Office"
+      },
+      "revision": {
+        "id": "demo-20261010"
+      },
+      "cost_sharing_or_matching_requirement": true,
+      "cfda_numbers": [
+        "81.121"
+      ],
+      "eligible_applicants": [
+        {
+          "code": "04",
+          "name": "Special district governments"
+        },
+        {
+          "code": "01",
+          "name": "County governments"
+        },
+        {
+          "code": "07",
+          "name": "Native American tribal governments (Federally recognized)"
+        },
+        {
+          "code": "06",
+          "name": "Public and State controlled institutions of higher education"
+        },
+        {
+          "code": "13",
+          "name": "Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "11",
+          "name": "Native American tribal organizations (other than Federally recognized tribal governments)"
+        },
+        {
+          "code": "02",
+          "name": "City or township governments"
+        },
+        {
+          "code": "20",
+          "name": "Private institutions of higher education"
+        },
+        {
+          "code": "12",
+          "name": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education"
+        },
+        {
+          "code": "22",
+          "name": "For profit organizations other than small businesses"
+        },
+        {
+          "code": "23",
+          "name": "Small businesses"
+        },
+        {
+          "code": "00",
+          "name": "State governments"
+        }
+      ],
+      "funding_instrument_types": [
+        {
+          "code": "CA",
+          "name": "Cooperative Agreement"
+        }
+      ],
+      "funding_activity": {
+        "categories": [
+          {
+            "code": "EN",
+            "name": "Energy"
+          }
+        ]
+      },
+      "award": {
+        "ceiling": "62500000",
+        "floor": "0",
+        "estimated_total_program_funding": "50000000",
+        "expected_number_of_awards": "1"
+      },
+      "grantor": {
+        "name": "Idaho Field Office",
+        "phone": "2022871878"
+      }
+    }
+  ]
+}

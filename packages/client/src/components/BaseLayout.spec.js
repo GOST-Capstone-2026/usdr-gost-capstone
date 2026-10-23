@@ -33,12 +33,18 @@ const noOpGetters = {
 };
 
 describe('BaseLayout.vue', () => {
-  it.each(['4', 0])('shows the organization profile for authorized team %s when enabled', (agencyId) => {
+  beforeEach(() => {
+    vi.mocked(organizationProfilesEnabled).mockReturnValue(false);
+  });
+
+  it.each([
+    ['staff', '4'], ['staff', 0], ['admin', '4'], ['admin', 0],
+  ])('shows the organization profile for %s on team %s when enabled', (role, agencyId) => {
     vi.mocked(organizationProfilesEnabled).mockReturnValue(true);
     const profileStore = createStore({
       getters: {
         ...noOpGetters,
-        'users/userRole': () => 'staff',
+        'users/userRole': () => role,
         'users/selectedAgencyId': () => agencyId,
       },
     });
@@ -50,7 +56,42 @@ describe('BaseLayout.vue', () => {
       },
     });
     expect(profileWrapper.text()).toContain('Organization Profile');
-    vi.mocked(organizationProfilesEnabled).mockReturnValue(false);
+    profileWrapper.unmount();
+  });
+
+  it.each([
+    {
+      reason: 'feature disabled', enabled: false, role: 'staff', agencyId: 4,
+    },
+    {
+      reason: 'null team', enabled: true, role: 'staff', agencyId: null,
+    },
+    {
+      reason: 'undefined team', enabled: true, role: 'staff', agencyId: undefined,
+    },
+    {
+      reason: 'empty team', enabled: true, role: 'staff', agencyId: '',
+    },
+    {
+      reason: 'unauthorized role', enabled: true, role: 'viewer', agencyId: 4,
+    },
+    {
+      reason: 'missing role', enabled: true, role: null, agencyId: 4,
+    },
+  ])('hides the organization profile for $reason', ({ enabled, role, agencyId }) => {
+    vi.mocked(organizationProfilesEnabled).mockReturnValue(enabled);
+    const profileStore = createStore({
+      getters: {
+        ...noOpGetters,
+        'users/userRole': () => role,
+        'users/selectedAgencyId': () => agencyId,
+      },
+    });
+    const profileWrapper = shallowMount(BaseLayout, {
+      global: { plugins: [profileStore], mocks: { $route: defaultRoute }, stubs },
+    });
+    expect(profileWrapper.text()).not.toContain('Organization Profile');
+    profileWrapper.unmount();
   });
   describe('when Layout view is loaded', () => {
     beforeEach(() => {

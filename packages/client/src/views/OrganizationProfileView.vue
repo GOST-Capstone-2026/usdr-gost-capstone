@@ -103,6 +103,7 @@
               <select
                 id="jurisdiction-type"
                 v-model="form.jurisdictionType"
+                :disabled="saving"
                 class="form-control"
               >
                 <option value="city">
@@ -133,6 +134,7 @@
               <input
                 id="jurisdiction-name"
                 v-model="form.jurisdictionName"
+                :disabled="saving"
                 class="form-control"
                 type="text"
                 maxlength="200"
@@ -146,6 +148,7 @@
               <input
                 id="state-code"
                 v-model="form.stateCode"
+                :disabled="saving"
                 class="form-control"
                 type="text"
                 maxlength="2"
@@ -158,6 +161,7 @@
               <input
                 id="county-name"
                 v-model="form.countyName"
+                :disabled="saving"
                 class="form-control"
                 type="text"
                 maxlength="200"
@@ -168,6 +172,7 @@
               <input
                 id="population"
                 v-model="form.population"
+                :disabled="saving"
                 class="form-control"
                 type="number"
                 min="0"
@@ -193,6 +198,7 @@
           <textarea
             id="focus-areas"
             v-model="form.focusAreasText"
+            :disabled="saving"
             class="form-control"
             rows="4"
             aria-describedby="focus-help"
@@ -221,6 +227,7 @@
               <select
                 id="staffing-level"
                 v-model="form.staffingLevel"
+                :disabled="saving"
                 class="form-control"
               >
                 <option value="limited">
@@ -239,6 +246,7 @@
               <input
                 id="staffing-fte"
                 v-model="form.fullTimeEquivalent"
+                :disabled="saving"
                 class="form-control"
                 type="number"
                 min="0"
@@ -253,6 +261,7 @@
             <textarea
               id="staffing-notes"
               v-model="form.staffingNotes"
+              :disabled="saving"
               class="form-control"
               maxlength="2000"
               rows="2"
@@ -274,6 +283,7 @@
             <input
               id="matching-available"
               v-model="form.matchingFundsAvailable"
+              :disabled="saving"
               class="form-check-input"
               type="checkbox"
             >
@@ -289,6 +299,7 @@
             <input
               id="matching-maximum"
               v-model="form.maximumAmountDollars"
+              :disabled="saving"
               class="form-control"
               type="text"
               inputmode="decimal"
@@ -300,6 +311,7 @@
             <textarea
               id="matching-notes"
               v-model="form.matchingFundsNotes"
+              :disabled="saving"
               class="form-control"
               maxlength="2000"
               rows="2"
