@@ -1058,6 +1058,154 @@ async function getSingleGrantDetails({ grantId, tenantId }) {
     return enhancedResults.length ? enhancedResults[0] : null;
 }
 
+// --- F1: Grant Analysis and Compliance Checklist (grant_documents) ---
+// See docs/g32-shared-api-contracts.md, "Grant Document Contract".
+
+async function createGrantDocument({
+    agencyId, grantId, uploadedBy, filename, mimeType, sizeBytes, sha256,
+    sourceUrl, storageBucket, storageKey, pageCount = null, pages = [], extractionQuality = 'unknown',
+}) {
+    // The document row and all of its page rows are saved together or not at all.
+    return knex.transaction(async (trx) => {
+        const [row] = await trx(TABLES.grant_documents)
+            .insert({
+                agency_id: agencyId,
+                grant_id: grantId,
+                uploaded_by: uploadedBy,
+                filename,
+                mime_type: mimeType,
+                size_bytes: sizeBytes,
+                sha256,
+                page_count: pageCount,
+                extraction_quality: extractionQuality,
+                source_url: sourceUrl || null,
+                storage_bucket: storageBucket,
+                storage_key: storageKey,
+            })
+            .returning('*');
+
+        if (pages.length > 0) {
+            await trx.batchInsert(TABLES.grant_document_pages, pages.map((page) => ({
+                document_id: row.id,
+                page_number: page.pageNumber,
+                // Postgres text columns reject NUL characters, which some PDFs contain.
+                text: page.text.replaceAll('\u0000', ''),
+                char_count: page.charCount,
+                is_low_text: Boolean(page.isLowText),
+            })), 100);
+        }
+
+        return row;
+    });
+}
+
+async function getGrantDocument({ documentId, agencyId }) {
+    const row = await knex(TABLES.grant_documents)
+        .select('*')
+        .where({ id: documentId, agency_id: agencyId })
+        .first();
+    return row;
+}
+
+// Saves what an analysis run found: the page count and quality rating on the document itself,
+// plus one row per page (AN-05/AN-06 shape). Called once processing finishes, separately from
+// createGrantDocument, since AN-08 moved processing out of the upload request (see AN-08 pull
+// request description for why: the upload/analysis-runs contract expects upload to return fast).
+async function saveDocumentAnalysisResults({
+    documentId, pageCount, pages = [], extractionQuality,
+}) {
+    return knex.transaction(async (trx) => {
+        await trx(TABLES.grant_documents)
+            .where({ id: documentId })
+            .update({ page_count: pageCount, extraction_quality: extractionQuality });
+
+        // Clear any page rows from a previous analysis run on this document (e.g. a retry after
+        // a failure), so re-running analysis replaces the old page set instead of colliding with it.
+        await trx(TABLES.grant_document_pages).where({ document_id: documentId }).del();
+
+        if (pages.length > 0) {
+            await trx.batchInsert(TABLES.grant_document_pages, pages.map((page) => ({
+                document_id: documentId,
+                page_number: page.pageNumber,
+                // Postgres text columns reject NUL characters, which some PDFs contain.
+                text: page.text.replaceAll('\u0000', ''),
+                char_count: page.charCount,
+                is_low_text: Boolean(page.isLowText),
+            })), 100);
+        }
+    });
+}
+
+async function createAnalysisRun({ documentId }) {
+    const [row] = await knex(TABLES.analysis_runs)
+        .insert({ document_id: documentId, status: 'queued' })
+        .returning('*');
+    return row;
+}
+
+// Scoped through grant_documents.agency_id, so one organization can't poll another's run by id.
+async function getAnalysisRun({ runId, agencyId }) {
+    const row = await knex(TABLES.analysis_runs)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.analysis_runs}.document_id`)
+        .where({
+            [`${TABLES.analysis_runs}.id`]: runId,
+            [`${TABLES.grant_documents}.agency_id`]: agencyId,
+        })
+        .select(`${TABLES.analysis_runs}.*`)
+        .first();
+    return row;
+}
+
+async function startAnalysisRun({ runId }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'processing', started_at: knex.fn.now() });
+}
+
+async function completeAnalysisRun({ runId, chunkCount }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'completed', completed_at: knex.fn.now(), chunk_count: chunkCount });
+}
+
+async function failAnalysisRun({ runId, errorMessage }) {
+    return knex(TABLES.analysis_runs)
+        .where({ id: runId })
+        .update({ status: 'failed', error_message: errorMessage, completed_at: knex.fn.now() });
+}
+
+// Saves one grant-brief result (AN-09 schema, docs/g32-shared-api-contracts.md "Grant Brief
+// Contract"). `brief` is shaped like grantBriefSchema.js's createEmptyBrief(), filled in or not.
+async function createGrantBrief({ documentId, runId, brief }) {
+    const [row] = await knex(TABLES.grant_briefs)
+        .insert({
+            document_id: documentId,
+            run_id: runId,
+            purpose: JSON.stringify(brief.purpose),
+            eligibility: JSON.stringify(brief.eligibility),
+            funding_range: JSON.stringify(brief.fundingRange),
+            key_dates: JSON.stringify(brief.keyDates),
+            cost_share: JSON.stringify(brief.costShare),
+            key_requirements: JSON.stringify(brief.keyRequirements),
+            not_found_fields: JSON.stringify(brief.notFoundFields),
+            verification_status: brief.verificationStatus,
+            model: brief.model,
+            prompt_version: brief.promptVersion,
+            generated_at: brief.generatedAt,
+        })
+        .returning('*');
+    return row;
+}
+
+// The newest brief for a document, if one has been generated yet.
+async function getLatestGrantBrief({ documentId }) {
+    const row = await knex(TABLES.grant_briefs)
+        .where({ document_id: documentId })
+        .orderBy('id', 'desc')
+        .first();
+    return row;
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1649,12 +1797,89 @@ async function deleteSavedSearch(searchId, userId) {
     return rowsDeleted === 1;
 }
 
+/**
+ * Returns every non-rejected deadline-bearing checklist item for one organization,
+ * including unverified and undated items, for the Portfolio and Deadline Tracker
+ * subsystem's read API (M-03). Undated items are returned even when from/through
+ * are given.
+ *
+ * Reads checklist_items_placeholder for now. When the real checklist_items table
+ * (owned by the Grant Analysis and Compliance Checklist subsystem) lands, this
+ * function is what changes — callers of getDeadlineChecklistItems() do not.
+ *
+ * @param {Object} args
+ * @param {number} args.agencyId
+ * @param {string} [args.from] - YYYY-MM-DD, inclusive lower bound on due_date
+ * @param {string} [args.through] - YYYY-MM-DD, inclusive upper bound on due_date
+ * @return {Promise<Array>}
+ */
+async function getDeadlineChecklistItems({ agencyId, from, through }) {
+    const query = knex(TABLES.checklist_items_placeholder)
+        .where('agency_id', agencyId)
+        .whereNot('verification_status', 'rejected')
+        .orderByRaw('due_date asc nulls last, id asc');
+
+    if (from || through) {
+        query.andWhere((dateScope) => {
+            dateScope.whereNull('due_date').orWhere((range) => {
+                if (from) {
+                    range.where('due_date', '>=', from);
+                }
+                if (through) {
+                    range.where('due_date', '<=', through);
+                }
+            });
+        });
+    }
+
+    return query;
+}
+
+async function updateDeadlineChecklistItem({
+    id, agencyId, dueDate, completionStatus,
+}) {
+    const updates = {
+        is_user_edited: true,
+        updated_at: new Date(),
+    };
+
+    if (dueDate !== undefined) {
+        updates.due_date = dueDate;
+        updates.verification_status = 'unverified';
+        updates.verified_by = null;
+        updates.verified_at = null;
+    }
+
+    if (completionStatus !== undefined) {
+        updates.completion_status = completionStatus;
+        updates.completed_at = completionStatus === 'completed' ? new Date() : null;
+    }
+
+    const [row] = await knex(TABLES.checklist_items_placeholder)
+        .where({ id, agency_id: agencyId })
+        .whereNot('verification_status', 'rejected')
+        .update(updates)
+        .returning('*');
+
+    return row || null;
+}
+
 function close() {
     return knex.destroy();
 }
 
 module.exports = {
     knex,
+    createGrantDocument,
+    getGrantDocument,
+    saveDocumentAnalysisResults,
+    createAnalysisRun,
+    getAnalysisRun,
+    startAnalysisRun,
+    completeAnalysisRun,
+    failAnalysisRun,
+    createGrantBrief,
+    getLatestGrantBrief,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,
@@ -1723,4 +1948,6 @@ module.exports = {
     getAllRows,
     close,
     validateSearchFilters,
+    getDeadlineChecklistItems,
+    updateDeadlineChecklistItem,
 };

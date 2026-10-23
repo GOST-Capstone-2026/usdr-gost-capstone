@@ -17,6 +17,8 @@ The preferred way to set up this repository for local development is to use the 
 
 Find instructions for using Docker-compose to do local development [here](../docker/README.md).
 
+Before starting Compose, follow the [G32 LocalStack authentication and verification guide](./localstack-setup.md). The pinned LocalStack image requires a personal authentication token, supplied through your terminal environment.
+
 ### Local
 
 - For Mac/Linux, see [here](./setup-mac.md)

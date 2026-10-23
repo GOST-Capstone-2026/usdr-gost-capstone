@@ -16,6 +16,9 @@ done
 
 awslocal s3api create-bucket --bucket arpa-audit-reports --region us-west-2 --create-bucket-configuration '{"LocationConstraint": "us-west-2"}'
 
+# F1 (Grant Analysis and Compliance Checklist) uploaded grant notice PDFs
+awslocal s3api create-bucket --bucket grant-documents --region us-west-2 --create-bucket-configuration '{"LocationConstraint": "us-west-2"}'
+
 awslocal sqs create-queue --queue-name grants-ingest-events
 awslocal sqs create-queue --queue-name arpa-queue
 awslocal sqs create-queue --queue-name full-file-export-queue
