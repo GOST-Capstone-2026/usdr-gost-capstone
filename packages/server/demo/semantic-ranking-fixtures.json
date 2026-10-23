@@ -1,0 +1,54 @@
+{
+  "scope": "Synthetic C-09 rehearsal controls; these are not real grants or a ranking-quality benchmark.",
+  "asOfDate": "2026-10-23",
+  "profile": {
+    "id": 1,
+    "organizationId": 0,
+    "version": 1,
+    "jurisdiction": { "type": "city", "name": "Synthetic City", "stateCode": "FL", "countyName": null },
+    "population": 42000,
+    "focusAreas": ["stormwater drainage and flood prevention"],
+    "staffingCapacity": { "level": "limited", "fullTimeEquivalent": 1, "notes": null },
+    "matchingFunds": { "available": false, "maximumAmountCents": null, "notes": null }
+  },
+  "grants": [
+    {
+      "grant_id": 930001, "revision_id": 1,
+      "title": "Municipal Flood Mitigation",
+      "description": "Upgrade culverts and drainage pipes to reduce neighborhood flooding and improve stormwater infrastructure.",
+      "opportunity_status": "posted", "close_date": "2026-11-30", "eligibility_codes": "02", "cost_sharing": "No"
+    },
+    {
+      "grant_id": 930002, "revision_id": 1,
+      "title": "Library Collection Preservation",
+      "description": "Preserve rare books, catalog historical manuscripts, and improve archival storage for public libraries.",
+      "opportunity_status": "posted", "close_date": "2026-11-30", "eligibility_codes": "02", "cost_sharing": "No"
+    },
+    {
+      "grant_id": 930003, "revision_id": 1,
+      "title": "Roadway Runoff Management",
+      "description": "Green infrastructure captures rainfall and manages surface water to prevent inundation of local streets.",
+      "opportunity_status": "posted", "close_date": "2026-11-30", "eligibility_codes": "99", "cost_sharing": "No"
+    },
+    {
+      "grant_id": 930004, "revision_id": 1,
+      "title": "Closed Stormwater Drainage Program",
+      "description": "Stormwater drainage and flood prevention projects for city governments.",
+      "opportunity_status": "closed", "close_date": "2026-11-30", "eligibility_codes": "02", "cost_sharing": "No"
+    },
+    {
+      "grant_id": 930005, "revision_id": 1,
+      "title": "Flood Prevention With Required Matching Funds",
+      "description": "Stormwater drainage and flood prevention projects for city governments.",
+      "opportunity_status": "posted", "close_date": "2026-11-30", "eligibility_codes": "02", "cost_sharing": "Yes"
+    },
+    {
+      "grant_id": 930006, "revision_id": 1, "title": "", "description": "",
+      "opportunity_status": "posted", "close_date": "2026-11-30", "eligibility_codes": "02", "cost_sharing": "No"
+    }
+  ],
+  "relevantGrantIds": [930001, 930003],
+  "unrelatedGrantId": 930002,
+  "blockedGrantIds": [930004, 930005],
+  "missingTextGrantId": 930006
+}
