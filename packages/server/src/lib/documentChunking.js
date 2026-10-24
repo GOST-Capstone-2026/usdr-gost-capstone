@@ -38,7 +38,8 @@ function splitOversizedPage(page, maxChunkChars) {
 /**
  * @param {Array<{pageNumber: number, text: string, charCount: number}>} pages from extractPages()
  * @param {number} [maxChunkChars] override for testing
- * @returns {Array<{chunkIndex: number, startPage: number, endPage: number, charCount: number, text: string}>}
+ * @returns {Array<{chunkIndex: number, startPage: number, endPage: number, charCount: number, text: string,
+ *            pages: Array<{pageNumber: number, text: string}>}>}
  */
 function chunkPages(pages, maxChunkChars = MAX_CHUNK_CHARS) {
     // Normalize first, so an oversized page becomes several same-page pieces before chunking.
@@ -58,6 +59,10 @@ function chunkPages(pages, maxChunkChars = MAX_CHUNK_CHARS) {
             endPage: current[current.length - 1].pageNumber,
             charCount: currentChars,
             text: current.map((p) => p.text).join('\n\n'),
+            // Kept alongside the joined text above (AN-10) so a fact the AI finds inside a
+            // multi-page chunk can still be cited to its one exact source page, not just the
+            // chunk's whole page range.
+            pages: current.map((p) => ({ pageNumber: p.pageNumber, text: p.text })),
         });
         current = [];
         currentChars = 0;
