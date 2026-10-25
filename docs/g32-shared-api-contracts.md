@@ -377,6 +377,31 @@ Blocker shape:
 }
 ```
 
+### C-10 source-linked match explanation extension
+
+`rankAndExplainGrantRows` adds a deterministic explanation layer to the C-09 service. It preserves existing ranks, scores, score factors, dispositions, blockers, uncertainties, model metadata and input hashes. The existing `explanation` string becomes a readable source-linked summary. No new HTTP route, database table or browser page is implemented by C-10.
+
+Each result additionally includes `explanationDetails`:
+
+| Field | Meaning |
+| --- | --- |
+| `version` | `grounded-match-v1` |
+| `method` | `extractive-template`; not generative AI prose |
+| `model` | `null` for explanation generation; the existing result `model` still identifies the embedding ranker |
+| `verificationStatus` | Always `unverified`; citation presence or a high score never constitutes human verification |
+| `provenance` | Ranking input hash, profile ID/version, organization ID, grant ID/revision, normalized source-text hash, and screening date |
+| `claims` | Objects with `code`, `text`, and nonempty `evidenceIds` resolving within this result |
+| `evidence` | Tagged `profileField`, `rankingResult`, `screeningAndReviewResult`, and `listingText` records |
+| `limitations` | Required interpretation limits, including incomplete geographic screening and unavailable source identity |
+
+`listingText` evidence records the actual raw-source or legacy field path, normalized field name, grant ID/revision, `normalizationVersion`, `sourceTextHash`, exact `excerpt`, `startOffset`, `endOffset`, and `truncated`. Offsets are zero-based UTF-16 indices with an exclusive end into that **normalized listing field**, not the raw HTML or a PDF page. Excerpts contain at most 240 UTF-16 code units and are contiguous source slices. Lexical overlap only selects display context; it does not attribute a cosine score to individual words. Missing text has no fabricated excerpt.
+
+This listing evidence is distinct from document `sources` in the Source Traceability Contract. It must not be presented as a verified document/page citation. No document IDs, page numbers or URLs are guessed. A future document-backed explanation must use actual authorized document evidence rather than attaching invented pages to these records.
+
+Run metadata additionally includes `explanationVersion`, `explanationMethod` and a canonical SHA-256 `explanationHash` over the ranking input identity and explanation details. The C-09 `inputHash` and `methodVersion` remain unchanged. The service snapshots inputs before inference so later caller changes cannot alter its evidence.
+
+Consumers must display warnings and the unverified state, use text rendering rather than raw HTML, and never label the score as eligibility, confidence or funding probability. Blocked results remain visible and unranked. A score of zero is a genuine relevance score, not missing data. Missing profile IDs/revisions stay null with limitations. The authorized server caller still owns tenant/organization authorization, persistence and controlled HTTP errors; this pure service is not an authorization boundary. `INVALID_EXPLANATION_INPUT` indicates uncloneable internal input and must be mapped to a safe validation envelope by any future route. Existing C-09 validation/provider errors propagate without fabricated successful output.
+
 ## Grant Document Contract
 
 ### Endpoints
