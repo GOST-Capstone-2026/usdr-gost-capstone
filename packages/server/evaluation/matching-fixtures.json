@@ -1,0 +1,1794 @@
+{
+  "fixtureVersion": "matching-eval-v1",
+  "about": "reviewed evaluation set for eligibility blockers and semantic ranking (A-11). real grants.gov listings from seeds/demo/opportunities.json, synthetic local-government profiles. labels follow docs/g32-a11-a12-matching-evaluation.md.",
+  "grantSource": "seeds/demo/opportunities.json",
+  "labelScale": {
+    "relevance": {
+      "0": "not relevant to any focus area",
+      "1": "partly relevant",
+      "2": "directly relevant"
+    }
+  },
+  "profiles": {
+    "fl-city-flood": {
+      "id": 1,
+      "organizationId": 0,
+      "version": 1,
+      "jurisdiction": {
+        "type": "city",
+        "name": "Synthetic Coastal City",
+        "stateCode": "FL",
+        "countyName": null
+      },
+      "population": 42000,
+      "focusAreas": [
+        "flood mitigation",
+        "stormwater infrastructure",
+        "disaster preparedness"
+      ],
+      "staffingCapacity": {
+        "level": "limited",
+        "fullTimeEquivalent": 1.5,
+        "notes": null
+      },
+      "matchingFunds": {
+        "available": true,
+        "maximumAmountCents": null,
+        "notes": null
+      }
+    },
+    "mi-county-forest": {
+      "id": 2,
+      "organizationId": 0,
+      "version": 1,
+      "jurisdiction": {
+        "type": "county",
+        "name": "Synthetic Lakeshore County",
+        "stateCode": "MI",
+        "countyName": "Synthetic Lakeshore County"
+      },
+      "population": 65000,
+      "focusAreas": [
+        "forest land conservation",
+        "parks and open space",
+        "wildlife habitat protection"
+      ],
+      "staffingCapacity": {
+        "level": "moderate",
+        "fullTimeEquivalent": 3,
+        "notes": null
+      },
+      "matchingFunds": {
+        "available": true,
+        "maximumAmountCents": 50000000,
+        "notes": null
+      }
+    },
+    "tx-city-justice": {
+      "id": 3,
+      "organizationId": 0,
+      "version": 1,
+      "jurisdiction": {
+        "type": "city",
+        "name": "Synthetic River City",
+        "stateCode": "TX",
+        "countyName": null
+      },
+      "population": 120000,
+      "focusAreas": [
+        "criminal justice and recidivism reduction",
+        "public safety",
+        "juvenile justice"
+      ],
+      "staffingCapacity": {
+        "level": "moderate",
+        "fullTimeEquivalent": 4,
+        "notes": null
+      },
+      "matchingFunds": {
+        "available": false,
+        "maximumAmountCents": null,
+        "notes": null
+      }
+    },
+    "wa-transport-district": {
+      "id": 4,
+      "organizationId": 0,
+      "version": 1,
+      "jurisdiction": {
+        "type": "specialDistrict",
+        "name": "Synthetic Regional Transportation District",
+        "stateCode": "WA",
+        "countyName": null
+      },
+      "population": 300000,
+      "focusAreas": [
+        "transportation safety",
+        "highway infrastructure"
+      ],
+      "staffingCapacity": {
+        "level": "substantial",
+        "fullTimeEquivalent": 12,
+        "notes": null
+      },
+      "matchingFunds": {
+        "available": true,
+        "maximumAmountCents": null,
+        "notes": null
+      }
+    },
+    "ak-tribe-marine": {
+      "id": 5,
+      "organizationId": 0,
+      "version": 1,
+      "jurisdiction": {
+        "type": "tribalGovernment",
+        "name": "Synthetic Native Village",
+        "stateCode": "AK",
+        "countyName": null
+      },
+      "population": 900,
+      "focusAreas": [
+        "fisheries and seafood workforce training",
+        "marine education"
+      ],
+      "staffingCapacity": {
+        "level": "limited",
+        "fullTimeEquivalent": 1,
+        "notes": null
+      },
+      "matchingFunds": {
+        "available": false,
+        "maximumAmountCents": null,
+        "notes": null
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "main",
+      "asOfDate": "2026-10-20",
+      "evaluateRanking": true,
+      "about": "every demo grant is open; all five profiles"
+    },
+    {
+      "id": "after-nov-deadlines",
+      "asOfDate": "2026-11-18",
+      "evaluateRanking": false,
+      "about": "two grants closed on 2026-11-16; checks deadline and closed blockers on real dates"
+    },
+    {
+      "id": "after-archive",
+      "asOfDate": "2026-12-20",
+      "evaluateRanking": false,
+      "about": "most grants closed or archived; checks closed blockers together with applicant blockers"
+    }
+  ],
+  "cases": [
+    {
+      "id": "main/fl-city-flood/364009",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "city (02) is listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. wildlife crossings, not flooding.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/364037",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "city (02) is listed but applicant list includes 25 Others, so the notice text has to be checked. justice program, not flooding.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/364035",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "eligible",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 1
+      },
+      "rationale": "city (02) listed, no cost share, plain deadline. emergency planning overlaps disaster preparedness a little.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/363696",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "city listed with 25 Others; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. general national service.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/361418",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "city (02) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. closing time note. notice limits land to the Lake Superior Basin of MI and WI.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/362034",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/363856",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "only applicant code is 00 State governments. a city cannot apply.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/363151",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. local governments usually apply through the state for FMA, so review is right, not a block. flood mitigation is the core focus.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/355417",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/363815",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "city (02) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. chemical technology.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/fl-city-flood/364026",
+      "scenario": "main",
+      "profile": "fl-city-flood",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "city (02) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. nuclear fuel research.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/364009",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 1
+      },
+      "rationale": "county (01) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. habitat connectivity is part of the program.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/364037",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/364035",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "eligible",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "county (01) listed, no cost share, plain deadline. not a conservation program.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/363696",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/361418",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "county (01) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. forest land acquisition is the core focus.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/362034",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/363856",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED"
+        ],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "only applicant code is 00 State governments. highly relevant habitat land acquisition, so a good check that a relevant but blocked grant stays unranked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/363151",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/355417",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/363815",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "county listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/mi-county-forest/364026",
+      "scenario": "main",
+      "profile": "mi-county-forest",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "county listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/364009",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and the profile has no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/364037",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. no cost share. recidivism reduction is the core focus.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/364035",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "eligible",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "city (02) listed, no cost share, plain deadline. juvenile justice facilities.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/363696",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/361418",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds. notice limits land to the Lake Superior Basin of MI and WI.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/362034",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/363856",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED",
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "only applicant code is 00 State governments. also cost share with no funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/363151",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/355417",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ],
+        "relevance": 1
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": true,
+        "notes": "changed relevance 0 -> 1: workplace safety research deals with public safety, so partly related"
+      }
+    },
+    {
+      "id": "main/tx-city-justice/363815",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/tx-city-justice/364026",
+      "scenario": "main",
+      "profile": "tx-city-justice",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/364009",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "special district (04) listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. roadway safety for the traveling public.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/364037",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/364035",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "eligible",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "special district (04) listed, no cost share, plain deadline.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/363696",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/361418",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED"
+        ],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicants are 01, 12, 07, 02 with no Others, so a special district is excluded. notice limits land to the Lake Superior Basin of MI and WI.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/362034",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/363856",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "only applicant code is 00 State governments.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/363151",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/355417",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/363815",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "special district listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. mentions road waste but is chemical technology.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/wa-transport-district/364026",
+      "scenario": "main",
+      "profile": "wa-transport-district",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "special district listed; cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/364009",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/364037",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. tribal recognition also needs confirming.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/364035",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "code 07 is listed but the profile does not say the tribe is federally recognized, so review.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/363696",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/361418",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [
+          "GEOGRAPHY"
+        ],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds. notice limits land to the Lake Superior Basin of MI and WI.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/362034",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [],
+        "relevance": 2
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. alaska marine workforce and education is the core focus.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/363856",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED",
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "only applicant code is 00 State governments. a tribe is not a state, and cost share with no funds. the screener has no rule to exclude tribes, so it should miss the applicant blocker.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/363151",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/355417",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ],
+        "relevance": 0
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/363815",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "main/ak-tribe-marine/364026",
+      "scenario": "main",
+      "profile": "ak-tribe-marine",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "MATCHING_FUNDS_UNAVAILABLE"
+        ],
+        "notModeled": [],
+        "relevance": 0
+      },
+      "rationale": "cost share required and no matching funds.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/364009",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed on 2026-11-16, before the screening date.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/364037",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "still open until 2026-11-20. applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/364035",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed on 2026-11-16, before the screening date.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/363696",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "open until 2027. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/361418",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ]
+      },
+      "rationale": "open until 2026-12-08. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking. notice limits land to the Lake Superior Basin of MI and WI.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/362034",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ]
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/363856",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "still open until 2026-11-20, but only applicant code is 00 State governments.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/363151",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/355417",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ]
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/363815",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "open until 2026-12-01. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-nov-deadlines/fl-city-flood/364026",
+      "scenario": "after-nov-deadlines",
+      "profile": "fl-city-flood",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "open until 2026-12-07. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/364009",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "364009",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-11-16 and archived 2026-12-16.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/364037",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "364037",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-11-20.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/364035",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "364035",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-11-16.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/363696",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "363696",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "open until 2027-01-13. applicant list includes 25 Others, so the notice text has to be checked. cost share is required and the profile has funds but no confirmed amount, so the amount needs checking.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/361418",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "361418",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED",
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": [
+          "GEOGRAPHY"
+        ]
+      },
+      "rationale": "closed 2026-12-08, and special districts are not listed.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/362034",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "362034",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "GEOGRAPHY"
+        ]
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. program is for the marine community in Alaska.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/363856",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "363856",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "APPLICANT_TYPE_UNSUPPORTED",
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-11-20 and archived 2026-11-27. only applicant code is 00 State governments.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/363151",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "363151",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": []
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/355417",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "355417",
+      "expected": {
+        "disposition": "reviewRequired",
+        "blockers": [],
+        "notModeled": [
+          "APPLICANT_TYPE_IN_NOTICE_TEXT"
+        ]
+      },
+      "rationale": "applicant list includes 25 Others, so the notice text has to be checked. description says ERCs are academic institutions, so a local government is unlikely to qualify.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/363815",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "363815",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-12-01.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    },
+    {
+      "id": "after-archive/wa-transport-district/364026",
+      "scenario": "after-archive",
+      "profile": "wa-transport-district",
+      "grantId": "364026",
+      "expected": {
+        "disposition": "blocked",
+        "blockers": [
+          "DEADLINE_PASSED",
+          "OPPORTUNITY_CLOSED"
+        ],
+        "notModeled": []
+      },
+      "rationale": "closed 2026-12-07.",
+      "review": {
+        "status": "reviewed",
+        "reviewer": "Allison Cerna",
+        "reviewedOn": "2026-10-24",
+        "changed": false,
+        "notes": null
+      }
+    }
+  ]
+}
