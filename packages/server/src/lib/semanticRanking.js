@@ -4,7 +4,7 @@ const { screenGrantRow } = require('./grantsEligibilityAdapter');
 const { isCalendarDate } = require('./eligibilityBlockers');
 const manifest = require('./semanticModelManifest.json');
 
-const METHOD_VERSION = 'matcher-minilm-v1';
+const METHOD_VERSION = 'matcher-minilm-v2';
 const TEXT_VERSION = 'focus-title-description-v1';
 function canonical(value) {
     if (Array.isArray(value)) return value.map(canonical);
@@ -15,6 +15,12 @@ function canonical(value) {
 }
 const digest = (value) => createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
 const inputError = (code, message) => Object.assign(new Error(message), { code });
+
+function normalizeGrantId(value) {
+    // PostgreSQL/ingest IDs may be decimal text. Never coerce null, booleans, fractions, or unsafe integers.
+    const normalized = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value.trim()) : value;
+    return Number.isSafeInteger(normalized) && normalized >= 0 ? normalized : null;
+}
 
 function plainText(value) {
     if (typeof value !== 'string') return '';
@@ -72,10 +78,11 @@ async function rankGrantRows(profile, rows, { asOfDate, expectedProfileVersion, 
     }
     if (!Array.isArray(rows) || rows.length > 250
         || rows.some((row) => !row || typeof row !== 'object' || Array.isArray(row)
-            || !Number.isSafeInteger(row.grant_id) || row.grant_id < 0)) {
-        throw inputError('INVALID_CANDIDATES', 'Supply at most 250 stored grant rows with nonnegative integer IDs.');
+            || normalizeGrantId(row.grant_id) === null)) {
+        throw inputError('INVALID_CANDIDATES', 'Supply at most 250 stored grant rows with nonnegative safe integer or decimal-text IDs.');
     }
-    if (new Set(rows.map((row) => row.grant_id)).size !== rows.length) {
+    const normalizedRows = rows.map((row) => ({ ...row, grant_id: normalizeGrantId(row.grant_id) }));
+    if (new Set(normalizedRows.map((row) => row.grant_id)).size !== rows.length) {
         throw inputError('DUPLICATE_CANDIDATE', 'Each candidate grant ID must identify exactly one source revision.');
     }
     if (!embedder || typeof embedder.embed !== 'function' || !embedder.manifest
@@ -83,7 +90,7 @@ async function rankGrantRows(profile, rows, { asOfDate, expectedProfileVersion, 
         throw inputError('MODEL_RUNTIME_MISMATCH', 'Use the pinned local model manifest; do not mix models or revisions.');
     }
     // Clone caller-owned inputs before the first await so later UI/caller changes cannot alter an active run.
-    const snapshots = JSON.parse(JSON.stringify(rows)).sort((a, b) => a.grant_id - b.grant_id);
+    const snapshots = JSON.parse(JSON.stringify(normalizedRows)).sort((a, b) => a.grant_id - b.grant_id);
     const storedProfile = JSON.parse(JSON.stringify({
         ...body, version: profile.version, id: profile.id ?? null, organizationId: profile.organizationId ?? null,
     }));
