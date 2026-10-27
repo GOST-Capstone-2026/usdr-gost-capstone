@@ -1,5 +1,5 @@
 // Deterministic screening only. A passing screen is not a funding-agency eligibility decision.
-const METHOD_VERSION = 'eligibility-v1';
+const METHOD_VERSION = 'eligibility-v2';
 const JURISDICTION_CODES = {
     city: '02', town: '02', village: '02', county: '01', specialDistrict: '04',
 };
@@ -11,6 +11,21 @@ function isCalendarDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const parsed = new Date(`${value}T00:00:00.000Z`);
     return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+// Conservative notice-review triggers, not a geographic parser or evidence for a hard exclusion.
+// A matching home state does not prove that the proposed project is in the required service area.
+function needsGeographicReview(value) {
+    if (typeof value !== 'string') return false;
+    const text = value.normalize('NFKC').replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/\s+/g, ' ');
+    return [
+        /\bgeograph(?:ic|ical)(?:ally)?\s+(?:eligib\w*|restrict\w*|limit\w*|scope|areas?)\b/i,
+        /\b(?:projects?|activities|work|services?|applicants?|entities|organizations?)\s+(?:must|shall)\s+(?:be\s+)?(?:conducted|located|performed|implemented|carried out|provided|based)\s+(?:only\s+)?(?:in|within)\b/i,
+        /\b(?:in|within)\s+(?:portions?\s+of\s+)?(?:the\s+)?[^.!?]{0,100}\b(?:basin|watershed|count(?:y|ies)|reservation|region|service area)\b/i,
+        /\b(?:limited|restricted)\s+to\b/i,
+        /\b(?:only|exclusively)\s+(?:applicants?|entities|organizations?|projects?|residents?)\s+(?:(?:located|based)\s+)?(?:in|within|from)\b/i,
+        /\b(?:eligible|eligibility|geographic)\s+(?:areas?|locations?|regions?|states?|territories)\b/i,
+    ].some((pattern) => pattern.test(text));
 }
 
 function screenEligibility(profile, opportunity, { asOfDate } = {}) {
@@ -43,7 +58,9 @@ function screenEligibility(profile, opportunity, { asOfDate } = {}) {
     } else if (opportunity.closeDate < asOfDate) {
         block('DEADLINE_PASSED', `The closing date ${opportunity.closeDate} is before ${asOfDate}.`, null, 'closeDate');
     }
-    if (typeof opportunity.closeDateExplanation === 'string' && opportunity.closeDateExplanation.trim()) {
+    // Grants.gov uses this exact placeholder when there are no additional deadline instructions.
+    const deadlineNotes = typeof opportunity.closeDateExplanation === 'string' ? opportunity.closeDateExplanation.trim() : '';
+    if (deadlineNotes && deadlineNotes.toLowerCase() !== 'no explanation') {
         uncertainties.push('The closing date has additional instructions; verify the stated time and any exceptions in the notice.');
     }
 
@@ -59,24 +76,37 @@ function screenEligibility(profile, opportunity, { asOfDate } = {}) {
         uncertainties.push('The applicant categories include Others or Unrestricted; review additional eligibility qualifications in the notice.');
     } else if (codes.some((code) => !KNOWN_CODES.has(code))) {
         uncertainties.push('An applicant eligibility code is unsupported; review the notice before excluding this organization.');
+    } else if (!hasAdditionalEligibility && (
+        (jurisdiction === 'tribalGovernment' && !codes.some((code) => ['07', '08', '11'].includes(code)))
+        || (jurisdictionCode && !codes.includes(jurisdictionCode))
+    )) {
+        block(
+            'APPLICANT_TYPE_UNSUPPORTED',
+            `The listed applicant categories do not include the profile's ${jurisdiction} government type.`,
+            'jurisdiction.type',
+            'eligibilityCodes',
+        );
     } else if (!jurisdictionCode) {
         uncertainties.push(jurisdiction === 'tribalGovernment'
             ? 'The profile does not specify tribal recognition; verify the applicable tribal applicant category.'
             : 'This jurisdiction type cannot be mapped to a definite applicant category; review the notice.');
-    } else if (!codes.includes(jurisdictionCode) && !hasAdditionalEligibility) {
-        block('APPLICANT_TYPE_UNSUPPORTED',
-            `The listed applicant categories do not include the profile's ${jurisdiction} government type.`,
-            'jurisdiction.type', 'eligibilityCodes');
     }
     if (hasAdditionalEligibility) {
         uncertainties.push('Additional applicant eligibility conditions require review of the notice.');
+    }
+    if ([opportunity.noticeText, opportunity.additionalEligibilityInformation].some(needsGeographicReview)) {
+        uncertainties.push('The listing may contain geographic or program-specific limits; geographic eligibility is unverified. Review the full notice and project location.');
     }
 
     if (opportunity.costShareRequired === true) {
         const funds = profile.matchingFunds || {};
         if (funds.available === false) {
-            block('MATCHING_FUNDS_UNAVAILABLE', 'The opportunity requires cost sharing, but the profile reports no matching funds available.',
-                'matchingFunds.available', 'costShareRequired');
+            block(
+                'MATCHING_FUNDS_UNAVAILABLE',
+                'The opportunity requires cost sharing, but the profile reports no matching funds available.',
+                'matchingFunds.available',
+                'costShareRequired',
+            );
         } else if (funds.available !== true) {
             uncertainties.push('The opportunity requires cost sharing, but the profile does not confirm matching funds availability.');
         } else {
@@ -88,8 +118,12 @@ function screenEligibility(profile, opportunity, { asOfDate } = {}) {
             } else if (!Number.isSafeInteger(available) || available < 0) {
                 uncertainties.push('The available matching-fund limit is unavailable; compare it with the stated requirement.');
             } else if (available < required) {
-                block('MATCHING_FUNDS_INSUFFICIENT', 'The stated minimum matching funds exceed the maximum available in the profile.',
-                    'matchingFunds.maximumAmountCents', 'minimumMatchingFundsCents');
+                block(
+                    'MATCHING_FUNDS_INSUFFICIENT',
+                    'The stated minimum matching funds exceed the maximum available in the profile.',
+                    'matchingFunds.maximumAmountCents',
+                    'minimumMatchingFundsCents',
+                );
             }
         }
     } else if (opportunity.costShareRequired !== false) {
