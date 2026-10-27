@@ -19,6 +19,15 @@ function configureApiRoutes(app) {
     app.use('/api/organizations/:organizationId/tenants', require('./routes/tenants'));
     app.use('/api/organizations/:organizationId/grants', require('./routes/grants'));
     app.use('/api/organizations/:organizationId/compliance/profile', require('./routes/complianceProfile'));
+    const { knex, getUser } = require('./db');
+    const matchRepository = require('./db/grantMatchRuns').createMatchRunRepository(knex);
+    const runMatching = require('./lib/matchRuns').createMatchRunner({
+        repository: matchRepository,
+        createEmbedder: require('./lib/localSemanticEmbedding').createLocalEmbedder,
+    });
+    app.use('/api/organizations/:organizationId/compliance/match-runs', require('./routes/complianceMatches').createMatchRunsRouter({
+        getUser, repository: matchRepository, runMatching, enabled: require('./lib/complianceConfig').matchingEnabled,
+    }));
     app.use('/api/organizations/:organizationId/compliance', require('./routes/compliance'));
     app.use('/api/organizations/:organizationId/grants-saved-search', require('./routes/grantsSavedSearch'));
     app.use('/api/organizations/:organizationId/eligibility-codes', require('./routes/eligibilityCodes'));
@@ -35,10 +44,10 @@ function configureApp(app, options = {}) {
     app.use(cookieParser(process.env.COOKIE_SECRET));
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
-    // Body parsing runs before routers, so handle malformed compliance-profile JSON here.
+    // Body parsing runs before routers, so handle malformed profile/matching JSON here.
     // eslint-disable-next-line no-unused-vars
     app.use((err, req, res, next) => {
-        if (!/^\/api\/organizations\/[^/]+\/compliance\/profile\/?$/.test(req.path)) return next(err);
+        if (!/^\/api\/organizations\/[^/]+\/compliance\/(?:profile|match-runs)\/?$/.test(req.path)) return next(err);
         const tooLarge = err.status === 413;
         return res.status(tooLarge ? 413 : 400).json({
             error: {
@@ -63,7 +72,7 @@ function configureApp(app, options = {}) {
         etag: true,
         lastModified: true,
         setHeaders: (res, path) => {
-            const hashRegExp = new RegExp('\\.[0-9a-f]{8}\\.');
+            const hashRegExp = /\.[0-9a-f]{8}\./;
 
             if (path.endsWith('.html')) {
                 // All of the project's HTML files end in .html

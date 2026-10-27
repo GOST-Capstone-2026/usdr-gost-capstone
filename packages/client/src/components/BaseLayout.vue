@@ -135,6 +135,13 @@
           My Grants
         </b-nav-item>
         <b-nav-item
+          v-if="canSeeGrantMatches"
+          to="/compliance/matches"
+          active-class="active"
+        >
+          Grant Matches
+        </b-nav-item>
+        <b-nav-item
           to="/dashboard"
           active-class="active"
         >
@@ -200,6 +207,7 @@ import {
 import AlertBox from '@/arpa_reporter/components/AlertBox.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
 import logo from '@/assets/usdr_logo_standard_wide.svg';
+import { grantMatchingEnabled } from '@/helpers/featureFlags/matching';
 
 export default {
   name: 'BaseLayout',
@@ -223,6 +231,9 @@ export default {
     }),
     canSeeOrganizationsTab() {
       return this.loggedInUser && this.loggedInUser.isUSDRSuperAdmin;
+    },
+    canSeeGrantMatches() {
+      return this.loggedInUser && ['admin', 'staff'].includes(this.userRole) && grantMatchingEnabled();
     },
     newTerminologyEnabled() {
       return newTerminologyEnabled();
