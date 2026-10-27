@@ -3,4 +3,8 @@ function profileEnabled() {
         && process.env.ENABLE_ORGANIZATION_PROFILES === 'true';
 }
 
-module.exports = { profileEnabled };
+function matchingEnabled() {
+    return profileEnabled() && process.env.ENABLE_GRANT_MATCHING === 'true';
+}
+
+module.exports = { profileEnabled, matchingEnabled };

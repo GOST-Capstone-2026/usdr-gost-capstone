@@ -402,6 +402,24 @@ Run metadata additionally includes `explanationVersion`, `explanationMethod` and
 
 Consumers must display warnings and the unverified state, use text rendering rather than raw HTML, and never label the score as eligibility, confidence or funding probability. Blocked results remain visible and unranked. A score of zero is a genuine relevance score, not missing data. Missing profile IDs/revisions stay null with limitations. The authorized server caller still owns tenant/organization authorization, persistence and controlled HTTP errors; this pure service is not an authorization boundary. `INVALID_EXPLANATION_INPUT` indicates uncloneable internal input and must be mapped to a safe validation envelope by any future route. Existing C-09 validation/provider errors propagate without fabricated successful output.
 
+### C-11 bounded saved match-run implementation
+
+The C-11 local baseline implements the matching `POST /api/organizations/:organizationId/compliance/match-runs` and organization-scoped `GET .../match-runs/:runId`. The start call is **synchronous and bounded**, returning **201** only after the completed calculation has been saved. It does not return a fictitious queued job, require a new worker, or implement asynchronous resume/retry lineage. A failed request returns the controlled error envelope without creating a successful run; prior runs are preserved. The general 202/polling contract remains for actual asynchronous operations, not this bounded implementation.
+
+Requests contain only `profileId`, `profileVersion`, optional numeric `candidateGrantIds`, and optional `limit`. The default candidate limit is 25, with a maximum of 50 for this HTTP baseline. Explicit IDs must be unique nonnegative safe integers and fit within the limit. Unknown fields, including browser-authored profiles, grant rows, ownership, dates, scores, and verification values, are rejected. The server loads the authenticated organization-owned saved profile and public stored grant fields, and rejects a stale profile version both before inference and transactionally before saving.
+
+When IDs are omitted, the repository selects a bounded sample of stored posted/forecasted opportunities ordered by stored grant ID (text ordering). This is not exhaustive retrieval or a global ranking of every opportunity. All selected candidates, including blocked/unranked results, remain in the response. `result.candidateSelection` contains `strategy`, `limit`, `totalAvailable`, `selectedCount`, and `limited`; its scope must be visible in the interface. Input/explanation hashes still identify the actual C-09/C-10 calculation, not an unperformed exhaustive search.
+
+The response is `{ run, links: { self } }`. `run` includes server-assigned ID, organization/profile identity and version, `kind: grantMatching`, `subjectType: organizationProfile`, `subjectId`, status, progress, timestamps, actor, method/model metadata, `attempt: 1`, `parentRunId: null`, `error: null`, and the complete unchanged C-10 result under **`run.result`**. `progressPercent` is 100 because the request has finished. Nonempty output is `reviewRequired` because its explanations are unverified; an empty completed calculation may be `completed`. Processing completion is never human verification or an eligibility certification. There is no human-verification mutation endpoint in C-11.
+
+`grant_match_runs` stores organization/tenant ownership, profile version, actor/time metadata, the actual input snapshot, and the versioned result JSON. Raw input snapshots are not returned to the browser. Reads and writes are scoped by both tenant and organization. Historical source edits do not silently replace a saved result. Organization/profile deletion may cascade its runs under the migration's foreign keys; this is not an independent archival retention system.
+
+Both endpoints require an authenticated admin/staff account, agency ownership within the user's tenant, and all three flags: `ENABLE_GRANT_COMPLIANCE`, `ENABLE_ORGANIZATION_PROFILES`, and `ENABLE_GRANT_MATCHING`. Staff are restricted to their own agency. The browser uses literal-true `grantComplianceEnabled`, `organizationProfilesEnabled`, and `grantMatchingEnabled`. All default off when absent; the matching client flag is explicitly false in local deployment configuration. Server authorization remains mandatory even when browser flags are bypassed.
+
+Model assets must already be pinned/checksummed and cached; HTTP requests never download them or invoke a text-generation provider. Only one matcher request is active per configured API process; overlapping work receives `429 MATCHING_BUSY`. Missing model assets/runtime or unapplied storage migrations return controlled errors. There is no distributed worker, cluster-wide concurrency guarantee, or cloud deployment claim in this local baseline. Screening dates are server-derived in `America/New_York`, not supplied by the browser.
+
+The page at `/compliance/matches` loads the current saved profile, starts matches explicitly, and can reopen a saved run using `?runId=...`. It ignores late responses after organization/route changes and hides runs with obsolete profile versions. It builds its own same-organization API URLs instead of following untrusted response links. Refresh/reload the profile to detect edits made elsewhere; a displayed historical snapshot is not a live eligibility certificate.
+
 ## Grant Document Contract
 
 ### Endpoints
@@ -726,7 +744,7 @@ The adapter returns parsed structured data plus provider metadata. A domain serv
 | API resource | Proposed PostgreSQL structure | Primary ownership |
 | --- | --- | --- |
 | Profile | `organization_profiles` | Connor with Allison repository support |
-| Match result | `grant_match_results` | Connor with Allison evaluation support |
+| Match result | `grant_match_runs` with saved input snapshots and versioned result JSON | Connor with Allison evaluation support |
 | Uploaded notice | `grant_documents` | Anthony with Allison persistence support |
 | Processing run | `ai_processing_runs` | Allison with all subsystem owners |
 | Grant brief | `grant_briefs` or a versioned structured result linked to `grant_documents` | Anthony |
