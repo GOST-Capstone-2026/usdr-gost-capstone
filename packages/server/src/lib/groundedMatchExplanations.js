@@ -89,9 +89,11 @@ function explainResult(profile, row, result, run) {
             model: result.model,
             inputHash: run.inputHash,
         });
-        claim('RELEVANCE_METHOD',
+        claim(
+            'RELEVANCE_METHOD',
             `Semantic relevance score ${result.score.toFixed(6)} compares profile focus areas with available listing title/description. This is not an eligibility decision or funding probability.`,
-            ['ranking', 'profile-focus', ...['title', 'description'].filter((field) => source[field]).map((field) => `listing-${field}`)]);
+            ['ranking', 'profile-focus', ...['title', 'description'].filter((field) => source[field]).map((field) => `listing-${field}`)],
+        );
     }
     claim('PROFILE_FOCUS', `Profile focus areas: ${JSON.stringify(focusAreas)}.`, ['profile-focus']);
 
@@ -113,8 +115,11 @@ function explainResult(profile, row, result, run) {
         };
         evidence.push(item);
         const punctuation = /[.!?]$/.test(item.excerpt) ? '' : '.';
-        claim(field === 'title' ? 'LISTING_TITLE' : 'LISTING_EXCERPT',
-            `Listing ${field}${item.truncated ? ' excerpt (partial)' : ''}: ${JSON.stringify(item.excerpt)}${punctuation}`, [id]);
+        claim(
+            field === 'title' ? 'LISTING_TITLE' : 'LISTING_EXCERPT',
+            `Listing ${field}${item.truncated ? ' excerpt (partial)' : ''}: ${JSON.stringify(item.excerpt)}${punctuation}`,
+            [id],
+        );
     });
     if (result.disposition !== 'blocked') {
         claim('SCREENING_SCOPE', 'The implemented checks found no hard blocker. This does not certify full notice eligibility.', ['screening']);
