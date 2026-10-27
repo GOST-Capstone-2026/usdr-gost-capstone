@@ -58,7 +58,9 @@ function screenEligibility(profile, opportunity, { asOfDate } = {}) {
     } else if (opportunity.closeDate < asOfDate) {
         block('DEADLINE_PASSED', `The closing date ${opportunity.closeDate} is before ${asOfDate}.`, null, 'closeDate');
     }
-    if (typeof opportunity.closeDateExplanation === 'string' && opportunity.closeDateExplanation.trim()) {
+    // Grants.gov uses this exact placeholder when there are no additional deadline instructions.
+    const deadlineNotes = typeof opportunity.closeDateExplanation === 'string' ? opportunity.closeDateExplanation.trim() : '';
+    if (deadlineNotes && deadlineNotes.toLowerCase() !== 'no explanation') {
         uncertainties.push('The closing date has additional instructions; verify the stated time and any exceptions in the notice.');
     }
 

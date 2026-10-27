@@ -38,6 +38,8 @@ The October 25 tribal fix distinguishes a definite exclusion from missing recogn
 
 A date-only deadline includes the closing day. A genuinely explicit closed status remains a blocker. Legacy GOST ingestion derives status from milestones and marks a grant closed on the closing day; if that derived status conflicts with an unelapsed deadline, this adapter requests review rather than prematurely excluding it. No ingestion code is changed.
 
+The exact Grants.gov deadline-note placeholder `No Explanation` is treated as an empty note, ignoring capitalization and surrounding whitespace. Actual instructions still require review, including longer notes that contain those words. Missing deadlines and independent hard blockers keep their existing behavior.
+
 The adapter distinguishes `opportunity_status` from GOST's unrelated collaboration `status` such as `inbox`. It preserves leading zeroes in applicant codes. It reads available source metadata to avoid treating the legacy `2100-01-01` missing-deadline placeholder as an actual deadline or treating an absent cost-share flag as false.
 
 `minimumMatchingFundsCents` is an optional internal normalized field for an explicitly stated monetary minimum. The legacy row adapter leaves it null: it never invents an amount from an award floor, ceiling, or percentage. If matching funds are available but the actual requirement or available limit is unknown, the result requires review. No shared HTTP request or database schema changes are introduced.
@@ -58,21 +60,25 @@ An isolated rerun against Allison's unchanged reviewed `matching-eval-v1` labels
 
 The agent verification used Node 20.11.1 without database access: **82 pure checks passed**, plus lint and the existing seven-case/three-chunk rehearsal. Docker execution and live API behavior are not claimed from these pure checks. Include the new regression file explicitly when repeating the focused suite; do not invoke the fixture-reseeding global library setup.
 
+## October 27 deadline-note regression coverage
+
+`__tests__/lib/eligibilityDeadlineNotes.test.js` adds 15 checks for absent notes, the exact `No Explanation` placeholder with case/whitespace variations, actual instructions, missing dates, independent hard blockers, and legacy/raw-source grant rows. The placeholder no longer creates a deadline warning; it does not suppress other review requirements or blockers.
+
 ## Verification
 
 From the repository root with project dependencies installed:
 
 ```powershell
-node node_modules/mocha/bin/mocha packages/server/__tests__/lib/eligibilityBlockers.test.js packages/server/__tests__/lib/grantsEligibilityAdapter.test.js packages/server/__tests__/lib/eligibilityProfileIntegration.test.js packages/server/__tests__/lib/eligibilityEvaluationRegressions.test.js packages/server/__tests__/lib/documentChunking.test.js
-node node_modules/eslint/bin/eslint.js packages/server/src/lib/eligibilityBlockers.js packages/server/src/lib/grantsEligibilityAdapter.js packages/server/src/scripts/rehearseFirstDemo.js packages/server/__tests__/lib/eligibilityBlockers.test.js packages/server/__tests__/lib/grantsEligibilityAdapter.test.js packages/server/__tests__/lib/eligibilityEvaluationRegressions.test.js
+node node_modules/mocha/bin/mocha packages/server/__tests__/lib/eligibilityDeadlineNotes.test.js packages/server/__tests__/lib/eligibilityBlockers.test.js packages/server/__tests__/lib/grantsEligibilityAdapter.test.js packages/server/__tests__/lib/eligibilityProfileIntegration.test.js packages/server/__tests__/lib/eligibilityEvaluationRegressions.test.js packages/server/__tests__/lib/documentChunking.test.js
+node node_modules/eslint/bin/eslint.js packages/server/src/lib/eligibilityBlockers.js packages/server/src/lib/grantsEligibilityAdapter.js packages/server/src/scripts/rehearseFirstDemo.js packages/server/__tests__/lib/eligibilityDeadlineNotes.test.js packages/server/__tests__/lib/eligibilityBlockers.test.js packages/server/__tests__/lib/grantsEligibilityAdapter.test.js packages/server/__tests__/lib/eligibilityEvaluationRegressions.test.js
 node packages/server/src/scripts/rehearseFirstDemo.js
 ```
 
 With an existing running `gost-app` container mounted to this checkout, use:
 
 ```powershell
-docker exec gost-app sh -lc 'cd /app/packages/server && yarn mocha __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityProfileIntegration.test.js __tests__/lib/eligibilityEvaluationRegressions.test.js __tests__/lib/documentChunking.test.js'
-docker exec gost-app sh -lc 'cd /app/packages/server && yarn eslint src/lib/eligibilityBlockers.js src/lib/grantsEligibilityAdapter.js src/scripts/rehearseFirstDemo.js __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityEvaluationRegressions.test.js'
+docker exec gost-app sh -lc 'cd /app/packages/server && yarn mocha __tests__/lib/eligibilityDeadlineNotes.test.js __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityProfileIntegration.test.js __tests__/lib/eligibilityEvaluationRegressions.test.js __tests__/lib/documentChunking.test.js'
+docker exec gost-app sh -lc 'cd /app/packages/server && yarn eslint src/lib/eligibilityBlockers.js src/lib/grantsEligibilityAdapter.js src/scripts/rehearseFirstDemo.js __tests__/lib/eligibilityDeadlineNotes.test.js __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityEvaluationRegressions.test.js'
 docker exec gost-app sh -lc 'cd /app && node packages/server/src/scripts/rehearseFirstDemo.js'
 ```
 
