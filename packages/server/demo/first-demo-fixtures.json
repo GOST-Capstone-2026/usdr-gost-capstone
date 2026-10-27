@@ -1,0 +1,66 @@
+{
+  "asOfDate": "2026-10-04",
+  "profile": {
+    "id": 1,
+    "organizationId": 4,
+    "version": 1,
+    "jurisdiction": { "type": "city", "name": "Demo City", "stateCode": "FL", "countyName": null },
+    "population": 42000,
+    "focusAreas": ["stormwater"],
+    "staffingCapacity": { "level": "limited", "fullTimeEquivalent": 1.5, "notes": null },
+    "matchingFunds": { "available": false, "maximumAmountCents": null, "notes": null }
+  },
+  "cases": [
+    {
+      "name": "supported-current-city",
+      "grant": { "grant_id": 900001, "opportunity_status": "posted", "close_date": "2026-10-11", "eligibility_codes": "02", "cost_sharing": "No" },
+      "expectedDisposition": "eligible",
+      "expectedBlockers": []
+    },
+    {
+      "name": "closed-opportunity",
+      "grant": { "grant_id": 900002, "opportunity_status": "closed", "close_date": "2026-10-11", "eligibility_codes": "02", "cost_sharing": "No" },
+      "expectedDisposition": "blocked",
+      "expectedBlockers": ["OPPORTUNITY_CLOSED"]
+    },
+    {
+      "name": "deadline-passed",
+      "grant": { "grant_id": 900003, "opportunity_status": "posted", "close_date": "2026-10-03", "eligibility_codes": "02", "cost_sharing": "No" },
+      "expectedDisposition": "blocked",
+      "expectedBlockers": ["DEADLINE_PASSED"]
+    },
+    {
+      "name": "nonprofit-only",
+      "grant": { "grant_id": 900004, "opportunity_status": "posted", "close_date": "2026-10-11", "eligibility_codes": "12", "cost_sharing": "No" },
+      "expectedDisposition": "blocked",
+      "expectedBlockers": ["APPLICANT_TYPE_UNSUPPORTED"]
+    },
+    {
+      "name": "unavailable-matching-funds",
+      "grant": { "grant_id": 900005, "opportunity_status": "posted", "close_date": "2026-10-11", "eligibility_codes": "02", "cost_sharing": "Yes" },
+      "expectedDisposition": "blocked",
+      "expectedBlockers": ["MATCHING_FUNDS_UNAVAILABLE"]
+    },
+    {
+      "name": "unrestricted-needs-review",
+      "grant": { "grant_id": 900006, "opportunity_status": "posted", "close_date": "2026-10-11", "eligibility_codes": "99", "cost_sharing": "No" },
+      "expectedDisposition": "reviewRequired",
+      "expectedBlockers": []
+    },
+    {
+      "name": "legacy-placeholder-needs-review",
+      "grant": { "grant_id": 900007, "opportunity_status": "posted", "close_date": "2100-01-01", "eligibility_codes": "02", "cost_sharing": "No", "raw_body_json": { "opportunity": { "milestones": {} } } },
+      "expectedDisposition": "reviewRequired",
+      "expectedBlockers": []
+    }
+  ],
+  "document": {
+    "grantId": 900001,
+    "maxChunkChars": 160,
+    "pages": [
+      { "pageNumber": 1, "text": "Synthetic demo notice. This fixture describes a stormwater program for city governments. It is test data and is not a real grant notice." },
+      { "pageNumber": 2, "text": "Applications close on October 11, 2026. Matching funds are not required for this synthetic opportunity. Applicants submit a project description." },
+      { "pageNumber": 3, "text": "The project description explains the drainage problem and identifies the proposed work. Keep the original page numbers when preparing text chunks." }
+    ]
+  }
+}
