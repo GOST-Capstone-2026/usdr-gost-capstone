@@ -1,0 +1,35 @@
+{
+  "modelId": "Xenova/all-MiniLM-L6-v2",
+  "revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+  "dimensions": 384,
+  "quantization": "q8",
+  "pooling": "mean",
+  "normalization": "l2",
+  "maxTokens": 256,
+  "runtime": "onnxruntime-web",
+  "runtimeVersion": "1.22.0",
+  "tokenizerVersion": "0.2.0",
+  "executionProvider": "wasm",
+  "threads": 1,
+  "license": "Apache-2.0",
+  "assets": [
+    {
+      "remotePath": "onnx/model_quantized.onnx",
+      "fileName": "model_quantized.onnx",
+      "sha256": "afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1",
+      "maxBytes": 24000000
+    },
+    {
+      "remotePath": "tokenizer.json",
+      "fileName": "tokenizer.json",
+      "sha256": "da0e79933b9ed51798a3ae27893d3c5fa4a201126cef75586296df9b4d2c62a0",
+      "maxBytes": 800000
+    },
+    {
+      "remotePath": "tokenizer_config.json",
+      "fileName": "tokenizer_config.json",
+      "sha256": "9261e7d79b44c8195c1cada2b453e55b00aeb81e907a6664974b4d7776172ab3",
+      "maxBytes": 10000
+    }
+  ]
+}
