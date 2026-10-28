@@ -20,5 +20,6 @@ module.exports = {
         grant_document_pages: 'grant_document_pages',
         analysis_runs: 'analysis_runs',
         grant_briefs: 'grant_briefs',
+        checklist_items: 'checklist_items',
     },
 };
