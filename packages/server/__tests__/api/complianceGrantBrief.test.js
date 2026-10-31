@@ -25,11 +25,13 @@ describe('grant brief API', () => {
     let cookie;
     let nvCookie;
     let documentId;
+    let adminUser;
 
     before(async function beforeHook() {
         this.timeout(15000);
         cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
         nvCookie = await getSessionCookie('user2@nv.example.com');
+        adminUser = await knex('users').select('id', 'tenant_id').where({ email: 'grant-admin@usdigitalresponse.org' }).first();
         server = await makeTestServer();
     });
 
@@ -83,6 +85,10 @@ describe('grant brief API', () => {
         auditRows.forEach((row) => {
             expect(row.grant_id).to.equal('335255');
             expect(row.prompt_version).to.equal('grant-brief-v1');
+            // Who asked for this and from which organization, so AI usage can be tracked per
+            // organization instead of leaving these columns empty (caught by A-13 security review).
+            expect(row.user_id).to.equal(adminUser.id);
+            expect(row.tenant_id).to.equal(adminUser.tenant_id);
         });
     });
 
