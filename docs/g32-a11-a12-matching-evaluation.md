@@ -140,6 +140,8 @@ Mean reciprocal rank is 1.000, against 0.513 for a random ordering. Precision@3 
 
 ## Findings
 
+> **Update (Oct 30):** Connor fixed findings 1–3, and his fixes are merged into `develop`. Blocker accuracy is now 100%. The latest numbers are in `docs/g32-a14-integrated-evaluation-snapshot.md`. I left the findings below as they were on Oct 24.
+
 1. **The ranker rejects real ingested rows.** Ingest stores `grant_id` as a string (`'364009'`), but `rankGrantRows` requires an integer and throws `INVALID_CANDIDATES`. The evaluation converts the IDs itself (`buildRow`). The future match-run route (C-11) needs to convert them too, or the ranker should accept numeric strings.
 2. **Tribal profiles can't be blocked by applicant type.** For a grant open only to code 00 (state governments), a tribal profile gets review instead of `APPLICANT_TYPE_UNSUPPORTED` (`main/ak-tribe-marine/363856`). That's the one missed blocker. It's safe in this case, because the matching-funds blocker still applied, but it would surface an ineligible grant otherwise.
 3. **Location limits aren't modeled.** 19 of 77 cases are ineligible because of location or applicant limits stated only in the description. They're all caught as review today, mostly because those listings include code 25. A location-limited grant without code 25 would show as `eligible`.

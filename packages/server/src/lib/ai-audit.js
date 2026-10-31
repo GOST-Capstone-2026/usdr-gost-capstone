@@ -127,7 +127,8 @@ async function listAiAuditRecords(knex, {
 } = {}) {
     const query = knex(TABLE).select('*').orderBy('id', 'desc').limit(limit);
     if (grantId) query.where({ grant_id: grantId });
-    if (tenantId) query.where({ tenant_id: tenantId });
+    // checking for null instead of truthy, otherwise tenant 0 skips the filter and sees every tenant (A-13)
+    if (tenantId !== undefined && tenantId !== null) query.where({ tenant_id: tenantId });
     if (status) query.where({ status });
     return query;
 }

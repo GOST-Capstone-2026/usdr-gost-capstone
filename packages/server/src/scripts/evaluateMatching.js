@@ -29,8 +29,7 @@ function statusOn(row, asOfDate) {
 function buildRow(event, asOfDate) {
     const row = mapSourceDataToGrant(event);
     row.opportunity_status = statusOn(row, asOfDate);
-    // ingest keeps grant_id as a string but the ranker only takes integers, converting here (see doc, finding 1)
-    row.grant_id = Number(row.grant_id);
+    // keeping grant_id as the text ingest stores, the ranker accepts it since matcher-minilm-v2 (finding 1, fixed)
     return row;
 }
 

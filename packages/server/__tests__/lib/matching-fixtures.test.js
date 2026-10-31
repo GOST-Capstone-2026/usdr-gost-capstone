@@ -75,8 +75,8 @@ describe('evaluateMatching', () => {
         expect(statusOn({ open_date: '2026-11-01', close_date: '2026-12-01' }, '2026-10-01')).to.equal('forecasted');
     });
 
-    it('converts grant ids to integers for the ranker', () => {
-        expect(buildRow(event, '2026-10-20').grant_id).to.equal(364009);
+    it('keeps the text grant id that ingest stores (the ranker accepts it since C-09 v2)', () => {
+        expect(buildRow(event, '2026-10-20').grant_id).to.equal('364009');
     });
 
     it('runs the screening part end to end without a model', async () => {
@@ -121,7 +121,7 @@ describe('evaluateMatching', () => {
         const rankGrantRows = async (profile, rows) => ({
             model: 'fake',
             inputHash: 'h',
-            results: rows.map((r) => ({ grantId: r.grant_id, rank: r.grant_id === 364009 ? 1 : 2, score: 0.5 })),
+            results: rows.map((r) => ({ grantId: r.grant_id, rank: r.grant_id === '364009' ? 1 : 2, score: 0.5 })),
         });
         const report = await runEvaluation(fx, demoData, { embedder: {}, rankGrantRows });
         expect(report.ranking.blockedLeaks).to.equal(1);

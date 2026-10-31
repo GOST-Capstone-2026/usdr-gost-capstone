@@ -1,0 +1,945 @@
+{
+  "snapshot": "a14-integrated",
+  "generatedAt": "2026-10-31T01:58:56.650Z",
+  "git": {
+    "branch": "data",
+    "head": "f9701e60cf56b6ca4fe8eb9062a4d4df2e73ce19"
+  },
+  "node": "v20.11.1",
+  "pipeline": [
+    "Grants.gov listing (seeds/demo/opportunities.json, A-09)",
+    "mapSourceDataToGrant (ingest row shape, text grant ids)",
+    "screenGrantRow (C-06, eligibility-v2)",
+    "rankGrantRows (C-09, matcher-minilm-v2)",
+    "rankAndExplainGrantRows (C-10, grounded-match-v1)",
+    "A-12 metrics against A-11 reviewed fixtures"
+  ],
+  "versions": {
+    "fixtures": "matching-eval-v1",
+    "screening": "eligibility-v2",
+    "ranking": "matcher-minilm-v2",
+    "rankingText": "focus-title-description-v1",
+    "explanation": "grounded-match-v1",
+    "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm"
+  },
+  "gates": [
+    {
+      "name": "every fixture label human-reviewed",
+      "pass": true,
+      "value": "77/77"
+    },
+    {
+      "name": "no truly blocked grant let through (missed block rate 0)",
+      "pass": true,
+      "value": 0
+    },
+    {
+      "name": "no wrongly blocked grant (false block rate 0)",
+      "pass": true,
+      "value": 0
+    },
+    {
+      "name": "no not-modeled case passed as eligible",
+      "pass": true,
+      "value": 0
+    },
+    {
+      "name": "no blocked grant ranked",
+      "pass": true,
+      "value": 0
+    },
+    {
+      "name": "ranking beats random (nDCG@3)",
+      "pass": true,
+      "value": "1.000 vs 0.386"
+    },
+    {
+      "name": "every explanation passes every grounding check",
+      "pass": true,
+      "value": "55/55"
+    },
+    {
+      "name": "two full runs give identical results and hashes",
+      "pass": true,
+      "value": true
+    }
+  ],
+  "allGatesPass": true,
+  "review": {
+    "total": 77,
+    "reviewed": 77,
+    "draft": 0,
+    "changedInReview": 1,
+    "reviewers": [
+      "Allison Cerna"
+    ]
+  },
+  "screening": {
+    "disposition": {
+      "cases": 77,
+      "accuracy": 1,
+      "matrix": {
+        "eligible": {
+          "eligible": 4,
+          "reviewRequired": 0,
+          "blocked": 0
+        },
+        "reviewRequired": {
+          "eligible": 0,
+          "reviewRequired": 45,
+          "blocked": 0
+        },
+        "blocked": {
+          "eligible": 0,
+          "reviewRequired": 0,
+          "blocked": 28
+        }
+      },
+      "falseBlockRate": 0,
+      "missedBlockRate": 0
+    },
+    "blockers": {
+      "cases": 77,
+      "exactMatchRate": 1,
+      "micro": {
+        "tp": 41,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1
+      },
+      "byCode": {
+        "APPLICANT_TYPE_UNSUPPORTED": {
+          "tp": 9,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "DEADLINE_PASSED": {
+          "tp": 9,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "MATCHING_FUNDS_UNAVAILABLE": {
+          "tp": 14,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "OPPORTUNITY_CLOSED": {
+          "tp": 9,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      }
+    },
+    "byScenario": {
+      "main": {
+        "asOfDate": "2026-10-20",
+        "disposition": {
+          "cases": 55,
+          "accuracy": 1,
+          "matrix": {
+            "eligible": {
+              "eligible": 4,
+              "reviewRequired": 0,
+              "blocked": 0
+            },
+            "reviewRequired": {
+              "eligible": 0,
+              "reviewRequired": 33,
+              "blocked": 0
+            },
+            "blocked": {
+              "eligible": 0,
+              "reviewRequired": 0,
+              "blocked": 18
+            }
+          },
+          "falseBlockRate": 0,
+          "missedBlockRate": 0
+        },
+        "blockers": {
+          "cases": 55,
+          "exactMatchRate": 1,
+          "micro": {
+            "tp": 20,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1": 1
+          },
+          "byCode": {
+            "APPLICANT_TYPE_UNSUPPORTED": {
+              "tp": 6,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            },
+            "MATCHING_FUNDS_UNAVAILABLE": {
+              "tp": 14,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            }
+          }
+        }
+      },
+      "after-nov-deadlines": {
+        "asOfDate": "2026-11-18",
+        "disposition": {
+          "cases": 11,
+          "accuracy": 1,
+          "matrix": {
+            "eligible": {
+              "eligible": 0,
+              "reviewRequired": 0,
+              "blocked": 0
+            },
+            "reviewRequired": {
+              "eligible": 0,
+              "reviewRequired": 8,
+              "blocked": 0
+            },
+            "blocked": {
+              "eligible": 0,
+              "reviewRequired": 0,
+              "blocked": 3
+            }
+          },
+          "falseBlockRate": 0,
+          "missedBlockRate": 0
+        },
+        "blockers": {
+          "cases": 11,
+          "exactMatchRate": 1,
+          "micro": {
+            "tp": 5,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1": 1
+          },
+          "byCode": {
+            "APPLICANT_TYPE_UNSUPPORTED": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            },
+            "DEADLINE_PASSED": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            },
+            "OPPORTUNITY_CLOSED": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            }
+          }
+        }
+      },
+      "after-archive": {
+        "asOfDate": "2026-12-20",
+        "disposition": {
+          "cases": 11,
+          "accuracy": 1,
+          "matrix": {
+            "eligible": {
+              "eligible": 0,
+              "reviewRequired": 0,
+              "blocked": 0
+            },
+            "reviewRequired": {
+              "eligible": 0,
+              "reviewRequired": 4,
+              "blocked": 0
+            },
+            "blocked": {
+              "eligible": 0,
+              "reviewRequired": 0,
+              "blocked": 7
+            }
+          },
+          "falseBlockRate": 0,
+          "missedBlockRate": 0
+        },
+        "blockers": {
+          "cases": 11,
+          "exactMatchRate": 1,
+          "micro": {
+            "tp": 16,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1,
+            "recall": 1,
+            "f1": 1
+          },
+          "byCode": {
+            "APPLICANT_TYPE_UNSUPPORTED": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            },
+            "DEADLINE_PASSED": {
+              "tp": 7,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            },
+            "OPPORTUNITY_CLOSED": {
+              "tp": 7,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1,
+              "recall": 1,
+              "f1": 1
+            }
+          }
+        }
+      }
+    },
+    "notModeled": {
+      "cases": 19,
+      "passedAsEligible": []
+    },
+    "mismatches": []
+  },
+  "ranking": {
+    "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+    "profiles": 5,
+    "blockedLeaks": 0,
+    "macro": {
+      "reciprocalRank": 1,
+      "randomReciprocalRank": 0.5134964726631394,
+      "atK": {
+        "1": {
+          "precision": 1,
+          "recall": 0.6666666666666666,
+          "ndcg": 1,
+          "randomNdcg": 0.24222222222222226
+        },
+        "3": {
+          "precision": 0.6,
+          "recall": 1,
+          "ndcg": 1,
+          "randomNdcg": 0.3861022026966487
+        },
+        "5": {
+          "precision": 0.4,
+          "recall": 1,
+          "ndcg": 1,
+          "randomNdcg": 0.4897800205603895
+        }
+      }
+    },
+    "runs": [
+      {
+        "scenario": "main",
+        "profile": "fl-city-flood",
+        "focusAreas": [
+          "flood mitigation",
+          "stormwater infrastructure",
+          "disaster preparedness"
+        ],
+        "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+        "inputHash": "0225d3ff9427ccda164a1983e891f7d40b4a2558e24fab3207c4162831cf5519",
+        "ranked": [
+          {
+            "grantId": "363151",
+            "rank": 1,
+            "score": 0.511241,
+            "relevance": 2
+          },
+          {
+            "grantId": "364035",
+            "rank": 2,
+            "score": 0.331363,
+            "relevance": 1
+          },
+          {
+            "grantId": "364037",
+            "rank": 3,
+            "score": 0.311951,
+            "relevance": 0
+          },
+          {
+            "grantId": "362034",
+            "rank": 4,
+            "score": 0.308871,
+            "relevance": 0
+          },
+          {
+            "grantId": "364009",
+            "rank": 5,
+            "score": 0.297699,
+            "relevance": 0
+          },
+          {
+            "grantId": "361418",
+            "rank": 6,
+            "score": 0.285009,
+            "relevance": 0
+          },
+          {
+            "grantId": "363696",
+            "rank": 7,
+            "score": 0.173883,
+            "relevance": 0
+          },
+          {
+            "grantId": "355417",
+            "rank": 8,
+            "score": 0.14608,
+            "relevance": 0
+          },
+          {
+            "grantId": "363815",
+            "rank": 9,
+            "score": 0.144914,
+            "relevance": 0
+          },
+          {
+            "grantId": "364026",
+            "rank": 10,
+            "score": 0.080191,
+            "relevance": 0
+          }
+        ],
+        "blockedLeaks": [],
+        "metrics": {
+          "rankedCount": 10,
+          "relevantCount": 2,
+          "reciprocalRank": 1,
+          "atK": {
+            "1": {
+              "precision": 1,
+              "recall": 0.5,
+              "ndcg": 1
+            },
+            "3": {
+              "precision": 0.6666666666666666,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "5": {
+              "precision": 0.4,
+              "recall": 1,
+              "ndcg": 1
+            }
+          }
+        },
+        "randomBaseline": {
+          "candidates": 10,
+          "relevantCount": 2,
+          "reciprocalRank": 0.4286596119929454,
+          "atK": {
+            "1": {
+              "precision": 0.2,
+              "recall": 0.1,
+              "ndcg": 0.13333333333333333
+            },
+            "3": {
+              "precision": 0.2,
+              "recall": 0.3,
+              "ndcg": 0.23475306857428802
+            },
+            "5": {
+              "precision": 0.2,
+              "recall": 0.5,
+              "ndcg": 0.32481588121931876
+            }
+          }
+        }
+      },
+      {
+        "scenario": "main",
+        "profile": "mi-county-forest",
+        "focusAreas": [
+          "forest land conservation",
+          "parks and open space",
+          "wildlife habitat protection"
+        ],
+        "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+        "inputHash": "a2d724a6496f9f3e01870be9e2dee96bdcb8c6eafb98f38011c424e3a1041096",
+        "ranked": [
+          {
+            "grantId": "361418",
+            "rank": 1,
+            "score": 0.491492,
+            "relevance": 2
+          },
+          {
+            "grantId": "364009",
+            "rank": 2,
+            "score": 0.426714,
+            "relevance": 1
+          },
+          {
+            "grantId": "363151",
+            "rank": 3,
+            "score": 0.360933,
+            "relevance": 0
+          },
+          {
+            "grantId": "364037",
+            "rank": 4,
+            "score": 0.303464,
+            "relevance": 0
+          },
+          {
+            "grantId": "362034",
+            "rank": 5,
+            "score": 0.277739,
+            "relevance": 0
+          },
+          {
+            "grantId": "363696",
+            "rank": 6,
+            "score": 0.259635,
+            "relevance": 0
+          },
+          {
+            "grantId": "363815",
+            "rank": 7,
+            "score": 0.236992,
+            "relevance": 0
+          },
+          {
+            "grantId": "364035",
+            "rank": 8,
+            "score": 0.229759,
+            "relevance": 0
+          },
+          {
+            "grantId": "355417",
+            "rank": 9,
+            "score": 0.150879,
+            "relevance": 0
+          },
+          {
+            "grantId": "364026",
+            "rank": 10,
+            "score": 0,
+            "relevance": 0
+          }
+        ],
+        "blockedLeaks": [],
+        "metrics": {
+          "rankedCount": 10,
+          "relevantCount": 2,
+          "reciprocalRank": 1,
+          "atK": {
+            "1": {
+              "precision": 1,
+              "recall": 0.5,
+              "ndcg": 1
+            },
+            "3": {
+              "precision": 0.6666666666666666,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "5": {
+              "precision": 0.4,
+              "recall": 1,
+              "ndcg": 1
+            }
+          }
+        },
+        "randomBaseline": {
+          "candidates": 10,
+          "relevantCount": 2,
+          "reciprocalRank": 0.4286596119929454,
+          "atK": {
+            "1": {
+              "precision": 0.2,
+              "recall": 0.1,
+              "ndcg": 0.13333333333333333
+            },
+            "3": {
+              "precision": 0.2,
+              "recall": 0.3,
+              "ndcg": 0.23475306857428802
+            },
+            "5": {
+              "precision": 0.2,
+              "recall": 0.5,
+              "ndcg": 0.32481588121931876
+            }
+          }
+        }
+      },
+      {
+        "scenario": "main",
+        "profile": "tx-city-justice",
+        "focusAreas": [
+          "criminal justice and recidivism reduction",
+          "public safety",
+          "juvenile justice"
+        ],
+        "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+        "inputHash": "84d9b20d120179ebdd400978681f4cb66247ae9f70930923d852c2152f00644d",
+        "ranked": [
+          {
+            "grantId": "364037",
+            "rank": 1,
+            "score": 0.578426,
+            "relevance": 2
+          },
+          {
+            "grantId": "364035",
+            "rank": 2,
+            "score": 0.478716,
+            "relevance": 2
+          },
+          {
+            "grantId": "355417",
+            "rank": 3,
+            "score": 0.225494,
+            "relevance": 1
+          },
+          {
+            "grantId": "362034",
+            "rank": 4,
+            "score": 0.204323,
+            "relevance": 0
+          }
+        ],
+        "blockedLeaks": [],
+        "metrics": {
+          "rankedCount": 4,
+          "relevantCount": 3,
+          "reciprocalRank": 1,
+          "atK": {
+            "1": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "ndcg": 1
+            },
+            "3": {
+              "precision": 1,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "5": {
+              "precision": 0.75,
+              "recall": 1,
+              "ndcg": 1
+            }
+          }
+        },
+        "randomBaseline": {
+          "candidates": 4,
+          "relevantCount": 3,
+          "reciprocalRank": 0.875,
+          "atK": {
+            "1": {
+              "precision": 0.75,
+              "recall": 0.25,
+              "ndcg": 0.5833333333333334
+            },
+            "3": {
+              "precision": 0.75,
+              "recall": 0.75,
+              "ndcg": 0.6915024653227523
+            },
+            "5": {
+              "precision": 0.75,
+              "recall": 1,
+              "ndcg": 0.8312601936877205
+            }
+          }
+        }
+      },
+      {
+        "scenario": "main",
+        "profile": "wa-transport-district",
+        "focusAreas": [
+          "transportation safety",
+          "highway infrastructure"
+        ],
+        "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+        "inputHash": "b4fe8e9d77b88e0a12d09b050fb036645237143cd90ec55d6c722d4da120f5cf",
+        "ranked": [
+          {
+            "grantId": "364009",
+            "rank": 1,
+            "score": 0.295913,
+            "relevance": 2
+          },
+          {
+            "grantId": "355417",
+            "rank": 2,
+            "score": 0.293755,
+            "relevance": 0
+          },
+          {
+            "grantId": "364037",
+            "rank": 3,
+            "score": 0.256712,
+            "relevance": 0
+          },
+          {
+            "grantId": "364035",
+            "rank": 4,
+            "score": 0.254598,
+            "relevance": 0
+          },
+          {
+            "grantId": "362034",
+            "rank": 5,
+            "score": 0.248753,
+            "relevance": 0
+          },
+          {
+            "grantId": "363151",
+            "rank": 6,
+            "score": 0.247413,
+            "relevance": 0
+          },
+          {
+            "grantId": "363815",
+            "rank": 7,
+            "score": 0.238828,
+            "relevance": 0
+          },
+          {
+            "grantId": "363696",
+            "rank": 8,
+            "score": 0.125086,
+            "relevance": 0
+          },
+          {
+            "grantId": "364026",
+            "rank": 9,
+            "score": 0,
+            "relevance": 0
+          }
+        ],
+        "blockedLeaks": [],
+        "metrics": {
+          "rankedCount": 9,
+          "relevantCount": 1,
+          "reciprocalRank": 1,
+          "atK": {
+            "1": {
+              "precision": 1,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "3": {
+              "precision": 0.3333333333333333,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "5": {
+              "precision": 0.2,
+              "recall": 1,
+              "ndcg": 1
+            }
+          }
+        },
+        "randomBaseline": {
+          "candidates": 9,
+          "relevantCount": 1,
+          "reciprocalRank": 0.31432980599647264,
+          "atK": {
+            "1": {
+              "precision": 0.1111111111111111,
+              "recall": 0.1111111111111111,
+              "ndcg": 0.1111111111111111
+            },
+            "3": {
+              "precision": 0.1111111111111111,
+              "recall": 0.3333333333333333,
+              "ndcg": 0.23676997261905083
+            },
+            "5": {
+              "precision": 0.1111111111111111,
+              "recall": 0.5555555555555556,
+              "ndcg": 0.32760656876437694
+            }
+          }
+        }
+      },
+      {
+        "scenario": "main",
+        "profile": "ak-tribe-marine",
+        "focusAreas": [
+          "fisheries and seafood workforce training",
+          "marine education"
+        ],
+        "model": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9:q8-wasm",
+        "inputHash": "1dbf467ee62c60734defea532df20765ed6b954125d8e691a297c99d621953ea",
+        "ranked": [
+          {
+            "grantId": "362034",
+            "rank": 1,
+            "score": 0.69071,
+            "relevance": 2
+          },
+          {
+            "grantId": "355417",
+            "rank": 2,
+            "score": 0.289537,
+            "relevance": 0
+          },
+          {
+            "grantId": "364037",
+            "rank": 3,
+            "score": 0.069788,
+            "relevance": 0
+          },
+          {
+            "grantId": "364035",
+            "rank": 4,
+            "score": 0.060459,
+            "relevance": 0
+          }
+        ],
+        "blockedLeaks": [],
+        "metrics": {
+          "rankedCount": 4,
+          "relevantCount": 1,
+          "reciprocalRank": 1,
+          "atK": {
+            "1": {
+              "precision": 1,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "3": {
+              "precision": 0.3333333333333333,
+              "recall": 1,
+              "ndcg": 1
+            },
+            "5": {
+              "precision": 0.25,
+              "recall": 1,
+              "ndcg": 1
+            }
+          }
+        },
+        "randomBaseline": {
+          "candidates": 4,
+          "relevantCount": 1,
+          "reciprocalRank": 0.5208333333333333,
+          "atK": {
+            "1": {
+              "precision": 0.25,
+              "recall": 0.25,
+              "ndcg": 0.25
+            },
+            "3": {
+              "precision": 0.25,
+              "recall": 0.75,
+              "ndcg": 0.5327324383928644
+            },
+            "5": {
+              "precision": 0.25,
+              "recall": 1,
+              "ndcg": 0.6404015779112127
+            }
+          }
+        }
+      }
+    ]
+  },
+  "explanations": {
+    "results": 55,
+    "ranked": 37,
+    "blocked": 18,
+    "claims": 351,
+    "resultsPassingAllChecks": 55,
+    "checks": {
+      "CLAIM_HAS_EVIDENCE": "every claim lists at least one evidence id",
+      "EVIDENCE_RESOLVES": "every evidence id a claim uses exists in the same result",
+      "EXCERPT_IN_SOURCE": "every listing excerpt is the exact slice of the listing text at its offsets",
+      "EXCERPT_LENGTH": "every listing excerpt is at most 240 characters",
+      "SCORE_MATCHES": "the ranking evidence repeats the actual score and rank",
+      "SCREENING_MATCHES": "the screening evidence repeats the actual disposition, blockers and warnings",
+      "BLOCKERS_EXPLAINED": "every blocker has its own HARD_BLOCKER claim",
+      "WARNINGS_EXPLAINED": "every review warning has its own REVIEW_WARNING claim",
+      "BLOCKED_NOT_SCORED": "a blocked grant has no rank and no relevance claim",
+      "MARKED_UNVERIFIED": "the explanation is marked unverified and names no text model",
+      "NO_OVERCLAIM": "no claim says the organization is eligible or qualifies"
+    },
+    "failuresByCheck": {
+      "CLAIM_HAS_EVIDENCE": 0,
+      "EVIDENCE_RESOLVES": 0,
+      "EXCERPT_IN_SOURCE": 0,
+      "EXCERPT_LENGTH": 0,
+      "SCORE_MATCHES": 0,
+      "SCREENING_MATCHES": 0,
+      "BLOCKERS_EXPLAINED": 0,
+      "WARNINGS_EXPLAINED": 0,
+      "BLOCKED_NOT_SCORED": 0,
+      "MARKED_UNVERIFIED": 0,
+      "NO_OVERCLAIM": 0
+    },
+    "failing": []
+  },
+  "reproducibility": {
+    "runs": 2,
+    "identical": true,
+    "runHashes": [
+      {
+        "profile": "fl-city-flood",
+        "inputHash": "0225d3ff9427ccda164a1983e891f7d40b4a2558e24fab3207c4162831cf5519",
+        "explanationHash": "b68a63a253e6ac68abafebef9b2b0339620b6cf8a996153cbebfeb755fc5d7d9"
+      },
+      {
+        "profile": "mi-county-forest",
+        "inputHash": "a2d724a6496f9f3e01870be9e2dee96bdcb8c6eafb98f38011c424e3a1041096",
+        "explanationHash": "ee7d9e94eeff6bd97cc76cca78bdc87013d11fcf60dd9d6010977b3a5089e26a"
+      },
+      {
+        "profile": "tx-city-justice",
+        "inputHash": "84d9b20d120179ebdd400978681f4cb66247ae9f70930923d852c2152f00644d",
+        "explanationHash": "9c909268b0d06a36766aa4a41c93dd7baca4bc4e5585dac194c7a83e1f48ec56"
+      },
+      {
+        "profile": "wa-transport-district",
+        "inputHash": "b4fe8e9d77b88e0a12d09b050fb036645237143cd90ec55d6c722d4da120f5cf",
+        "explanationHash": "501a9a44e972540a7e09b1622a98e27222def3d0451feef552240bc26db86b9c"
+      },
+      {
+        "profile": "ak-tribe-marine",
+        "inputHash": "1dbf467ee62c60734defea532df20765ed6b954125d8e691a297c99d621953ea",
+        "explanationHash": "bae2e6ddc59cd5b237388f1384ebaafc1b292a49764ec2383c6967e7c72e7785"
+      }
+    ]
+  }
+}
