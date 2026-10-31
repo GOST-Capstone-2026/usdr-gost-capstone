@@ -2,7 +2,23 @@ const path = require('path');
 const { expect } = require('chai');
 const { getSessionCookie, makeTestServer, knex } = require('./utils');
 const db = require('../../src/db');
-const { createChecklistItem } = require('../../src/lib/checklistItemSchema');
+
+// Built inline, matching checklistItemSchema.js's createChecklistItem() shape (AN-11), rather
+// than importing it: AN-11 and AN-12 are separate branches/pull requests, each starting clean
+// from develop, so AN-12's own tests must not depend on a module that only exists on AN-11's
+// branch.
+function buildChecklistItem({
+    category, description, found, sources = [], dueDate = null, possiblyAffectedByQualityIssue = false,
+}) {
+    return {
+        category,
+        description,
+        found,
+        sources,
+        possiblyAffectedByQualityIssue,
+        dueDate,
+    };
+}
 
 const FIXTURE_PDF_PATH = path.join(__dirname, '..', 'fixtures', 'an08-sample.pdf');
 
@@ -44,18 +60,14 @@ describe('checklist item storage', () => {
         const items = await db.createChecklistItems({
             documentId,
             items: [
-                createChecklistItem({
-                    documentId,
-                    grantId: '335255',
+                buildChecklistItem({
                     category: 'reporting',
                     description: 'Submit quarterly performance reports within 30 days after each quarter.',
                     found: true,
                     sources: [{ documentId, pageNumber: 14, excerpt: 'Quarterly performance reports are due...' }],
                     dueDate: '2026-12-31',
                 }),
-                createChecklistItem({
-                    documentId,
-                    grantId: '335255',
+                buildChecklistItem({
                     category: 'costShare',
                     description: 'Not found in the processed notice.',
                     found: false,
