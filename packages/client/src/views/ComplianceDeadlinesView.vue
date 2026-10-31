@@ -102,6 +102,23 @@
               striped
               fixed
             >
+              <template #cell(title)="{ item }">
+                <span data-testid="deadline-title">{{ item.title }}</span>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 ml-1 align-baseline"
+                  :aria-expanded="isExpanded(item) ? 'true' : 'false'"
+                  data-testid="toggle-details"
+                  @click="toggleDetails(item)"
+                >
+                  {{ isExpanded(item) ? 'Hide details' : 'Details' }}
+                </button>
+                <deadline-details
+                  v-if="isExpanded(item)"
+                  class="mt-1"
+                  :item="item"
+                />
+              </template>
               <template #cell(dueDate)="{ item }">
                 {{ item.dueDate ? formatDate(item.dueDate) : 'No due date' }}
               </template>
@@ -145,6 +162,23 @@
               striped
               fixed
             >
+              <template #cell(title)="{ item }">
+                <span data-testid="deadline-title">{{ item.title }}</span>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 ml-1 align-baseline"
+                  :aria-expanded="isExpanded(item) ? 'true' : 'false'"
+                  data-testid="toggle-details"
+                  @click="toggleDetails(item)"
+                >
+                  {{ isExpanded(item) ? 'Hide details' : 'Details' }}
+                </button>
+                <deadline-details
+                  v-if="isExpanded(item)"
+                  class="mt-1"
+                  :item="item"
+                />
+              </template>
               <template #cell(dueDate)="{ item }">
                 {{ formatDate(item.dueDate) }}
               </template>
@@ -175,6 +209,7 @@ import { mapActions, mapGetters } from 'vuex';
 import { formatDate, formatDateTime } from '@/helpers/dates';
 import { CLOSED_STATUSES, statusLabel, statusVariant } from '@/helpers/deadlineStatus';
 import ComplianceDeadlinesCalendar from '@/components/ComplianceDeadlinesCalendar.vue';
+import DeadlineDetails from '@/components/DeadlineDetails.vue';
 
 const PORTFOLIO_SECTIONS = [
   { key: 'overdue', title: 'Overdue' },
@@ -186,6 +221,7 @@ const PORTFOLIO_SECTIONS = [
 export default {
   components: {
     ComplianceDeadlinesCalendar,
+    DeadlineDetails,
   },
   data() {
     return {
@@ -193,6 +229,7 @@ export default {
       loadError: false,
       showCompleted: false,
       viewMode: 'list',
+      expandedIds: [],
       fields: [
         { key: 'title', label: 'Obligation', thStyle: { width: '45%' } },
         { key: 'dueDate', label: 'Due date', thStyle: { width: '18%' } },
@@ -261,6 +298,14 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    isExpanded(item) {
+      return this.expandedIds.includes(item.checklistItemId);
+    },
+    toggleDetails(item) {
+      this.expandedIds = this.isExpanded(item)
+        ? this.expandedIds.filter((id) => id !== item.checklistItemId)
+        : [...this.expandedIds, item.checklistItemId];
     },
     statusLabel,
     statusVariant,

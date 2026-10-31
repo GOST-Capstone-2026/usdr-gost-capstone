@@ -113,7 +113,7 @@ function mountView({
 }
 
 const section = (key) => wrapper.get(`[data-testid="deadline-section-${key}"]`);
-const rowTitles = (key) => section(key).findAll('[data-testid="deadline-row"]').map((row) => row.find('td').text());
+const rowTitles = (key) => section(key).findAll('[data-testid="deadline-title"]').map((title) => title.text());
 
 afterEach(() => {
   wrapper = undefined;
@@ -252,6 +252,48 @@ describe('ComplianceDeadlinesView.vue', () => {
       expect(rowText).toContain('N/A');
       expect(rowText).not.toContain('Complete');
       expect(rowText).not.toContain('Not recorded');
+    });
+  });
+
+  describe('source and verification details', () => {
+    const sourcedItem = makeItem({
+      checklistItemId: 21,
+      title: 'Sourced report',
+      status: 'overdue',
+      source: { pageNumber: 14, excerpt: 'Quarterly reports are due within 30 days.' },
+    });
+
+    beforeEach(async () => {
+      await mountView({ portfolioItems: [sourcedItem], reviewNeededItems: reviewNeeded });
+    });
+
+    it('hides details until the row is expanded', () => {
+      expect(section('overdue').find('[data-testid="deadline-source"]').exists()).toBe(false);
+      expect(section('overdue').get('[data-testid="toggle-details"]').attributes('aria-expanded')).toBe('false');
+    });
+
+    it('shows the source page and excerpt with the verified date when expanded', async () => {
+      await section('overdue').get('[data-testid="toggle-details"]').trigger('click');
+
+      expect(section('overdue').get('[data-testid="deadline-source"]').text())
+        .toBe('Page 14: "Quarterly reports are due within 30 days."');
+      expect(section('overdue').get('[data-testid="deadline-verification"]').text()).toBe('Verified on Sep 20, 2026');
+      expect(section('overdue').get('[data-testid="toggle-details"]').text()).toBe('Hide details');
+    });
+
+    it('shows Source not found and Not yet verified for an unverified item without a source', async () => {
+      await section('reviewNeeded').get('[data-testid="toggle-details"]').trigger('click');
+
+      expect(section('reviewNeeded').get('[data-testid="deadline-source"]').text()).toBe('Source not found');
+      expect(section('reviewNeeded').get('[data-testid="deadline-verification"]').text()).toBe('Not yet verified');
+    });
+
+    it('collapses the details when toggled again', async () => {
+      const toggle = section('overdue').get('[data-testid="toggle-details"]');
+      await toggle.trigger('click');
+      await toggle.trigger('click');
+
+      expect(section('overdue').find('[data-testid="deadline-source"]').exists()).toBe(false);
     });
   });
 
