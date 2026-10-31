@@ -14,6 +14,8 @@ function fromGrantRow(row) {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new TypeError('A stored GOST grant row is required.');
     const raw = row.raw_body_json && typeof row.raw_body_json === 'object' ? row.raw_body_json : null;
     const close = raw?.opportunity?.milestones?.close;
+    const sourceField = (key) => (raw?.opportunity && Object.prototype.hasOwnProperty.call(raw.opportunity, key)
+        ? raw.opportunity[key] : row[key]);
     let closeDate = row.close_date === '2100-01-01' ? null : row.close_date;
     if (raw) closeDate = close?.date || null;
     let costShareRequired = null;
@@ -37,6 +39,8 @@ function fromGrantRow(row) {
         eligibilityCodes: codeList(raw?.eligible_applicants ?? row.eligibility_codes),
         additionalEligibilityInformation: raw?.additional_information_on_eligibility
             ?? raw?.eligibility_description ?? null,
+        // Preserve source text for conservative location review; do not infer a verified project location.
+        noticeText: ['title', 'description'].map(sourceField).filter((value) => typeof value === 'string').join('\n').trim(),
         costShareRequired,
         // No minimum is guessed from cost_sharing, award_floor, or award_ceiling.
         minimumMatchingFundsCents: null,

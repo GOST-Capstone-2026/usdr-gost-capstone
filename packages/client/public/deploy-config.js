@@ -33,6 +33,7 @@ window.APP_CONFIG.featureFlags = {
   grantsLoginEnabled: true,
   arpaLoginEnabled: true,
   grantComplianceEnabled: false,
+  organizationProfilesEnabled: false,
   grantDocumentAnalysisEnabled: false,
   complianceChecklistsEnabled: false,
   complianceDeadlinesEnabled: false,

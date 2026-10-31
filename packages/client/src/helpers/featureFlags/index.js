@@ -45,6 +45,10 @@ export function grantComplianceEnabled() {
   return getFeatureFlags().grantComplianceEnabled === true;
 }
 
+export function organizationProfilesEnabled() {
+  return grantComplianceEnabled() && getFeatureFlags().organizationProfilesEnabled === true;
+}
+
 export function grantDocumentAnalysisEnabled() {
   return grantComplianceEnabled() && getFeatureFlags().grantDocumentAnalysisEnabled === true;
 }

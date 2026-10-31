@@ -24,7 +24,7 @@ describe('deterministic eligibility screening', () => {
         expect(result.blockers).to.deep.equal([]);
         expect(result.uncertainties).to.deep.equal([]);
         expect(result).to.include({
-            methodVersion: 'eligibility-v1', profileVersion: 2, model: null, score: null, rank: null,
+            methodVersion: 'eligibility-v2', profileVersion: 2, model: null, score: null, rank: null,
         });
     });
 

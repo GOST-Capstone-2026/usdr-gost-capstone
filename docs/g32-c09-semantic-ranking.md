@@ -26,9 +26,11 @@ WASM avoids relying on a native glibc ONNX binding in the current Alpine-based d
 
 Model files total approximately 24 MB and are stored under the repository's already ignored `.cache/g32-matcher/<revision>/` directory. Model assets are downloaded only with explicit opt-in. Only fixed public model URLs are requested: profile and grant text are processed locally, not sent to Hugging Face or a paid inference API. After dependencies and model assets are cached, the rehearsal runs without requesting remote inference. Cached files are verified before use; a modified file fails closed rather than silently changing the model.
 
-Method version: `matcher-minilm-v1`. Text preprocessing version: `focus-title-description-v1`.
+Current method version: `matcher-minilm-v2` (October 25 ID normalization and screening integration fixes; originally `matcher-minilm-v1`). Text preprocessing version remains `focus-title-description-v1`; the model, runtime, vectors, and weights are unchanged.
 
 Each run records the model manifest, explicit business date, profile version/identity, canonical SHA-256 input snapshot hash, source revisions, normalized source text hashes, and screening method version. Candidate rows are sorted numerically by ID before inference. Scores are clamped to `[0,1]`, rounded to six decimals, and tied scores use ascending numeric grant ID. No wall-clock date or random score enters the ranking.
+
+Stored `grant_id` accepts nonnegative safe integers and decimal digit strings (surrounding whitespace and leading zeroes are normalized). Normalization happens before duplicate detection, snapshots, hashing, screening, and score lookup, without modifying caller-owned rows. Equivalent numeric/text IDs produce the same numeric output IDs and input hash. Booleans, empty text, fractions, scientific/hex notation, negative values, objects, and IDs outside the safe-integer range are rejected rather than blindly passed to `Number()`.
 
 Repeated fixed inputs on the tested runtime produced identical results, including after reversing candidate order. Do not interpret this as a guarantee of bit-for-bit floating-point equality on every hardware/runtime combination. Changes to model, runtime, preprocessing, profile, source snapshot, or screening date require a new recorded run.
 
@@ -93,7 +95,7 @@ docker exec gost-app sh -lc 'cd /app && HUSKY_SKIP_INSTALL=1 yarn install --froz
 Run the focused regression suite (explicit file list; do not use fixture-reseeding `yarn test:lib`):
 
 ```powershell
-docker exec gost-app sh -lc 'cd /app/packages/server && yarn mocha __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityProfileIntegration.test.js __tests__/lib/eligibilityBoundaries.test.js __tests__/lib/eligibilityProfileValidation.test.js __tests__/lib/semanticRanking.test.js __tests__/lib/localSemanticEmbedding.test.js'
+docker exec gost-app sh -lc 'cd /app/packages/server && yarn mocha __tests__/lib/eligibilityBlockers.test.js __tests__/lib/grantsEligibilityAdapter.test.js __tests__/lib/eligibilityProfileIntegration.test.js __tests__/lib/eligibilityBoundaries.test.js __tests__/lib/eligibilityProfileValidation.test.js __tests__/lib/eligibilityEvaluationRegressions.test.js __tests__/lib/semanticRanking.test.js __tests__/lib/localSemanticEmbedding.test.js'
 ```
 
 Run code-style checks and the real-model rehearsal:
@@ -113,7 +115,19 @@ Add `--json` for the full result and reproducibility metadata. Unknown CLI optio
 
 ## Evidence and review handoff
 
-Capture the `155 passing` summary, clean ESLint completion, and real-model result table with the final `PASS` line. Keep model revision/input hash visible. Only report the Docker checks as passed after personally running them.
+### October 25 A-11/A-12 follow-up
+
+The updated focused suite passed **218 checks** (the original 155 plus 34 screening and 29 ranking regressions). Adding the six document-chunking checks gave **224 passing checks** in total. Changed-code ESLint and the existing first-demo rehearsal also passed. Historical October 23 counts elsewhere in this guide remain the results from that earlier version; use the updated suite for new evidence.
+
+The ID fix was tested with real ingested text IDs from Allison's evaluation, bypassing only her harness's numeric-ID workaround in an isolated verification wrapper. All 55 candidate rows across five profiles ranked without the former `INVALID_CANDIDATES` error. The unchanged 77 reviewed labels had no disposition/blocker mismatches after the accompanying `eligibility-v2` tribal fix; zero blocked grants received ranks. The new location warning survives semantic scoring, including a synthetic perfect relevance score.
+
+The cached real model also passed repeated-run, reversed candidate order, numeric/text ID equivalence, relevance controls, blockers, and missing-text checks under Node 20.11.1. Model assets and Allison's branch/labels were not modified; no database operations were performed. These are direct agent Windows results, not a fresh Docker verification.
+
+The WA transportation district scores remain `0.295913` versus `0.293755` (gap `0.002158`). That is a narrow, wording-sensitive relevance margin, not confidence, eligibility, or proof that the winner is substantially better. No weights, thresholds, labels, or model settings were tuned to make this evaluation look stronger. C-10 explanations and later UI must preserve this distinction; add broader independent/paraphrase evaluation before claiming robustness.
+
+The C-06 screening fix is committed as `0d09ae2e67e29522f6e7c39f3ee915ce2ee99df6` in PR #18 and has been included in the C-09 working branch so ranking can be verified while review is pending. Do not merge Allison's entire evaluation/data branch solely to bring in these fixes. Keep PR #27 dependent on C-08/T-03 until the prerequisites merge; its comparison may temporarily include the five inherited C-06 fix files because the C-08 branch does not yet contain that commit. Retarget to `develop` and verify the comparison after #18 and #25 merge. This local preparation does not approve or merge those PRs.
+
+Capture the current `218 passing` focused-suite summary, clean ESLint completion, and real-model result table with the final `PASS` line. Keep model revision/input hash visible. Only report the Docker checks as passed after personally running them.
 
 This change consists of ten files: the server package, root Yarn lockfile, model manifest, two implementation modules, two test files, synthetic fixture, rehearsal script, and this guide. No generated model binaries or dependency folders belong in the commit.
 

@@ -14,7 +14,9 @@ describe('chunkPages', () => {
         const pages = [page(1, 'a'.repeat(100)), page(2, 'b'.repeat(100)), page(3, 'c'.repeat(100))];
         const chunks = chunkPages(pages);
         expect(chunks).to.have.length(1);
-        expect(chunks[0]).to.include({ chunkIndex: 0, startPage: 1, endPage: 3, charCount: 300 });
+        expect(chunks[0]).to.include({
+            chunkIndex: 0, startPage: 1, endPage: 3, charCount: 300,
+        });
     });
 
     it('starts a new chunk once the size limit would be exceeded', () => {
@@ -48,5 +50,15 @@ describe('chunkPages', () => {
         const text = `${'a'.repeat(48)} ${'b'.repeat(48)}`;
         const chunks = chunkPages([page(1, text)], 50);
         expect(chunks.map((c) => c.text)).to.deep.equal(['a'.repeat(48), 'b'.repeat(48)]);
+    });
+
+    it('keeps each page separate in the pages field, even though text joins them', () => {
+        const pages = [page(1, 'first page text'), page(2, 'second page text')];
+        const chunks = chunkPages(pages);
+        expect(chunks).to.have.length(1);
+        expect(chunks[0].pages).to.deep.equal([
+            { pageNumber: 1, text: 'first page text' },
+            { pageNumber: 2, text: 'second page text' },
+        ]);
     });
 });

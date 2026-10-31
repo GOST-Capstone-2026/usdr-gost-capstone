@@ -167,6 +167,13 @@
         >
           {{ newTerminologyEnabled ? 'Organizations' : 'Tenants' }}
         </b-nav-item>
+        <b-nav-item
+          v-if="showOrganizationProfile"
+          :to="{ name: 'complianceProfile' }"
+          active-class="active"
+        >
+          Organization Profile
+        </b-nav-item>
       </b-nav>
     </b-col>
 
@@ -187,7 +194,9 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { newTerminologyEnabled, complianceDeadlinesEnabled } from '@/helpers/featureFlags';
+import {
+  newTerminologyEnabled, organizationProfilesEnabled, complianceDeadlinesEnabled,
+} from '@/helpers/featureFlags';
 import AlertBox from '@/arpa_reporter/components/AlertBox.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
 import logo from '@/assets/usdr_logo_standard_wide.svg';
@@ -209,6 +218,7 @@ export default {
       loggedInUser: 'users/loggedInUser',
       userRole: 'users/userRole',
       selectedTeam: 'users/selectedAgency',
+      selectedAgencyId: 'users/selectedAgencyId',
       alerts: 'alerts/alerts',
     }),
     canSeeOrganizationsTab() {
@@ -216,6 +226,11 @@ export default {
     },
     newTerminologyEnabled() {
       return newTerminologyEnabled();
+    },
+    showOrganizationProfile() {
+      return organizationProfilesEnabled()
+        && ['admin', 'staff'].includes(this.userRole)
+        && ![null, undefined, ''].includes(this.selectedAgencyId);
     },
     complianceDeadlinesEnabled() {
       return complianceDeadlinesEnabled();

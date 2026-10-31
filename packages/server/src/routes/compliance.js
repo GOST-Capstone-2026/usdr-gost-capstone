@@ -45,6 +45,25 @@ function serializeDocument(row) {
     };
 }
 
+function serializeGrantBrief(row, document) {
+    return {
+        documentId: row.document_id,
+        grantId: document.grant_id,
+        purpose: row.purpose,
+        eligibility: row.eligibility,
+        fundingRange: row.funding_range,
+        keyDates: row.key_dates,
+        costShare: row.cost_share,
+        keyRequirements: row.key_requirements,
+        notFoundFields: row.not_found_fields,
+        verificationStatus: row.verification_status,
+        runId: row.run_id,
+        model: row.model,
+        promptVersion: row.prompt_version,
+        generatedAt: row.generated_at,
+    };
+}
+
 function serializeAnalysisRun(row) {
     return {
         id: row.id,
@@ -153,6 +172,26 @@ router.get('/documents/:documentId', requireUser, async (req, res) => {
     }
 
     return res.json({ document: serializeDocument(document) });
+});
+
+// GET /api/organizations/:organizationId/compliance/documents/:documentId/brief
+router.get('/documents/:documentId/brief', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const document = await db.getGrantDocument({
+        documentId: req.params.documentId,
+        agencyId: selectedAgency,
+    });
+
+    if (!document) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Document not found.');
+    }
+
+    const brief = await db.getLatestGrantBrief({ documentId: document.id });
+    if (!brief) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'No grant brief has been generated for this document yet.');
+    }
+
+    return res.json({ brief: serializeGrantBrief(brief, document) });
 });
 
 // POST /api/organizations/:organizationId/compliance/documents/:documentId/analysis-runs

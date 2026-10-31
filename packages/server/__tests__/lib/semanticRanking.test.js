@@ -97,7 +97,7 @@ describe('C-09 semantic ranking mechanics', () => {
         expect(result.modelManifest).to.deep.equal(manifest);
         expect(result.model).to.include(manifest.revision);
         expect(result.inputHash).to.match(/^[a-f0-9]{64}$/);
-        expect(result.results[0]).to.include({ sourceRevision: 5, screeningMethodVersion: 'eligibility-v1', profileVersion: 2 });
+        expect(result.results[0]).to.include({ sourceRevision: 5, screeningMethodVersion: 'eligibility-v2', profileVersion: 2 });
         expect(result.results[0].sourceTextHash).to.match(/^[a-f0-9]{64}$/);
         expect(result.results[0].scoreFactors[0]).to.include({ code: 'FOCUS_AREA_MATCH', value: 1, weight: 1 });
     });
@@ -182,7 +182,7 @@ describe('C-09 ranking input and output validation', () => {
             await failure(() => run(profile(), [row()], { asOfDate }), 'INVALID_DATE');
         });
     });
-    [null, [null], [row(-1)], [row('1')], Array.from({ length: 251 }, (_, index) => row(index))].forEach((rows, index) => {
+    [null, [null], [row(-1)], [row('not-an-id')], Array.from({ length: 251 }, (_, index) => row(index))].forEach((rows, index) => {
         it(`rejects invalid candidate set ${index}`, async () => { await failure(() => run(profile(), rows), 'INVALID_CANDIDATES'); });
     });
     it('rejects duplicate IDs instead of silently choosing one source revision', async () => {
@@ -215,6 +215,62 @@ describe('C-09 ranking input and output validation', () => {
         const embedder = fakeEmbedder();
         embedder.embed = async () => [0, 1].map(() => ({ vector: vector(1), tokenCount: 257, truncated: false }));
         await failure(() => run(profile(), [row()], { embedder }), 'INVALID_EMBEDDING');
+    });
+});
+
+describe('A-11/A-12 stored grant ID and screening integration regressions', () => {
+    const run = (rows, p = profile()) => rankGrantRows(p, rows, { ...options, embedder: fakeEmbedder() });
+    it('normalizes database text IDs without mutation and keeps numeric ordering and input hashes', async () => {
+        const rows = [row('364009'), row('0002'), row(' 10 ')];
+        const before = JSON.stringify(rows);
+        const expected = await run([row(364009), row(2), row(10)]);
+        expect(await run(rows)).to.deep.equal(expected);
+        expect(await run([...rows].reverse())).to.deep.equal(expected);
+        expect(expected.results.map(({ grantId }) => grantId)).to.deep.equal([2, 10, 364009]);
+        expect(JSON.stringify(rows)).to.equal(before);
+    });
+    it('accepts safe integer boundaries in either representation', async () => {
+        const result = await run([row('0'), row(String(Number.MAX_SAFE_INTEGER))]);
+        expect(result.results.map(({ grantId }) => grantId)).to.deep.equal([0, Number.MAX_SAFE_INTEGER]);
+    });
+    it('keeps close scores distinct without converting a narrow margin into an eligibility decision', async () => {
+        const embedder = fakeEmbedder();
+        embedder.embed = async () => [1, 0.295913, 0.293755].map((score) => ({
+            vector: vector(score, Math.sqrt(1 - score ** 2)), tokenCount: 8, truncated: false,
+        }));
+        const result = await rankGrantRows(profile(), [row('10'), row('2')], { ...options, embedder });
+        expect(result.results.map(({ grantId, score }) => [grantId, score])).to.deep.equal([[2, 0.295913], [10, 0.293755]]);
+        expect(result.results.every((item) => item.scoreFactors[0].explanation.includes('not an eligibility decision'))).to.equal(true);
+    });
+    [null, undefined, true, false, '', ' ', '-1', '+1', '1.5', '1e3', '0x10', 'Infinity', 'NaN',
+        '9007199254740992', 9007199254740992, 1.5, NaN, Infinity, [], {}, ['364009']].forEach((id, index) => {
+        it(`rejects malformed or unsafe ID ${index} without embedding`, async () => {
+            const embedder = fakeEmbedder();
+            await failure(() => rankGrantRows(profile(), [row(1, { grant_id: id })], { ...options, embedder }), 'INVALID_CANDIDATES');
+            expect(embedder.calls).to.deep.equal([]);
+        });
+    });
+    [[row(1), row('1')], [row('01'), row('1')], [row(0), row('00')]].forEach((rows, index) => {
+        it(`detects duplicate IDs after normalization ${index}`, async () => {
+            await failure(() => run(rows), 'DUPLICATE_CANDIDATE');
+        });
+    });
+    it('does not embed a tribe when definitive applicant categories exclude it', async () => {
+        const p = profile(); p.jurisdiction.type = 'tribalGovernment';
+        const embedder = fakeEmbedder();
+        const result = await rankGrantRows(p, [row('363856', { eligibility_codes: '00' })], { ...options, embedder });
+        expect(result.results[0]).to.include({
+            grantId: 363856, disposition: 'blocked', rank: null, score: null,
+        });
+        expect(result.results[0].blockers.map(({ code }) => code)).to.deep.equal(['APPLICANT_TYPE_UNSUPPORTED']);
+        expect(embedder.calls).to.deep.equal([]);
+    });
+    it('does not let a perfect relevance score erase geographic review', async () => {
+        const result = await run([row('362034', { description: 'Projects must be conducted in Alaska.' })]);
+        expect(result.results[0]).to.include({
+            grantId: 362034, disposition: 'reviewRequired', rank: 1, score: 1,
+        });
+        expect(result.results[0].uncertainties.some((message) => message.includes('geographic'))).to.equal(true);
     });
 });
 

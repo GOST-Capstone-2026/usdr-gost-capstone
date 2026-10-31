@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import BaseLayout from '@/components/BaseLayout.vue';
 import {
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
+  organizationProfilesEnabled,
   complianceDeadlinesEnabled,
 } from '@/helpers/featureFlags';
 import LoginView from '@/views/LoginView.vue';
@@ -171,6 +172,15 @@ export const routes = [
         },
       },
       {
+        path: '/compliance/profile',
+        name: 'complianceProfile',
+        component: () => import('@/views/OrganizationProfileView.vue'),
+        meta: {
+          requiresAuth: true,
+          requiresOrganizationProfilesEnabled: true,
+        },
+      },
+      {
         // AN-08 demo-prep page for the Oct 13 first demo. Not linked from navigation; the real,
         // full-featured checklist UI is AN-15's job later. Reachable by URL for the demo walkthrough.
         path: '/grant-document-demo',
@@ -216,6 +226,7 @@ router.beforeEach((to, from, next) => {
     (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())
     || (to.meta.requiresNewGrantsDetailPageEnabled && !newGrantsDetailPageEnabled())
     || (to.meta.requiresShareTerminologyEnabled && !shareTerminologyEnabled())
+    || (to.meta.requiresOrganizationProfilesEnabled && !organizationProfilesEnabled())
     || (to.meta.requiresComplianceDeadlinesEnabled && !complianceDeadlinesEnabled())
   ) {
     if (authenticated) {
