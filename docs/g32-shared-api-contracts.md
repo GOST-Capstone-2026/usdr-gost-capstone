@@ -789,3 +789,10 @@ Changes to a shared field, enum, state transition, or route require a pull-reque
 8. Retries create new processing-run records and preserve prior completed results and failures.
 9. External services are accessed only through server-side adapters.
 10. Secrets and provider internals are never returned in API responses or ordinary logs.
+
+
+## C-12 selected grant document handoff
+
+The C-11 result action navigates to the named `grantDocumentAnalysis` route at `/compliance/grants/:grantId/documents`, with explicit `organizationId` and optional `matchRunId` query parameters. This is navigation context, not an authorization credential. Upload uses the selected grant ID with the existing organization-scoped document endpoints. No fixed sample ID is used.
+
+On upload or reopen, document organization, grant and document IDs must match the current selection before displaying or analyzing the record. The document URL retains `documentId`; the return link retains the saved matching run. Opening a document does not trigger analysis, change eligibility, or verify a match explanation. The existing API's authorization and feature controls remain authoritative. The former bare `/grant-document-demo` URL now requires explicit grant/team context and the document-analysis flags.

@@ -130,3 +130,23 @@ describe('C-11 live match page request lifecycle', () => {
     expect(api.startSavedMatch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('C-12 matching-to-document entry point', () => {
+  it('links each result to its own grant and preserves team and saved run', async () => {
+    window.sessionStorage.removeItem('featureFlags');
+    window.APP_CONFIG = { featureFlags: { grantComplianceEnabled: true, grantDocumentAnalysisEnabled: true } };
+    route.query.runId = '9'; render(); await flushPromises();
+    const links = wrapper.findAll('router-link-stub').filter((link) => link.text().includes('Review documents'));
+    expect(links).toHaveLength(5);
+    expect(wrapper.vm.documentLocation(4)).toEqual({
+      name: 'grantDocumentAnalysis', params: { grantId: '4' }, query: { organizationId: '0', matchRunId: '9' },
+    });
+    expect(wrapper.get('[data-grant-id="4"]').text()).toContain('Blocked — not ranked');
+  });
+  it('hides the handoff when document analysis is disabled', async () => {
+    window.sessionStorage.removeItem('featureFlags');
+    window.APP_CONFIG = { featureFlags: { grantComplianceEnabled: true, grantDocumentAnalysisEnabled: false } };
+    route.query.runId = '9'; render(); await flushPromises();
+    expect(wrapper.text()).not.toContain('Review documents for grant');
+  });
+});
