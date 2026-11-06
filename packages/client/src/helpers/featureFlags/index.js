@@ -1,5 +1,7 @@
 import { getFeatureFlags } from '@/helpers/featureFlags/utils';
 
+export { grantMatchingEnabled } from '@/helpers/featureFlags/matching';
+
 export function newTerminologyEnabled() {
   return getFeatureFlags().newTerminologyEnabled === true;
 }
