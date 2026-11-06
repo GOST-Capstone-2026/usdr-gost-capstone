@@ -1207,9 +1207,8 @@ async function getLatestGrantBrief({ documentId }) {
 }
 
 // --- F1: Grant Analysis and Compliance Checklist (checklist_items, AN-12) ---
-// See docs/g32-shared-api-contracts.md, "Checklist Contract". Separate from the pre-existing
-// checklist_items_placeholder table (Manuel's M-01); Manuel switches the deadline tracker over
-// to these rows once this subsystem is generating them.
+// See docs/g32-shared-api-contracts.md, "Checklist Contract". The deadline tracker reads these
+// same rows (getDeadlineChecklistItems, updateDeadlineChecklistItem below).
 
 // Saves the checklist items one analysis run identified for a document. `items` are shaped like
 // checklistItemSchema.js's createChecklistItem() (AN-11), filled in or not. Returns the saved
@@ -1885,15 +1884,22 @@ async function deleteSavedSearch(searchId, userId) {
     return rowsDeleted === 1;
 }
 
+function deadlineChecklistItemsQuery(agencyId) {
+    return knex(TABLES.checklist_items)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.checklist_items}.document_id`)
+        .where(`${TABLES.grant_documents}.agency_id`, agencyId)
+        .whereNot(`${TABLES.checklist_items}.verification_status`, 'rejected')
+        .select(`${TABLES.checklist_items}.*`, `${TABLES.grant_documents}.grant_id`);
+}
+
 /**
  * Returns every non-rejected deadline-bearing checklist item for one organization,
  * including unverified and undated items, for the Portfolio and Deadline Tracker
  * subsystem's read API (M-03). Undated items are returned even when from/through
  * are given.
  *
- * Reads checklist_items_placeholder for now. When the real checklist_items table
- * (owned by the Grant Analysis and Compliance Checklist subsystem) lands, this
- * function is what changes — callers of getDeadlineChecklistItems() do not.
+ * Reads checklist_items, owned by the Grant Analysis and Compliance Checklist
+ * subsystem. Organization and grant come from the item's grant document.
  *
  * @param {Object} args
  * @param {number} args.agencyId
@@ -1902,19 +1908,17 @@ async function deleteSavedSearch(searchId, userId) {
  * @return {Promise<Array>}
  */
 async function getDeadlineChecklistItems({ agencyId, from, through }) {
-    const query = knex(TABLES.checklist_items_placeholder)
-        .where('agency_id', agencyId)
-        .whereNot('verification_status', 'rejected')
-        .orderByRaw('due_date asc nulls last, id asc');
+    const query = deadlineChecklistItemsQuery(agencyId)
+        .orderByRaw(`${TABLES.checklist_items}.due_date asc nulls last, ${TABLES.checklist_items}.id asc`);
 
     if (from || through) {
         query.andWhere((dateScope) => {
-            dateScope.whereNull('due_date').orWhere((range) => {
+            dateScope.whereNull(`${TABLES.checklist_items}.due_date`).orWhere((range) => {
                 if (from) {
-                    range.where('due_date', '>=', from);
+                    range.where(`${TABLES.checklist_items}.due_date`, '>=', from);
                 }
                 if (through) {
-                    range.where('due_date', '<=', through);
+                    range.where(`${TABLES.checklist_items}.due_date`, '<=', through);
                 }
             });
         });
@@ -1927,12 +1931,13 @@ async function updateDeadlineChecklistItem({
     id, agencyId, dueDate, completionStatus,
 }) {
     const updates = {
-        is_user_edited: true,
+        version: knex.raw('version + 1'),
         updated_at: new Date(),
     };
 
     if (dueDate !== undefined) {
         updates.due_date = dueDate;
+        updates.is_user_edited = true;
         updates.verification_status = 'unverified';
         updates.verified_by = null;
         updates.verified_at = null;
@@ -1943,11 +1948,20 @@ async function updateDeadlineChecklistItem({
         updates.completed_at = completionStatus === 'completed' ? new Date() : null;
     }
 
-    const [row] = await knex(TABLES.checklist_items_placeholder)
-        .where({ id, agency_id: agencyId })
+    const [updated] = await knex(TABLES.checklist_items)
+        .where({ id })
+        .whereIn('document_id', knex(TABLES.grant_documents).select('id').where({ agency_id: agencyId }))
         .whereNot('verification_status', 'rejected')
         .update(updates)
-        .returning('*');
+        .returning('id');
+
+    if (!updated) {
+        return null;
+    }
+
+    const row = await deadlineChecklistItemsQuery(agencyId)
+        .where(`${TABLES.checklist_items}.id`, updated.id)
+        .first();
 
     return row || null;
 }

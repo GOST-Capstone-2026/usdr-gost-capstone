@@ -41,17 +41,18 @@ function toIsoOrNull(dateValue) {
 }
 
 function serializeSource(row) {
-    if (row.source_page_number === null || row.source_excerpt === null) {
+    const [first] = Array.isArray(row.sources) ? row.sources : [];
+    if (!first || first.pageNumber == null || first.excerpt == null) {
         return null;
     }
-    return { pageNumber: row.source_page_number, excerpt: row.source_excerpt };
+    return { pageNumber: first.pageNumber, excerpt: first.excerpt };
 }
 
 function serializeDeadline(row, status) {
     return {
         checklistItemId: row.id,
-        grantId: null,
-        documentId: null,
+        grantId: row.grant_id,
+        documentId: row.document_id,
         title: row.description,
         dueDate: row.due_date,
         status,
