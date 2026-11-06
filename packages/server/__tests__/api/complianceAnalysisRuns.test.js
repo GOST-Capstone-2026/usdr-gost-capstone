@@ -25,6 +25,7 @@ describe('grant document analysis-runs API', () => {
     let cookie;
     let nvCookie;
     let documentId;
+    let adminUser;
 
     before(async function beforeHook() {
         this.timeout(15000);
@@ -33,11 +34,13 @@ describe('grant document analysis-runs API', () => {
         // getAnalysisRun rejects a cross-organization lookup, separately from the broader
         // access-control layer that already blocks a user from selecting an agency at all.
         nvCookie = await getSessionCookie('user2@nv.example.com');
+        adminUser = await knex('users').select('id', 'tenant_id').where({ email: 'grant-admin@usdigitalresponse.org' }).first();
         server = await makeTestServer();
     });
 
     after(async () => {
         if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
             await knex('analysis_runs').where({ document_id: documentId }).del();
             await knex('grant_document_pages').where({ document_id: documentId }).del();
             await knex('grant_documents').where({ id: documentId }).del();
@@ -74,6 +77,19 @@ describe('grant document analysis-runs API', () => {
 
         const pageRows = await knex('grant_document_pages').where({ document_id: documentId }).orderBy('page_number');
         expect(pageRows).to.have.length(2);
+
+        // The dev/test environment has no AI_PROVIDER configured, so checklist generation (AN-14)
+        // ran against the mock provider: its canned text isn't real JSON for it to find obligations
+        // in, so no checklist_items are created, but this proves the real pipeline (audit logging
+        // included) runs without error, who asked recorded, same as the grant-brief audit check.
+        const checklistAuditRows = await knex('ai_audit_records').where({ task: 'checklistGeneration' });
+        expect(checklistAuditRows.length).to.be.greaterThan(0);
+        checklistAuditRows.forEach((row) => {
+            expect(row.grant_id).to.equal('335255');
+            expect(row.prompt_version).to.equal('checklist-generation-v1');
+            expect(row.user_id).to.equal(adminUser.id);
+            expect(row.tenant_id).to.equal(adminUser.tenant_id);
+        });
     });
 
     it('returns 404 starting an analysis run for a document that does not exist', async () => {
