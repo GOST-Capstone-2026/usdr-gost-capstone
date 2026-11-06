@@ -120,7 +120,15 @@
           :error-code="resultError.code || ''"
           :retryable="resultError.retryable === true"
           @retry="loadSelection"
-        />
+        >
+          <template #grant-actions="{ grantId }">
+            <p v-if="canAnalyzeDocuments">
+              <router-link :to="documentLocation(grantId)">
+                Review documents for grant {{ grantId }}
+              </router-link>
+            </p>
+          </template>
+        </RankedMatchResults>
       </template>
     </template>
   </main>
@@ -129,7 +137,8 @@
 <script>
 import { mapGetters } from 'vuex';
 import RankedMatchResults from '@/components/RankedMatchResults.vue';
-import { grantMatchingEnabled } from '@/helpers/featureFlags';
+import { grantMatchingEnabled, grantDocumentAnalysisEnabled } from '@/helpers/featureFlags';
+import { grantDocumentLocation } from '@/helpers/grantDocumentHandoff';
 import { matchDisplayError } from '@/helpers/rankedMatchResults';
 import {
   organizationId, loadMatchProfile, loadSavedMatch, startSavedMatch, matchApiError,
@@ -157,6 +166,7 @@ export default {
     ...mapGetters({ selectedAgencyId: 'users/selectedAgencyId', userRole: 'users/userRole' }),
     selectedOrganizationId() { return organizationId(this.selectedAgencyId); },
     canUseMatching() { return grantMatchingEnabled() && ['admin', 'staff'].includes(this.userRole); },
+    canAnalyzeDocuments() { return this.canUseMatching && grantDocumentAnalysisEnabled(); },
     context() {
       return this.profile ? { organizationId: this.selectedOrganizationId, profileId: this.profile.id, profileVersion: this.profile.version } : null;
     },
@@ -171,6 +181,9 @@ export default {
   beforeUnmount() { this.sequence += 1; },
   methods: {
     errorMessage: matchDisplayError,
+    documentLocation(grantId) {
+      return grantDocumentLocation(grantId, this.selectedOrganizationId, this.savedRun?.id);
+    },
     async loadSelection() {
       this.sequence += 1;
       const { sequence } = this;
