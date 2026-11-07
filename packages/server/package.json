@@ -36,6 +36,7 @@
     "start": "node src",
     "test:ai": "NODE_ENV=test LOG_LEVEL=silent mocha __tests__/lib/ai-provider.test.js __tests__/lib/ai-audit.test.js",
     "test:eval": "NODE_ENV=test mocha __tests__/lib/evaluation-metrics.test.js __tests__/lib/matching-fixtures.test.js __tests__/lib/explanation-checks.test.js",
+    "verify:prototype": "node src/scripts/verifyPrototype.js",
     "test:isolation": "NODE_ENV=test SUPPRESS_EMAIL=true mocha --exit --require __tests__/api/fixtures.js __tests__/api/organizationIsolation.test.js",
     "test:agencyimport": "NODE_ENV=test SUPPRESS_EMAIL=true mocha --exit --bail --require __tests__/api/fixtures.js __tests__/db/agencyImporter._test_.js",
     "test:apis": "NODE_ENV=test SUPPRESS_EMAIL=true mocha --exit --bail --require __tests__/api/fixtures.js __tests__/api/*.test.js",

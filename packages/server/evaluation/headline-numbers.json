@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-11-04T21:29:22.369Z",
+  "note": "copy numbers for the poster, demo script and video from here so they always match",
+  "sources": {
+    "a14": "a14-integrated-2026-11-04.json",
+    "a16": null
+  },
+  "eligibility": {
+    "reviewedCases": "77/77",
+    "accuracy": 1,
+    "missedBlockRate": 0,
+    "falseBlockRate": 0,
+    "blockerRecall": 1,
+    "notModeledPassedAsEligible": "0 of 19"
+  },
+  "ranking": {
+    "blockedGrantsRanked": 0,
+    "ndcgAt1": 1,
+    "ndcgAt3": 1,
+    "ndcgAt5": 1,
+    "randomNdcgAt1": 0.242,
+    "randomNdcgAt3": 0.386,
+    "randomNdcgAt5": 0.49,
+    "profiles": 5
+  },
+  "explanations": {
+    "passingAllChecks": "55/55",
+    "claims": 351,
+    "reproducible": true
+  },
+  "faithfulness": "no live run yet",
+  "demoDay": {
+    "date": "2026-12-04",
+    "openGrants": 6,
+    "totalGrants": 11
+  }
+}

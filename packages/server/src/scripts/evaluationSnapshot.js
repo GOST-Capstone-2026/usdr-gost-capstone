@@ -186,4 +186,6 @@ if (require.main === module) {
     });
 }
 
-module.exports = { buildSnapshot, runPipeline, summarizeExplanations };
+module.exports = {
+    buildSnapshot, gitInfo, runPipeline, summarizeExplanations,
+};
