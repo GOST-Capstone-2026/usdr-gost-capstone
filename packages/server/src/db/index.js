@@ -1206,6 +1206,94 @@ async function getLatestGrantBrief({ documentId }) {
     return row;
 }
 
+// --- F1: Grant Analysis and Compliance Checklist (checklist_items, AN-12) ---
+// See docs/g32-shared-api-contracts.md, "Checklist Contract". Separate from the pre-existing
+// checklist_items_placeholder table (Manuel's M-01); Manuel switches the deadline tracker over
+// to these rows once this subsystem is generating them.
+
+// Saves the checklist items one analysis run identified for a document. `items` are shaped like
+// checklistItemSchema.js's createChecklistItem() (AN-11), filled in or not. Returns the saved
+// rows, each with the id, version, and timestamps storage assigns.
+async function createChecklistItems({ documentId, items }) {
+    if (items.length === 0) {
+        return [];
+    }
+    return knex(TABLES.checklist_items)
+        .insert(items.map((item) => ({
+            document_id: documentId,
+            category: item.category,
+            description: item.description,
+            found: item.found,
+            sources: JSON.stringify(item.sources),
+            possibly_affected_by_quality_issue: item.possiblyAffectedByQualityIssue,
+            due_date: item.dueDate,
+        })))
+        .returning('*');
+}
+
+// Every checklist item generated for one document, scoped to the organization that owns the
+// document so one organization cannot read another's checklist by guessing a document id.
+async function getChecklistItemsForDocument({ documentId, agencyId }) {
+    return knex(TABLES.checklist_items)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.checklist_items}.document_id`)
+        .where({
+            [`${TABLES.checklist_items}.document_id`]: documentId,
+            [`${TABLES.grant_documents}.agency_id`]: agencyId,
+        })
+        .select(`${TABLES.checklist_items}.*`)
+        .orderBy(`${TABLES.checklist_items}.id`);
+}
+
+// Applies an edit, annotation, or verification/rejection to one checklist item (the Checklist
+// Update Request contract). expectedVersion enforces optimistic locking: a stale version matches
+// no row, so the caller can tell a version conflict apart from a plain not-found (returns null
+// either way; which one it was is an HTTP-layer concern, not storage's). isUserEdited, verifiedBy,
+// verifiedAt, completedAt, updatedAt, and the next version are set here, never by the caller, per
+// the shared contract. Checking that a found item being verified actually carries a source is
+// AN-13's job (source-citation validation), not this function's.
+async function updateChecklistItem({
+    itemId,
+    agencyId,
+    expectedVersion,
+    verifiedByUserId,
+    description,
+    dueDate,
+    userNotes,
+    completionStatus,
+    verificationStatus,
+}) {
+    const updates = { version: expectedVersion + 1, updated_at: knex.fn.now() };
+
+    // Only an actual content edit marks the item user-edited; confirming or rejecting an
+    // AI-generated value through verificationStatus is not itself an edit to that value.
+    if (description !== undefined || dueDate !== undefined || userNotes !== undefined) {
+        updates.is_user_edited = true;
+    }
+    if (description !== undefined) updates.description = description;
+    if (dueDate !== undefined) updates.due_date = dueDate;
+    if (userNotes !== undefined) updates.user_notes = userNotes;
+
+    if (completionStatus !== undefined) {
+        updates.completion_status = completionStatus;
+        updates.completed_at = completionStatus === 'completed' ? knex.fn.now() : null;
+    }
+
+    if (verificationStatus !== undefined) {
+        updates.verification_status = verificationStatus;
+        const isVerifyingOrRejecting = verificationStatus === 'verified' || verificationStatus === 'rejected';
+        updates.verified_by = isVerifyingOrRejecting ? verifiedByUserId : null;
+        updates.verified_at = isVerifyingOrRejecting ? knex.fn.now() : null;
+    }
+
+    const [row] = await knex(TABLES.checklist_items)
+        .where({ id: itemId, version: expectedVersion })
+        .whereIn('document_id', knex(TABLES.grant_documents).select('id').where({ agency_id: agencyId }))
+        .update(updates)
+        .returning('*');
+
+    return row || null;
+}
+
 async function markGrantAsViewed({ grantId, agencyId, userId }) {
     return knex(TABLES.grants_viewed)
         .insert({
@@ -1880,6 +1968,9 @@ module.exports = {
     failAnalysisRun,
     createGrantBrief,
     getLatestGrantBrief,
+    createChecklistItems,
+    getChecklistItemsForDocument,
+    updateChecklistItem,
     createSavedSearch,
     getSavedSearch,
     getSavedSearches,

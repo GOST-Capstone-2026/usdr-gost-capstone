@@ -1,15 +1,13 @@
 const express = require('express');
 const { DateTime } = require('luxon');
 const { requireUser } = require('../lib/access-helpers');
+const {
+    ALLOWED_STATUSES, getToday, isPortfolioItem, computeStatus,
+} = require('../lib/deadlineStatus');
 const db = require('../db');
 
 const router = express.Router({ mergeParams: true });
 
-const TIME_ZONE = 'America/New_York';
-const DUE_SOON_WINDOW_DAYS = 7;
-const PORTFOLIO_STATUSES = ['overdue', 'dueToday', 'dueSoon', 'upcoming', 'completed', 'completedLate', 'notApplicable'];
-const REVIEW_NEEDED_STATUSES = [...PORTFOLIO_STATUSES.map((status) => `${status}Unverified`), 'reviewNeeded'];
-const ALLOWED_STATUSES = [...PORTFOLIO_STATUSES, ...REVIEW_NEEDED_STATUSES];
 const DEFAULT_PER_PAGE = 25;
 const ALLOWED_COMPLETION_STATUSES = ['notStarted', 'inProgress', 'completed', 'notApplicable'];
 const ALLOWED_PATCH_FIELDS = ['dueDate', 'completionStatus'];
@@ -27,55 +25,6 @@ function sendError(req, res, status, code, message, details) {
     });
 }
 
-function computeDateStatus({
-    completionStatus, completedAt, dueDate, today,
-}) {
-    const due = DateTime.fromISO(dueDate, { zone: TIME_ZONE }).startOf('day');
-
-    if (completionStatus === 'notApplicable') {
-        return 'notApplicable';
-    }
-
-    if (completionStatus === 'completed') {
-        const completedDay = completedAt
-            ? DateTime.fromJSDate(completedAt).setZone(TIME_ZONE).startOf('day')
-            : null;
-        return completedDay && completedDay > due ? 'completedLate' : 'completed';
-    }
-
-    const dueSoonCutoff = today.plus({ days: DUE_SOON_WINDOW_DAYS });
-
-    if (due < today) {
-        return 'overdue';
-    }
-    if (due.hasSame(today, 'day')) {
-        return 'dueToday';
-    }
-    if (due <= dueSoonCutoff) {
-        return 'dueSoon';
-    }
-    return 'upcoming';
-}
-
-function isPortfolioItem(row) {
-    return row.verification_status === 'verified' && row.due_date !== null;
-}
-
-function computeStatus(row, today) {
-    if (row.due_date === null) {
-        return 'reviewNeeded';
-    }
-
-    const dateStatus = computeDateStatus({
-        completionStatus: row.completion_status,
-        completedAt: row.completed_at,
-        dueDate: row.due_date,
-        today,
-    });
-
-    return isPortfolioItem(row) ? dateStatus : `${dateStatus}Unverified`;
-}
-
 function paginate(items, page, size) {
     const total = items.length;
     const start = (page - 1) * size;
@@ -91,6 +40,13 @@ function toIsoOrNull(dateValue) {
     return dateValue ? DateTime.fromJSDate(dateValue).toUTC().toISO() : null;
 }
 
+function serializeSource(row) {
+    if (row.source_page_number === null || row.source_excerpt === null) {
+        return null;
+    }
+    return { pageNumber: row.source_page_number, excerpt: row.source_excerpt };
+}
+
 function serializeDeadline(row, status) {
     return {
         checklistItemId: row.id,
@@ -104,7 +60,7 @@ function serializeDeadline(row, status) {
         verificationStatus: row.verification_status,
         verifiedBy: row.verified_by,
         verifiedAt: toIsoOrNull(row.verified_at),
-        source: null,
+        source: serializeSource(row),
     };
 }
 
@@ -140,7 +96,7 @@ router.get('/deadlines', requireUser, async (req, res) => {
 
     const rows = await db.getDeadlineChecklistItems({ agencyId: selectedAgency, from, through });
 
-    const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
+    const today = getToday();
 
     // Status is computed in application code, not SQL
     const portfolioItems = [];
@@ -219,8 +175,7 @@ router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
         return sendError(req, res, 404, 'NOT_FOUND', 'Checklist item not found.');
     }
 
-    const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
-    const deadline = serializeDeadline(updated, computeStatus(updated, today));
+    const deadline = serializeDeadline(updated, computeStatus(updated, getToday()));
 
     return res.json({ deadline });
 });

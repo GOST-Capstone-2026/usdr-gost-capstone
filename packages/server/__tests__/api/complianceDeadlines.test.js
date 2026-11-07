@@ -102,6 +102,27 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(item.dueDate).to.equal(null);
         });
 
+        it('returns the source page and excerpt for an item with a cited source', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.portfolio, 'Submit quarterly financial status report');
+            expect(item.source).to.deep.equal({
+                pageNumber: 12,
+                excerpt: 'Recipients must submit a quarterly Federal Financial Report (SF-425) no later than 30 calendar days after the end of each calendar quarter.',
+            });
+        });
+
+        it('returns a null source when no source was located', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.reviewNeeded, 'Complete civil rights compliance self-assessment');
+            expect(item.source).to.equal(null);
+        });
+
+        it('keeps the source on an undated item so the date can be resolved later', async () => {
+            const { data } = await getDeadlines();
+            const item = findByTitle(data.reviewNeeded, 'Maintain records supporting ongoing grant obligations');
+            expect(item.source.pageNumber).to.equal(27);
+        });
+
         it('keeps undated items when a date range is requested', async () => {
             const { data } = await getDeadlines({ from: '2000-01-01', through: '2000-12-31' });
             expect(data.portfolio.length).to.equal(0);
@@ -293,6 +314,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(deadline.verificationStatus).to.equal('unverified');
             expect(deadline.verifiedBy).to.equal(null);
             expect(deadline.verifiedAt).to.equal(null);
+            expect(deadline.source.pageNumber).to.equal(14);
         });
 
         it('attaches a due date to an item that previously had none', async () => {

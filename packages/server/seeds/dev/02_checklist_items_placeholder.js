@@ -18,6 +18,8 @@ const checklistItems = [
         verified_by: 1,
         verified_at: moment().subtract(5, 'days').toDate(),
         is_user_edited: false,
+        source_page_number: 12,
+        source_excerpt: 'Recipients must submit a quarterly Federal Financial Report (SF-425) no later than 30 calendar days after the end of each calendar quarter.',
     },
     {
         agency_id: usdrAgency.id,
@@ -30,6 +32,8 @@ const checklistItems = [
         verified_by: null,
         verified_at: null,
         is_user_edited: false,
+        source_page_number: 18,
+        source_excerpt: 'An updated subrecipient monitoring plan must be submitted to the program office for review prior to issuing any new subawards.',
     },
     {
         agency_id: usdrAgency.id,
@@ -42,6 +46,8 @@ const checklistItems = [
         verified_by: 1,
         verified_at: moment().subtract(1, 'days').toDate(),
         is_user_edited: false,
+        source_page_number: 14,
+        source_excerpt: 'The recipient shall submit an annual performance report describing progress toward each approved project objective.',
     },
     {
         agency_id: usdrAgency.id,
@@ -54,6 +60,8 @@ const checklistItems = [
         verified_by: 1,
         verified_at: moment().subtract(18, 'days').toDate(),
         is_user_edited: true,
+        source_page_number: 22,
+        source_excerpt: 'All final financial reports must be submitted within 120 calendar days after the end of the period of performance.',
     },
     {
         agency_id: usdrAgency.id,
@@ -66,6 +74,8 @@ const checklistItems = [
         verified_by: 1,
         verified_at: moment().subtract(16, 'days').toDate(),
         is_user_edited: false,
+        source_page_number: 25,
+        source_excerpt: 'Recipients that expend $1,000,000 or more in federal awards during the fiscal year must certify completion of a single audit.',
     },
     {
         agency_id: usdrAgency.id,
@@ -78,6 +88,8 @@ const checklistItems = [
         verified_by: null,
         verified_at: null,
         is_user_edited: false,
+        source_page_number: null,
+        source_excerpt: null,
     },
     {
         agency_id: usdrAgency.id,
@@ -90,6 +102,8 @@ const checklistItems = [
         verified_by: null,
         verified_at: null,
         is_user_edited: false,
+        source_page_number: 27,
+        source_excerpt: 'Financial records, supporting documents, and all other records pertinent to the award must be retained for three years from the date of submission of the final expenditure report.',
     },
 ];
 
