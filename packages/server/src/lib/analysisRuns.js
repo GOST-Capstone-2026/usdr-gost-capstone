@@ -47,8 +47,11 @@ async function fetchStoredPdf(document) {
  *
  * @param {{id: number}} analysisRun
  * @param {{id: number, storage_bucket: string, storage_key: string}} document
+ * @param {{userId?: number, tenantId?: number}} requestedBy who asked for this run, so the AI
+ *   audit trail (ai_audit_records) can say which user and organization triggered the call
  */
-async function runAnalysis(analysisRun, document) {
+async function runAnalysis(analysisRun, document, requestedBy = {}) {
+    const { userId, tenantId } = requestedBy;
     await db.startAnalysisRun({ runId: analysisRun.id });
     try {
         const buffer = await fetchStoredPdf(document);
@@ -72,7 +75,9 @@ async function runAnalysis(analysisRun, document) {
                     runId: analysisRun.id,
                     chunks,
                     generateText: (args) => generateTextAudited(
-                        { task: 'grantBrief', grantId: document.grant_id, promptVersion: GRANT_BRIEF_PROMPT_VERSION },
+                        {
+                            task: 'grantBrief', grantId: document.grant_id, promptVersion: GRANT_BRIEF_PROMPT_VERSION, userId, tenantId,
+                        },
                         args,
                         { knex: db.knex },
                     ),

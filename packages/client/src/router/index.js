@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import BaseLayout from '@/components/BaseLayout.vue';
 import {
+  grantMatchingEnabled,
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
   organizationProfilesEnabled,
   complianceDeadlinesEnabled,
@@ -55,6 +56,12 @@ export const routes = [
       requiresAuth: true,
     },
     children: [
+      {
+        path: '/compliance/matches',
+        name: 'grantMatches',
+        component: () => import('@/views/GrantMatchesView.vue'),
+        meta: { requiresAuth: true, requiresGrantMatchingEnabled: true },
+      },
       {
         path: '/dashboard',
         name: 'dashboard',
@@ -221,6 +228,8 @@ router.beforeEach((to, from, next) => {
 
     next({ name: 'login', query: { redirect_to: redirectTo } });
   } else if (to.name === 'login' && authenticated) {
+    next({ name: 'grants' });
+  } else if (to.meta.requiresGrantMatchingEnabled && !grantMatchingEnabled()) {
     next({ name: 'grants' });
   } else if (
     (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())

@@ -198,7 +198,7 @@ router.get('/documents/:documentId/brief', requireUser, async (req, res) => {
 // Starts processing (extract, rate quality, chunk for AI) and returns immediately; poll
 // GET .../analysis-runs/:runId for progress instead of waiting on this request.
 router.post('/documents/:documentId/analysis-runs', requireUser, async (req, res) => {
-    const { selectedAgency } = req.session;
+    const { selectedAgency, user } = req.session;
     const document = await db.getGrantDocument({
         documentId: req.params.documentId,
         agencyId: selectedAgency,
@@ -213,7 +213,7 @@ router.post('/documents/:documentId/analysis-runs', requireUser, async (req, res
     // Deliberately not awaited: the point of this endpoint is that the caller does not wait for
     // processing to finish. runAnalysis reports its own success/failure into the analysis_runs
     // row, so there is nothing more to do with its result here.
-    runAnalysis(analysisRun, document).catch((err) => {
+    runAnalysis(analysisRun, document, { userId: user.id, tenantId: user.tenant_id }).catch((err) => {
         req.log.error({ err, analysisRunId: analysisRun.id }, 'unhandled error starting analysis run');
     });
 
