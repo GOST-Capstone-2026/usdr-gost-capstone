@@ -84,14 +84,17 @@ const paginationFor = (portfolioTotal, reviewNeededTotal) => ({
 
 let wrapper;
 let fetchDeadlines;
+let updateDeadline;
 
 function mountView({
   portfolioItems = portfolio,
   reviewNeededItems = reviewNeeded,
   pagination = paginationFor(portfolioItems.length, reviewNeededItems.length),
   fetchImpl = () => Promise.resolve(),
+  updateImpl = () => Promise.resolve(),
 } = {}) {
   fetchDeadlines = vi.fn(fetchImpl);
+  updateDeadline = vi.fn(updateImpl);
   const store = createStore({
     getters: {
       'deadlines/portfolio': () => portfolioItems,
@@ -101,6 +104,7 @@ function mountView({
     },
     actions: {
       'deadlines/fetchDeadlines': fetchDeadlines,
+      'deadlines/updateDeadline': updateDeadline,
     },
   });
   wrapper = mount(ComplianceDeadlinesView, {
@@ -294,6 +298,43 @@ describe('ComplianceDeadlinesView.vue', () => {
       await toggle.trigger('click');
 
       expect(section('overdue').find('[data-testid="deadline-source"]').exists()).toBe(false);
+    });
+  });
+
+  describe('acting on a deadline from the list', () => {
+    const openDetails = async (key) => {
+      await section(key).get('[data-testid="toggle-details"]').trigger('click');
+    };
+
+    it('sends the change for the expanded deadline', async () => {
+      await mountView();
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+      await flushPromises();
+
+      expect(updateDeadline).toHaveBeenCalledTimes(1);
+      expect(updateDeadline.mock.calls[0][1]).toEqual({
+        checklistItemId: 4,
+        changes: { completionStatus: 'completed' },
+        successMessage: 'Marked "Later report" complete.',
+      });
+    });
+
+    it('keeps the dashboard and the open details on screen while the change saves', async () => {
+      let finish;
+      await mountView({ updateImpl: () => new Promise((resolve) => { finish = resolve; }) });
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(true);
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
+      expect(fetchDeadlines).toHaveBeenCalledTimes(1);
+
+      finish();
+      await flushPromises();
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
     });
   });
 

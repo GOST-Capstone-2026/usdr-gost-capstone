@@ -24,6 +24,29 @@ export default {
       const response = await fetchApi.get(`/api/organizations/${rootGetters['users/selectedAgencyId']}/compliance/deadlines${query}`);
       commit('SET_DEADLINES', response);
     },
+    async updateDeadline({ commit, dispatch, rootGetters }, { checklistItemId, changes, successMessage }) {
+      const url = `/api/organizations/${rootGetters['users/selectedAgencyId']}/compliance/deadlines/${checklistItemId}`;
+      try {
+        await fetchApi.patch(url, changes);
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          await dispatch('fetchDeadlines');
+        }
+        throw error;
+      }
+      try {
+        await dispatch('fetchDeadlines');
+      } catch (error) {
+        commit('alerts/addAlert', {
+          text: 'The change was saved, but the deadlines could not be refreshed. Reload the page to see it.',
+          level: 'warn',
+        }, { root: true });
+        return;
+      }
+      if (successMessage) {
+        commit('alerts/addAlert', { text: successMessage, level: 'ok' }, { root: true });
+      }
+    },
   },
   mutations: {
     SET_DEADLINES(state, { data, pagination }) {
