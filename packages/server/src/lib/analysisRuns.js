@@ -7,7 +7,7 @@
 // routes/compliance.js, so the route only has to worry about HTTP concerns (create the run,
 // respond, kick this off) and this file only has to worry about doing the work.
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
-const { getS3Client } = require('./gost-aws');
+const { getGrantDocumentsS3Client } = require('./gost-aws');
 const { extractPages } = require('./pdfTextExtraction');
 const { assessExtractionQuality } = require('./extractionQuality');
 const { chunkPages } = require('./documentChunking');
@@ -32,7 +32,7 @@ async function streamToBuffer(stream) {
  * @returns {Promise<Buffer>}
  */
 async function fetchStoredPdf(document) {
-    const s3 = getS3Client();
+    const s3 = getGrantDocumentsS3Client();
     const response = await s3.send(new GetObjectCommand({
         Bucket: document.storage_bucket,
         Key: document.storage_key,
