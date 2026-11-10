@@ -106,6 +106,10 @@
             </li>
           </ul>
         </div>
+        <slot
+          name="grant-actions"
+          :grant-id="row.grantId"
+        />
         <details class="match-results__details">
           <summary>Explanation and listing evidence for grant {{ row.grantId }}</summary>
           <p>{{ row.explanation }}</p>
