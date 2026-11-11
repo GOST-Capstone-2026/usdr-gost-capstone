@@ -17,6 +17,19 @@ function fakeAi(responsesByChunkIndex) {
 }
 
 describe('generateChecklistItems', () => {
+    it('retains supported obligations for review when a provider returns an invalid calendar date', async () => {
+        const excerpt = 'Quarterly performance reports are due within 30 days after each quarter.';
+        const chunks = [chunk(0, [{ pageNumber: 1, text: excerpt }])];
+        const generateText = fakeAi([JSON.stringify(['2026-02-30', '0000-01-01', '30 days after each quarter'].map((dueDate) => ({
+            category: 'reporting', description: excerpt, dueDate, pageNumber: 1, excerpt,
+        })))]);
+        const items = await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText,
+        });
+        expect(items.map((item) => item.dueDate)).to.deep.equal([null, null, null]);
+        expect(items.every((item) => item.verificationStatus === 'unverified')).to.equal(true);
+    });
+
     it('builds a checklist item from an obligation the AI finds, with a validated citation', async () => {
         const chunks = [chunk(0, [{ pageNumber: 1, text: 'Quarterly performance reports are due within 30 days after each quarter.' }])];
         const generateText = fakeAi([JSON.stringify([{

@@ -1214,11 +1214,11 @@ async function getLatestGrantBrief({ documentId }) {
 // Saves the checklist items one analysis run identified for a document. `items` are shaped like
 // checklistItemSchema.js's createChecklistItem() (AN-11), filled in or not. Returns the saved
 // rows, each with the id, version, and timestamps storage assigns.
-async function createChecklistItems({ documentId, items }) {
+async function createChecklistItems({ documentId, items }, connection = knex) {
     if (items.length === 0) {
         return [];
     }
-    return knex(TABLES.checklist_items)
+    return connection(TABLES.checklist_items)
         .insert(items.map((item) => ({
             document_id: documentId,
             category: item.category,
@@ -1229,6 +1229,29 @@ async function createChecklistItems({ documentId, items }) {
             due_date: item.dueDate,
         })))
         .returning('*');
+}
+
+// Lock the parent so overlapping analyses can only save one initial checklist.
+async function createInitialChecklistItems({ documentId, items }) {
+    if (items.length === 0) {
+        return [];
+    }
+    return knex.transaction(async (trx) => {
+        const document = await trx(TABLES.grant_documents)
+            .where({ id: documentId })
+            .forUpdate()
+            .first('id');
+        if (!document) {
+            return [];
+        }
+        const existingItem = await trx(TABLES.checklist_items)
+            .where({ document_id: documentId })
+            .first('id');
+        if (existingItem) {
+            return [];
+        }
+        return createChecklistItems({ documentId, items }, trx);
+    });
 }
 
 // Every checklist item generated for one document, scoped to the organization that owns the
@@ -1969,6 +1992,7 @@ module.exports = {
     createGrantBrief,
     getLatestGrantBrief,
     createChecklistItems,
+    createInitialChecklistItems,
     getChecklistItemsForDocument,
     updateChecklistItem,
     createSavedSearch,

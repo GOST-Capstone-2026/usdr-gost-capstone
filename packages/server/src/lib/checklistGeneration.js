@@ -11,6 +11,7 @@
 const { CHECKLIST_CATEGORIES, createChecklistItem } = require('./checklistItemSchema');
 const { validateSource } = require('./sourceCitationValidation');
 const { log } = require('./logging');
+const { isCalendarDate } = require('./eligibilityBlockers');
 
 const SYSTEM_PROMPT = 'You are extracting compliance checklist obligations from a U.S. federal grant '
     + 'notice for a nonprofit or local government reader. List every distinct obligation the recipient '
@@ -91,6 +92,7 @@ async function generateChecklistItems({
                 return;
             }
 
+            const { dueDate } = candidate;
             items.push(createChecklistItem({
                 documentId,
                 grantId,
@@ -98,7 +100,7 @@ async function generateChecklistItems({
                 description: candidate.description,
                 found: true,
                 sources: [source],
-                dueDate: candidate.dueDate || null,
+                dueDate: isCalendarDate(dueDate) && !dueDate.startsWith('0000-') ? dueDate : null,
                 possiblyAffectedByQualityIssue: lowTextPages.includes(candidate.pageNumber),
             }));
         });

@@ -49,7 +49,7 @@ async function fetchStoredPdf(document) {
  * by PDF processing.
  *
  * @param {{id: number}} analysisRun
- * @param {{id: number, storage_bucket: string, storage_key: string}} document
+ * @param {{id: number, agency_id: number, storage_bucket: string, storage_key: string}} document
  * @param {{userId?: number, tenantId?: number}} requestedBy who asked for this run, so the AI
  *   audit trail (ai_audit_records) can say which user and organization triggered the call
  */
@@ -96,20 +96,25 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
             }
 
             try {
-                const items = await generateChecklistItems({
-                    documentId: document.id,
-                    grantId: document.grant_id,
-                    chunks,
-                    lowTextPages: assessment.lowTextPages,
-                    generateText: (args) => generateTextAudited(
-                        {
-                            task: 'checklistGeneration', grantId: document.grant_id, promptVersion: CHECKLIST_GENERATION_PROMPT_VERSION, userId, tenantId,
-                        },
-                        args,
-                        { knex: db.knex },
-                    ),
+                const existingItems = await db.getChecklistItemsForDocument({
+                    documentId: document.id, agencyId: document.agency_id,
                 });
-                await db.createChecklistItems({ documentId: document.id, items });
+                if (existingItems.length === 0) {
+                    const items = await generateChecklistItems({
+                        documentId: document.id,
+                        grantId: document.grant_id,
+                        chunks,
+                        lowTextPages: assessment.lowTextPages,
+                        generateText: (args) => generateTextAudited(
+                            {
+                                task: 'checklistGeneration', grantId: document.grant_id, promptVersion: CHECKLIST_GENERATION_PROMPT_VERSION, userId, tenantId,
+                            },
+                            args,
+                            { knex: db.knex },
+                        ),
+                    });
+                    await db.createInitialChecklistItems({ documentId: document.id, items });
+                }
             } catch (checklistErr) {
                 // Same reasoning as the grant-brief catch above: a failed generation attempt should
                 // not erase the extraction work that already succeeded, and can be retried later.

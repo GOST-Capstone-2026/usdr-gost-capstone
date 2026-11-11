@@ -56,8 +56,10 @@ describe('checklist item storage', () => {
         server.stop();
     });
 
-    it('persists created items with storage-assigned audit fields', async () => {
-        const items = await db.createChecklistItems({
+    it('saves one initial checklist with storage-assigned audit fields even when analyses overlap', async () => {
+        const empty = await db.createInitialChecklistItems({ documentId, items: [] });
+        expect(empty).to.deep.equal([]);
+        const request = {
             documentId,
             items: [
                 buildChecklistItem({
@@ -73,7 +75,13 @@ describe('checklist item storage', () => {
                     found: false,
                 }),
             ],
-        });
+        };
+        const saved = await Promise.all([
+            db.createInitialChecklistItems(request),
+            db.createInitialChecklistItems(request),
+        ]);
+        expect(saved.map((batch) => batch.length).sort()).to.deep.equal([0, 2]);
+        const items = saved.flat();
 
         expect(items).to.have.length(2);
         const [reporting, costShare] = items;
