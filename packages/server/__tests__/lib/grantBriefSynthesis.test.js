@@ -81,6 +81,40 @@ describe('synthesizeGrantBrief', () => {
         }]);
     });
 
+    it('keeps a certification requirement from being listed as grant eligibility', async () => {
+        const tribal = {
+            value: 'Federally recognized tribal governments',
+            pageNumber: 5,
+            excerpt: 'Eligible applicants include federally recognized tribal governments.',
+        };
+        const certificationScope = {
+            value: 'Applicant state or local government entities only',
+            pageNumber: 14,
+            excerpt: 'Certification by the Chief Executive Officer (or senior official) of the Applicant Government: Applicant state or local government entities only—',
+        };
+        const requirement = {
+            value: 'State and local government applicants must submit the certification.',
+            pageNumber: 14,
+            excerpt: `${certificationScope.excerpt} Upload the certification.`,
+        };
+        const brief = await synthesizeGrantBrief({
+            documentId: 1,
+            runId: 4,
+            chunks: [chunk(0, 5, 14)],
+            generateText: fakeAi([JSON.stringify({
+                eligibility: [tribal, certificationScope],
+                keyRequirements: [requirement],
+            })]),
+        });
+
+        expect(brief.eligibility.map((item) => item.value)).to.deep.equal([tribal.value]);
+        expect(brief.keyRequirements).to.deep.equal([{
+            found: true,
+            value: requirement.value,
+            sources: [{ documentId: 1, pageNumber: 14, excerpt: requirement.excerpt }],
+        }]);
+    });
+
     it('skips a chunk whose response is not valid JSON instead of failing the whole document', async () => {
         const chunks = [chunk(0, 1, 2), chunk(1, 3, 4)];
         const generateText = fakeAi([

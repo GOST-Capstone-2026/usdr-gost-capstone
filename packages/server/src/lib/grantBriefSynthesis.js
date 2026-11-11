@@ -9,6 +9,8 @@
 const { createEmptyBrief, computeNotFoundFields } = require('./grantBriefSchema');
 const { log } = require('./logging');
 
+const APPLICANT_CERTIFICATION_HEADING = /^\s*Certification by the Chief Executive Officer\b/i;
+
 const SYSTEM_PROMPT = 'You are extracting compliance information from a U.S. federal grant notice '
     + 'for a nonprofit or local government reader. Only report a fact if it is explicitly present '
     + 'in the text you are given. Never guess or infer a value that is not stated. Respond with '
@@ -86,6 +88,13 @@ function mergeListField(target, candidateList, documentId) {
     return [...target, ...additions];
 }
 
+function mergeEligibility(target, candidateList, documentId) {
+    if (!Array.isArray(candidateList)) return target;
+    // A citation headed by this certification describes who must submit the form.
+    const applicants = candidateList.filter((entry) => !APPLICANT_CERTIFICATION_HEADING.test(entry?.excerpt || ''));
+    return mergeListField(target, applicants, documentId);
+}
+
 function mergeKeyDates(target, candidateList, documentId) {
     if (!Array.isArray(candidateList)) return target;
     const additions = candidateList
@@ -123,7 +132,7 @@ async function synthesizeGrantBrief({
             purpose: mergeSingleField(brief.purpose, candidate.purpose, documentId),
             fundingRange: mergeFundingRange(brief.fundingRange, candidate.fundingRange, documentId),
             costShare: mergeCostShare(brief.costShare, candidate.costShare, documentId),
-            eligibility: mergeListField(brief.eligibility, candidate.eligibility, documentId),
+            eligibility: mergeEligibility(brief.eligibility, candidate.eligibility, documentId),
             keyRequirements: mergeListField(brief.keyRequirements, candidate.keyRequirements, documentId),
             keyDates: mergeKeyDates(brief.keyDates, candidate.keyDates, documentId),
         };
