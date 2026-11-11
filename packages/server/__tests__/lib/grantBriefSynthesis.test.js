@@ -115,6 +115,59 @@ describe('synthesizeGrantBrief', () => {
         }]);
     });
 
+    it('prefers the scoped certification requirement to the blanket checklist entry', async () => {
+        const checklistEntry = {
+            value: 'Applications must include the certification.',
+            pageNumber: 10,
+            excerpt: 'Certification by the Chief Executive Officer (or senior official) of the Applicant Government (Appendix 1) *Required*',
+        };
+        const scopedEntry = {
+            value: 'State or local government applicants must submit the Appendix 1 certification.',
+            pageNumber: 14,
+            excerpt: 'Applicant state or local government entities only—Upload properly executed “Certification by the Chief Executive Officer (or senior official) of the Applicant Government.”',
+        };
+        const exemption = {
+            value: 'Tribal government entities and educational organizations are exempt from the certification.',
+            pageNumber: 5,
+            excerpt: 'Tribal government entities and educational organizations (e.g., public or state-controlled institutions of higher education) are not required to submit this certification.',
+        };
+        const timeline = {
+            value: 'Include a project timeline.',
+            pageNumber: 14,
+            excerpt: 'Timeline *Required*',
+        };
+        const brief = await synthesizeGrantBrief({
+            documentId: 1,
+            runId: 6,
+            chunks: [chunk(0, 5, 10), chunk(1, 14, 14)],
+            generateText: fakeAi([
+                JSON.stringify({ keyRequirements: [exemption, checklistEntry] }),
+                JSON.stringify({ keyRequirements: [scopedEntry, timeline] }),
+            ]),
+        });
+
+        expect(brief.keyRequirements.map((item) => item.value)).to.deep.equal([exemption.value, scopedEntry.value, timeline.value]);
+        expect(brief.keyRequirements[1].sources).to.deep.equal([
+            { documentId: 1, pageNumber: 14, excerpt: scopedEntry.excerpt },
+        ]);
+    });
+
+    it('retains a certification checklist entry when there is no cited scope', async () => {
+        const entry = {
+            value: 'Applications must include the certification.',
+            pageNumber: 10,
+            excerpt: 'Certification by the Chief Executive Officer (Appendix 1) *Required*',
+        };
+        const brief = await synthesizeGrantBrief({
+            documentId: 1,
+            runId: 6,
+            chunks: [chunk(0, 10, 10)],
+            generateText: fakeAi([JSON.stringify({ keyRequirements: [entry] })]),
+        });
+
+        expect(brief.keyRequirements.map((item) => item.value)).to.deep.equal([entry.value]);
+    });
+
     it('skips a chunk whose response is not valid JSON instead of failing the whole document', async () => {
         const chunks = [chunk(0, 1, 2), chunk(1, 3, 4)];
         const generateText = fakeAi([

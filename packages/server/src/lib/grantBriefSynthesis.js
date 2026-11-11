@@ -9,7 +9,9 @@
 const { createEmptyBrief, computeNotFoundFields } = require('./grantBriefSchema');
 const { log } = require('./logging');
 
-const APPLICANT_CERTIFICATION_HEADING = /^\s*Certification by the Chief Executive Officer\b/i;
+const APPLICANT_CERTIFICATION = /\bCertification by the Chief Executive Officer\b/i;
+const STATE_LOCAL_GOVERNMENT_APPLICANTS = /\bstate (?:or|and) local government (?:entity|entities|applicants?)\b/i;
+const REQUIRED_CHECKLIST_LABEL = /\brequired\**\s*$/i;
 
 const SYSTEM_PROMPT = 'You are extracting compliance information from a U.S. federal grant notice '
     + 'for a nonprofit or local government reader. Only report a fact if it is explicitly present '
@@ -88,11 +90,30 @@ function mergeListField(target, candidateList, documentId) {
     return [...target, ...additions];
 }
 
+function startsWithApplicantCertification(excerpt) {
+    return APPLICANT_CERTIFICATION.exec(String(excerpt || '').trimStart())?.index === 0;
+}
+
 function mergeEligibility(target, candidateList, documentId) {
     if (!Array.isArray(candidateList)) return target;
     // A citation headed by this certification describes who must submit the form.
-    const applicants = candidateList.filter((entry) => !APPLICANT_CERTIFICATION_HEADING.test(entry?.excerpt || ''));
+    const applicants = candidateList.filter((entry) => !startsWithApplicantCertification(entry?.excerpt));
     return mergeListField(target, applicants, documentId);
+}
+
+function removeUnqualifiedCertificationDuplicates(requirements) {
+    const hasScopedCertification = requirements.some(({ value, sources }) => (
+        STATE_LOCAL_GOVERNMENT_APPLICANTS.test(value)
+        && sources.some(({ excerpt }) => APPLICANT_CERTIFICATION.test(excerpt)
+            && STATE_LOCAL_GOVERNMENT_APPLICANTS.test(excerpt))
+    ));
+    if (!hasScopedCertification) return requirements;
+
+    return requirements.filter(({ sources }) => !sources.some(({ excerpt }) => (
+        startsWithApplicantCertification(excerpt)
+        && REQUIRED_CHECKLIST_LABEL.test(excerpt)
+        && !STATE_LOCAL_GOVERNMENT_APPLICANTS.test(excerpt)
+    )));
 }
 
 function mergeKeyDates(target, candidateList, documentId) {
@@ -138,6 +159,7 @@ async function synthesizeGrantBrief({
         };
     }
 
+    brief.keyRequirements = removeUnqualifiedCertificationDuplicates(brief.keyRequirements);
     brief.notFoundFields = computeNotFoundFields(brief);
     brief.generatedAt = new Date().toISOString();
     return brief;
