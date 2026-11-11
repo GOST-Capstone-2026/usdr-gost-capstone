@@ -1,22 +1,25 @@
-// F1 — Grant Analysis and Compliance Checklist subsystem (AN-08, extended by AN-10).
+// F1 — Grant Analysis and Compliance Checklist subsystem (AN-08, extended by AN-10 and AN-14).
 // Runs the actual processing work for one analysis run: fetch the stored PDF back from S3,
 // extract its pages, rate extraction quality (AN-06), chunk it for the AI step (AN-07), save the
-// results, then synthesize a grant brief from those chunks (AN-10). This matches the contract's
-// own description of this endpoint: "Start extraction, brief, and checklist processing" is all
-// one run, not three separate triggers. This is deliberately separate from the Express route in
-// routes/compliance.js, so the route only has to worry about HTTP concerns (create the run,
-// respond, kick this off) and this file only has to worry about doing the work.
+// results, then synthesize a grant brief (AN-10) and generate checklist items (AN-14) from those
+// chunks. This matches the contract's own description of this endpoint: "Start extraction, brief,
+// and checklist processing" is all one run, not three separate triggers. This is deliberately
+// separate from the Express route in routes/compliance.js, so the route only has to worry about
+// HTTP concerns (create the run, respond, kick this off) and this file only has to worry about
+// doing the work.
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getS3Client } = require('./gost-aws');
 const { extractPages } = require('./pdfTextExtraction');
 const { assessExtractionQuality } = require('./extractionQuality');
 const { chunkPages } = require('./documentChunking');
 const { synthesizeGrantBrief } = require('./grantBriefSynthesis');
+const { generateChecklistItems } = require('./checklistGeneration');
 const { generateTextAudited } = require('./ai-audit');
 const { log } = require('./logging');
 const db = require('../db');
 
 const GRANT_BRIEF_PROMPT_VERSION = 'grant-brief-v1';
+const CHECKLIST_GENERATION_PROMPT_VERSION = 'checklist-generation-v1';
 
 async function streamToBuffer(stream) {
     const chunks = [];
@@ -46,7 +49,7 @@ async function fetchStoredPdf(document) {
  * by PDF processing.
  *
  * @param {{id: number}} analysisRun
- * @param {{id: number, storage_bucket: string, storage_key: string}} document
+ * @param {{id: number, agency_id: number, storage_bucket: string, storage_key: string}} document
  * @param {{userId?: number, tenantId?: number}} requestedBy who asked for this run, so the AI
  *   audit trail (ai_audit_records) can say which user and organization triggered the call
  */
@@ -90,6 +93,34 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
                 log.error({
                     err: briefErr, documentId: document.id, analysisRunId: analysisRun.id,
                 }, 'grant brief synthesis failed');
+            }
+
+            try {
+                const existingItems = await db.getChecklistItemsForDocument({
+                    documentId: document.id, agencyId: document.agency_id,
+                });
+                if (existingItems.length === 0) {
+                    const items = await generateChecklistItems({
+                        documentId: document.id,
+                        grantId: document.grant_id,
+                        chunks,
+                        lowTextPages: assessment.lowTextPages,
+                        generateText: (args) => generateTextAudited(
+                            {
+                                task: 'checklistGeneration', grantId: document.grant_id, promptVersion: CHECKLIST_GENERATION_PROMPT_VERSION, userId, tenantId,
+                            },
+                            args,
+                            { knex: db.knex },
+                        ),
+                    });
+                    await db.createInitialChecklistItems({ documentId: document.id, items });
+                }
+            } catch (checklistErr) {
+                // Same reasoning as the grant-brief catch above: a failed generation attempt should
+                // not erase the extraction work that already succeeded, and can be retried later.
+                log.error({
+                    err: checklistErr, documentId: document.id, analysisRunId: analysisRun.id,
+                }, 'checklist generation failed');
             }
         }
 
