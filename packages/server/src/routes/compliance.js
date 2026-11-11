@@ -6,7 +6,7 @@ const multer = require('multer');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { requireUser } = require('../lib/access-helpers');
 const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-context');
-const { getS3Client } = require('../lib/gost-aws');
+const { getGrantDocumentsS3Client } = require('../lib/gost-aws');
 const { validateGrantDocumentUpload, sha256Hex } = require('../lib/grantDocumentValidation');
 const { runAnalysis } = require('../lib/analysisRuns');
 const db = require('../db');
@@ -116,7 +116,7 @@ router.post(
         const storageKey = `${selectedAgency}/${sha256}-${req.file.originalname}`;
 
         try {
-            const s3 = getS3Client();
+            const s3 = getGrantDocumentsS3Client();
             await s3.send(new PutObjectCommand({
                 Bucket: GRANT_DOCUMENTS_BUCKET,
                 Key: storageKey,
