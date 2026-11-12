@@ -227,6 +227,7 @@ export default {
     return {
       loading: true,
       loadError: false,
+      requestId: 0,
       showCompleted: false,
       viewMode: 'list',
       expandedIds: [],
@@ -289,14 +290,20 @@ export default {
       fetchDeadlines: 'deadlines/fetchDeadlines',
     }),
     async loadDeadlines() {
+      this.requestId += 1;
+      const { requestId } = this;
       this.loading = true;
       this.loadError = false;
       try {
         await this.fetchDeadlines();
       } catch (e) {
-        this.loadError = true;
+        if (this.requestId === requestId) {
+          this.loadError = true;
+        }
       } finally {
-        this.loading = false;
+        if (this.requestId === requestId) {
+          this.loading = false;
+        }
       }
     },
     isExpanded(item) {

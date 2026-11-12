@@ -345,6 +345,25 @@ describe('ComplianceDeadlinesView.vue', () => {
     });
   });
 
+  describe('when an earlier load finishes after a newer one', () => {
+    it('keeps the newer result instead of showing the earlier error', async () => {
+      let failEarlier;
+      const earlier = new Promise((resolve, reject) => { failEarlier = reject; });
+      await mountView({ fetchImpl: () => Promise.resolve() });
+      fetchDeadlines.mockImplementationOnce(() => earlier);
+
+      const earlierLoad = wrapper.vm.loadDeadlines();
+      await wrapper.vm.loadDeadlines();
+      failEarlier(new Error('previous team request failed'));
+      await earlierLoad;
+      await flushPromises();
+
+      expect(wrapper.vm.loadError).toBe(false);
+      expect(wrapper.vm.loading).toBe(false);
+      expect(rowTitles('overdue')).toEqual(['Overdue report']);
+    });
+  });
+
   describe('when loading fails', () => {
     beforeEach(async () => {
       await mountView({ fetchImpl: () => Promise.reject(new Error('network down')) });
