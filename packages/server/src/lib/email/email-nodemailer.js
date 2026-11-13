@@ -11,12 +11,13 @@ const nodemailer = require('nodemailer');
   SMTP transport
   */
 function createTransport() {
+    const useAuth = process.env.NODEMAILER_AUTH !== 'false';
     const environmentVariable = [
         'NODEMAILER_HOST', // e.g. smtp.gmail.com
         'NODEMAILER_PORT', // e.g. 465
         'NODEMAILER_EMAIL', // e.g. caresreportertest@gmail.com
-        'NODEMAILER_EMAIL_PW',
     ];
+    if (useAuth) environmentVariable.push('NODEMAILER_EMAIL_PW');
     for (let i = 0; i < environmentVariable.length; i += 1) {
         const ev = process.env[environmentVariable[i]];
         if (!ev) {
@@ -30,15 +31,19 @@ function createTransport() {
         }
     }
 
-    return nodemailer.createTransport({
+    const options = {
         host: process.env.NODEMAILER_HOST, // e.g. 'smtp.ethereal.email'
         port: process.env.NODEMAILER_PORT, // e.g. 465
         secure: process.env.NODEMAILER_SECURE !== 'false', // In dev, it can be useful to turn this off, e.g. to work with ethereal.email
-        auth: {
+        requireTLS: process.env.NODEMAILER_REQUIRE_TLS === 'true',
+    };
+    if (useAuth) {
+        options.auth = {
             user: process.env.NODEMAILER_EMAIL,
             pass: process.env.NODEMAILER_EMAIL_PW,
-        },
-    });
+        };
+    }
+    return nodemailer.createTransport(options);
 }
 
 async function sendEmail(message) {
