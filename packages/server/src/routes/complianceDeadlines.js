@@ -1,6 +1,7 @@
 const express = require('express');
 const { DateTime } = require('luxon');
 const { requireUser } = require('../lib/access-helpers');
+const { canVerifyFoundItem } = require('../lib/sourceCitationValidation');
 const {
     ALLOWED_STATUSES, getToday, isPortfolioItem, computeStatus,
 } = require('../lib/deadlineStatus');
@@ -40,15 +41,17 @@ function toIsoOrNull(dateValue) {
     return dateValue ? DateTime.fromJSDate(dateValue).toUTC().toISO() : null;
 }
 
-function serializeSource(row) {
-    const [first] = Array.isArray(row.sources) ? row.sources : [];
-    if (!first || first.pageNumber == null || first.excerpt == null) {
-        return null;
-    }
-    return { pageNumber: first.pageNumber, excerpt: first.excerpt };
+function hasReadableSources(sources) {
+    return Array.isArray(sources) && sources.length > 0 && sources.every((source) => (
+        Number.isInteger(source?.pageNumber) && source.pageNumber > 0 && typeof source.excerpt === 'string' && source.excerpt.trim()
+    ));
 }
 
 function serializeDeadline(row, status) {
+    const first = Array.isArray(row.sources) ? row.sources[0] : null;
+    const sources = hasReadableSources(row.sources)
+        ? row.sources.map(({ pageNumber, excerpt }) => ({ pageNumber, excerpt }))
+        : [];
     return {
         checklistItemId: row.id,
         grantId: row.grant_id,
@@ -61,7 +64,10 @@ function serializeDeadline(row, status) {
         verificationStatus: row.verification_status,
         verifiedBy: row.verified_by,
         verifiedAt: toIsoOrNull(row.verified_at),
-        source: serializeSource(row),
+        version: row.version,
+        source: first?.pageNumber == null || first.excerpt == null
+            ? null : { pageNumber: first.pageNumber, excerpt: first.excerpt },
+        sources,
     };
 }
 
@@ -195,6 +201,52 @@ router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
     const deadline = serializeDeadline(updated, computeStatus(updated, getToday()));
 
     return res.json({ deadline });
+});
+
+router.patch('/deadlines/:checklistItemId/verification', requireUser, async (req, res) => {
+    const { selectedAgency, user } = req.session;
+    if (!['admin', 'staff'].includes(user.role_name)) {
+        return sendError(req, res, 403, 'FORBIDDEN', 'Only administrators and staff can verify a checklist item.');
+    }
+
+    const id = Number(req.params.checklistItemId);
+    const { expectedVersion } = req.body || {};
+    if (!/^[1-9]\d*$/.test(req.params.checklistItemId) || id > 2147483647
+        || !Number.isInteger(expectedVersion) || expectedVersion < 1 || expectedVersion >= 2147483647
+        || Object.keys(req.body || {}).length !== 1) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'A checklist item ID and its current version are required.');
+    }
+
+    const item = await db.getDeadlineChecklistItem({ id, agencyId: selectedAgency });
+    if (!item) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Checklist item not found.');
+    }
+    if (item.version !== expectedVersion) {
+        return sendError(req, res, 409, 'VERSION_CONFLICT', 'This item changed. Review the latest version before verifying.');
+    }
+    if (item.verification_status === 'verified') {
+        return res.json({ deadline: serializeDeadline(item, computeStatus(item, getToday())) });
+    }
+
+    const { document_id: documentId } = item;
+    const pages = await db.getGrantDocumentPages({ documentId, agencyId: selectedAgency });
+    if (!hasReadableSources(item.sources) || !canVerifyFoundItem({ found: true, sources: item.sources }, pages, { expectedDocumentId: documentId })) {
+        return sendError(req, res, 422, 'SOURCE_NOT_VERIFIABLE', 'The cited text could not be verified against the document.');
+    }
+
+    const updated = await db.updateChecklistItem({
+        itemId: id,
+        agencyId: selectedAgency,
+        expectedVersion,
+        verifiedByUserId: user.id,
+        verificationStatus: 'verified',
+    });
+    if (!updated) {
+        return sendError(req, res, 409, 'VERSION_CONFLICT', 'This item changed. Review the latest version before verifying.');
+    }
+
+    const row = { ...updated, grant_id: item.grant_id };
+    return res.json({ deadline: serializeDeadline(row, computeStatus(row, getToday())) });
 });
 
 module.exports = router;

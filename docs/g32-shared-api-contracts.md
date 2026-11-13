@@ -585,6 +585,9 @@ Deadlines are a read and update view over non-rejected `checklist_items`; there 
 | --- | --- | --- |
 | `GET` | `/api/organizations/:organizationId/compliance/deadlines` | Return non-rejected checklist items, grouped into `portfolio` and `reviewNeeded` |
 | `PATCH` | `/api/organizations/:organizationId/compliance/deadlines/:checklistItemId` | Correct the underlying due date or completion status |
+| `PATCH` | `/api/organizations/:organizationId/compliance/deadlines/:checklistItemId/verification` | Verify the cited checklist item as an administrator or staff member |
+
+The verification request takes only `expectedVersion`. The server checks all citations against the stored extracted pages and records the authenticated reviewer. An outdated version returns `409 VERSION_CONFLICT`. Missing or unsupported citations return `422 SOURCE_NOT_VERIFIABLE`. A successful verification returns the updated `deadline` and does not change its completion status. Deadline responses include `version` and the reviewable `sources` array. The existing `source` field continues to provide the first citation.
 
 Supported query parameters are `from`, `through`, `status`, `currentPage`, and `perPage`. `from` and `through` bound `dueDate`; undated items are always returned because they cannot be placed in a range. `currentPage` and `perPage` apply to each group independently. The server calculates status at request time from `dueDate`, `completionStatus`, `completedAt`, `verificationStatus`, the current date in Eastern Time (America/New_York), and an organization-configured warning window that defaults to seven days.
 

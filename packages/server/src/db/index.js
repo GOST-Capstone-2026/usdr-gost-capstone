@@ -1915,6 +1915,18 @@ function deadlineChecklistItemsQuery(agencyId) {
         .select(`${TABLES.checklist_items}.*`, `${TABLES.grant_documents}.grant_id`);
 }
 
+async function getDeadlineChecklistItem({ id, agencyId }) {
+    return deadlineChecklistItemsQuery(agencyId).where(`${TABLES.checklist_items}.id`, id).first();
+}
+
+async function getGrantDocumentPages({ documentId, agencyId }) {
+    return knex(TABLES.grant_document_pages)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.grant_document_pages}.document_id`)
+        .where(`${TABLES.grant_documents}.agency_id`, agencyId)
+        .where(`${TABLES.grant_document_pages}.document_id`, documentId)
+        .select('page_number as pageNumber', 'text');
+}
+
 /**
  * Returns every non-rejected deadline-bearing checklist item for one organization,
  * including unverified and undated items, for the Portfolio and Deadline Tracker
@@ -1989,11 +2001,7 @@ async function updateDeadlineChecklistItem({
         return null;
     }
 
-    const row = await deadlineChecklistItemsQuery(agencyId)
-        .where(`${TABLES.checklist_items}.id`, updated.id)
-        .first();
-
-    return row || null;
+    return (await getDeadlineChecklistItem({ id: updated.id, agencyId })) || null;
 }
 
 function close() {
@@ -2015,6 +2023,8 @@ module.exports = {
     createChecklistItems,
     createInitialChecklistItems,
     getChecklistItemsForDocument,
+    getDeadlineChecklistItem,
+    getGrantDocumentPages,
     updateChecklistItem,
     createSavedSearch,
     getSavedSearch,
