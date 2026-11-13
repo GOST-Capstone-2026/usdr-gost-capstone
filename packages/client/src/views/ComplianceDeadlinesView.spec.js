@@ -84,14 +84,17 @@ const paginationFor = (portfolioTotal, reviewNeededTotal) => ({
 
 let wrapper;
 let fetchDeadlines;
+let updateDeadline;
 
 function mountView({
   portfolioItems = portfolio,
   reviewNeededItems = reviewNeeded,
   pagination = paginationFor(portfolioItems.length, reviewNeededItems.length),
   fetchImpl = () => Promise.resolve(),
+  updateImpl = () => Promise.resolve(),
 } = {}) {
   fetchDeadlines = vi.fn(fetchImpl);
+  updateDeadline = vi.fn(updateImpl);
   const store = createStore({
     getters: {
       'deadlines/portfolio': () => portfolioItems,
@@ -101,6 +104,7 @@ function mountView({
     },
     actions: {
       'deadlines/fetchDeadlines': fetchDeadlines,
+      'deadlines/updateDeadline': updateDeadline,
     },
   });
   wrapper = mount(ComplianceDeadlinesView, {
@@ -297,10 +301,66 @@ describe('ComplianceDeadlinesView.vue', () => {
     });
   });
 
+  describe('acting on a deadline from the list', () => {
+    const openDetails = async (key) => {
+      await section(key).get('[data-testid="toggle-details"]').trigger('click');
+    };
+
+    it('sends the change for the expanded deadline', async () => {
+      await mountView();
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+      await flushPromises();
+
+      expect(updateDeadline).toHaveBeenCalledTimes(1);
+      expect(updateDeadline.mock.calls[0][1]).toEqual({
+        checklistItemId: 4,
+        changes: { completionStatus: 'completed' },
+        successMessage: 'Marked "Later report" complete.',
+      });
+    });
+
+    it('keeps the dashboard and the open details on screen while the change saves', async () => {
+      let finish;
+      await mountView({ updateImpl: () => new Promise((resolve) => { finish = resolve; }) });
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(true);
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
+      expect(fetchDeadlines).toHaveBeenCalledTimes(1);
+
+      finish();
+      await flushPromises();
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
+    });
+  });
+
   describe('when more deadlines exist than were returned', () => {
     it('shows a truncation warning', async () => {
       await mountView({ pagination: paginationFor(portfolio.length + 1, reviewNeeded.length) });
       expect(wrapper.text()).toContain('Not every deadline is shown');
+    });
+  });
+
+  describe('when an earlier load finishes after a newer one', () => {
+    it('keeps the newer result instead of showing the earlier error', async () => {
+      let failEarlier;
+      const earlier = new Promise((resolve, reject) => { failEarlier = reject; });
+      await mountView({ fetchImpl: () => Promise.resolve() });
+      fetchDeadlines.mockImplementationOnce(() => earlier);
+
+      const earlierLoad = wrapper.vm.loadDeadlines();
+      await wrapper.vm.loadDeadlines();
+      failEarlier(new Error('previous team request failed'));
+      await earlierLoad;
+      await flushPromises();
+
+      expect(wrapper.vm.loadError).toBe(false);
+      expect(wrapper.vm.loading).toBe(false);
+      expect(rowTitles('overdue')).toEqual(['Overdue report']);
     });
   });
 
