@@ -140,21 +140,64 @@
           Refresh analysis status
         </button>
       </section>
+      <template v-if="document">
+        <p
+          v-if="briefLoading"
+          class="mt-4"
+          role="status"
+        >
+          Loading the saved grant brief…
+        </p>
+        <div
+          v-else-if="briefError"
+          class="mt-4"
+        >
+          <p role="alert">
+            {{ briefError }}
+          </p>
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            @click="loadBrief"
+          >
+            Retry loading the brief
+          </button>
+        </div>
+        <p
+          v-else-if="!brief && !isRunActive"
+          class="mt-4"
+        >
+          No grant brief is saved for this document.
+        </p>
+        <p
+          v-if="brief && analysisRun?.status === 'completed' && brief.runId !== analysisRun.id"
+          class="mt-4"
+          role="status"
+        >
+          Run {{ analysisRun.id }} completed. The latest saved brief is from run {{ brief.runId }}.
+        </p>
+        <saved-grant-brief
+          v-if="brief"
+          :brief="brief"
+        />
+      </template>
     </template>
   </main>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
+import SavedGrantBrief from '@/components/SavedGrantBrief.vue';
 import * as fetchApi from '@/helpers/fetchApi';
 import { complianceDeadlinesEnabled, grantDocumentAnalysisEnabled, grantMatchingEnabled } from '@/helpers/featureFlags';
 import {
-  documentContext, checkedDocument, checkedAnalysisRun, documentAnalysisError, recordId,
+  documentContext, checkedDocument, checkedAnalysisRun, documentAnalysisError, recordId, grantId,
 } from '@/helpers/grantDocumentHandoff';
 
 const POLL_INTERVAL_MS = 1500;
 
 export default {
+  components: { SavedGrantBrief },
   data() {
     return {
       selectedFile: null,
@@ -168,6 +211,10 @@ export default {
       errorMessage: '',
       pollHandle: null,
       sequence: 0,
+      brief: null,
+      briefLoading: false,
+      briefError: '',
+      briefRequest: 0,
     };
   },
   computed: {
@@ -207,6 +254,9 @@ export default {
       this.selectedFile = null;
       this.document = null;
       this.analysisRun = null;
+      this.brief = null;
+      this.briefLoading = false;
+      this.briefError = '';
       this.existingDocumentId = '';
       this.errorMessage = '';
       this.uploading = false;
@@ -222,10 +272,37 @@ export default {
         const response = await fetchApi.get(`${this.base(context)}/documents/${id}`);
         if (sequence !== this.sequence) return;
         this.document = checkedDocument(response.document, context, id);
+        this.loadBrief();
       } catch (error) {
         if (sequence === this.sequence) this.errorMessage = documentAnalysisError(error);
       } finally {
         if (sequence === this.sequence) this.loadingDocument = false;
+      }
+    },
+    async loadBrief() {
+      if (!this.canAnalyze || !this.context || !this.document) return;
+      const { sequence, context, document } = this;
+      const request = this.briefRequest + 1;
+      this.briefRequest = request;
+      const isCurrent = () => sequence === this.sequence && request === this.briefRequest
+        && this.document?.id === document.id;
+      this.briefLoading = true;
+      this.briefError = '';
+      try {
+        const { brief } = await fetchApi.get(`${this.base(context)}/documents/${document.id}/brief`);
+        if (!isCurrent()) return;
+        if (brief?.documentId !== document.id || grantId(brief.grantId) !== context.grantId || recordId(brief.runId) === null) {
+          this.brief = null;
+          this.briefError = 'The saved brief does not match this grant or document.';
+          return;
+        }
+        this.brief = brief;
+      } catch (error) {
+        if (!isCurrent()) return;
+        this.brief = null;
+        if (error.response?.status !== 404) this.briefError = 'The saved grant brief could not be loaded.';
+      } finally {
+        if (isCurrent()) this.briefLoading = false;
       }
     },
     onFileChange(event) { [this.selectedFile] = event.target.files; },
@@ -248,6 +325,10 @@ export default {
       this.errorMessage = '';
       this.document = null;
       this.analysisRun = null;
+      this.brief = null;
+      this.briefLoading = false;
+      this.briefError = '';
+      this.briefRequest += 1;
       this.uploading = true;
       try {
         const body = new FormData();
@@ -300,6 +381,7 @@ export default {
           const saved = await fetchApi.get(`${this.base(context)}/documents/${document.id}`);
           if (sequence !== this.sequence) return;
           this.document = checkedDocument(saved.document, context, document.id);
+          this.loadBrief();
         }
         this.schedulePoll();
       } catch (error) {

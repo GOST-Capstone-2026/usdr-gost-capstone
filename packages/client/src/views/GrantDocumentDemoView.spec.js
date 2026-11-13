@@ -24,6 +24,19 @@ const document = (overrides = {}) => ({
   ...overrides,
 });
 const deferred = () => { let resolve; const promise = new Promise((done) => { resolve = done; }); return { promise, resolve }; };
+const brief = (overrides = {}) => ({
+  documentId: 7,
+  grantId: '364009',
+  runId: 11,
+  verificationStatus: 'unverified',
+  keyDates: [{
+    found: true,
+    label: 'Application deadline',
+    date: '2026-11-20',
+    sources: [{ pageNumber: 4, excerpt: 'Submit by November 20, 2026.' }],
+  }],
+  ...overrides,
+});
 let wrapper;
 let store;
 let router;
@@ -33,7 +46,10 @@ beforeEach(() => {
   flags.grantDocumentAnalysisEnabled.mockReturnValue(true);
   flags.grantMatchingEnabled.mockReturnValue(true);
   api.postFormData.mockResolvedValue({ document: document() });
-  api.get.mockResolvedValue({ document: document() });
+  api.get.mockImplementation(async (url) => {
+    if (url.endsWith('/brief')) throw Object.assign(new Error('Not found'), { response: { status: 404 } });
+    return { document: document() };
+  });
   api.post.mockResolvedValue({ analysisRun: { id: 12, documentId: 7, status: 'queued' } });
   store = createStore({
     state: { selected: '0', role: 'staff' },
@@ -97,6 +113,57 @@ describe('C-12 selected grant document workflow', () => {
     expect(api.postFormData).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain('Document 7 · Grant 364009');
+  });
+  it('shows the saved brief with its run, deadline, and citation when reopening a document', async () => {
+    api.get.mockResolvedValueOnce({ document: document() }).mockResolvedValueOnce({ brief: brief() });
+    await render({ documentId: '7' });
+    const saved = wrapper.get('section[aria-labelledby="saved-grant-brief-heading"]');
+    expect(saved.text()).toContain('Analysis run 11 · Unverified');
+    expect(saved.text()).toContain('Application deadline · Nov 20, 2026');
+    expect(saved.get('blockquote').text()).toContain('Page 4');
+    expect(saved.get('blockquote').text()).toContain('Submit by November 20, 2026.');
+  });
+  it('handles a missing brief without blocking analysis', async () => {
+    await render({ documentId: '7' });
+    expect(wrapper.text()).toContain('No grant brief is saved');
+    expect(startButton().element.disabled).toBe(false);
+  });
+  it('rejects a saved brief returned for a different document', async () => {
+    api.get.mockResolvedValueOnce({ document: document() }).mockResolvedValueOnce({ brief: brief({ documentId: 8 }) });
+    await render({ documentId: '7' });
+    expect(wrapper.text()).toContain('The saved brief does not match this grant or document.');
+    expect(wrapper.find('section[aria-labelledby="saved-grant-brief-heading"]').exists()).toBe(false);
+  });
+  it('refreshes the brief for the newly completed run', async () => {
+    api.get.mockResolvedValueOnce({ document: document() }).mockResolvedValueOnce({ brief: brief() });
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document() })
+      .mockResolvedValueOnce({ brief: brief({ runId: 12 }) });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.get('section[aria-labelledby="saved-grant-brief-heading"]').text()).toContain('Analysis run 12 · Unverified');
+    expect(wrapper.text()).not.toContain('Analysis run 11');
+  });
+  it('keeps a prior brief labeled with its original run when a new run produces none', async () => {
+    api.get.mockResolvedValueOnce({ document: document() }).mockResolvedValueOnce({ brief: brief() });
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document() })
+      .mockResolvedValueOnce({ brief: brief() });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('Run 12 completed. The latest saved brief is from run 11.');
+  });
+  it('discards a delayed brief after switching teams', async () => {
+    const pending = deferred();
+    api.get.mockResolvedValueOnce({ document: document() }).mockReturnValueOnce(pending.promise);
+    await render({ documentId: '7' });
+    store.state.selected = '3'; await flushPromises();
+    pending.resolve({ brief: brief() }); await flushPromises();
+    expect(wrapper.text()).not.toContain('Application deadline');
   });
   it('opens a known document ID and rejects malformed IDs without requesting them', async () => {
     await render();
