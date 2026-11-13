@@ -9,7 +9,11 @@ import * as api from '@/helpers/fetchApi';
 import * as flags from '@/helpers/featureFlags';
 
 vi.mock('@/helpers/fetchApi', () => ({ get: vi.fn(), post: vi.fn(), postFormData: vi.fn() }));
-vi.mock('@/helpers/featureFlags', () => ({ grantDocumentAnalysisEnabled: vi.fn(), grantMatchingEnabled: vi.fn() }));
+vi.mock('@/helpers/featureFlags', () => ({
+  complianceDeadlinesEnabled: vi.fn(),
+  grantDocumentAnalysisEnabled: vi.fn(),
+  grantMatchingEnabled: vi.fn(),
+}));
 const document = (overrides = {}) => ({
   id: 7,
   grantId: '364009',
@@ -41,6 +45,7 @@ beforeEach(() => {
       { name: 'grantDocumentAnalysis', path: '/compliance/grants/:grantId/documents', component: GrantDocumentDemoView },
       { name: 'grantDocumentDemo', path: '/grant-document-demo', component: GrantDocumentDemoView },
       { name: 'grantMatches', path: '/compliance/matches', component: { template: '<div>Matches</div>' } },
+      { name: 'complianceDeadlines', path: '/compliance/deadlines', component: { template: '<div>Deadlines</div>' } },
     ],
   });
 });
@@ -61,6 +66,13 @@ async function upload() {
 const startButton = () => wrapper.findAll('button').find((button) => button.text() === 'Start Analysis');
 
 describe('C-12 selected grant document workflow', () => {
+  it('links a loaded document to its deadlines with the original match context when enabled', async () => {
+    flags.complianceDeadlinesEnabled.mockReturnValue(true);
+    await render({ documentId: '7' });
+    expect(wrapper.text()).toContain('View deadlines for this document');
+    expect(router.resolve(wrapper.vm.deadlineLocation).href)
+      .toBe('/compliance/deadlines?organizationId=0&grantId=364009&documentId=7&matchRunId=9');
+  });
   it('shows the selected grant/team and does not upload, analyze or fetch automatically', async () => {
     await render();
     expect(wrapper.text()).toContain('Selected grant 364009 · Team 0');

@@ -6,7 +6,32 @@
       </h2>
 
       <div
-        v-if="loading"
+        v-if="hasDocumentScope"
+        class="mb-3"
+      >
+        <p v-if="documentScope">
+          Grant {{ documentScope.grantId }} · Document {{ documentScope.documentId }}
+        </p>
+        <router-link
+          v-if="returnToDocument"
+          :to="returnToDocument"
+          class="mr-3"
+        >
+          Return to document analysis
+        </router-link>
+        <router-link :to="{ name: 'complianceDeadlines' }">
+          View all deadlines
+        </router-link>
+      </div>
+
+      <p
+        v-if="selectionError"
+        role="alert"
+      >
+        {{ selectionError }}
+      </p>
+      <div
+        v-else-if="loading"
         class="text-center my-4"
       >
         <b-spinner label="Loading deadlines" />
@@ -29,6 +54,12 @@
       </b-alert>
 
       <template v-else>
+        <p
+          v-if="documentScope && !portfolio.length && !reviewNeeded.length"
+          role="status"
+        >
+          No checklist deadlines are available for this document.
+        </p>
         <b-alert
           v-if="isTruncated"
           show
@@ -210,6 +241,8 @@ import { formatDate, formatDateTime } from '@/helpers/dates';
 import { CLOSED_STATUSES, statusLabel, statusVariant } from '@/helpers/deadlineStatus';
 import ComplianceDeadlinesCalendar from '@/components/ComplianceDeadlinesCalendar.vue';
 import DeadlineDetails from '@/components/DeadlineDetails.vue';
+import { organizationId } from '@/helpers/matchRunApi';
+import { documentContext, grantDocumentLocation, recordId } from '@/helpers/grantDocumentHandoff';
 
 const PORTFOLIO_SECTIONS = [
   { key: 'overdue', title: 'Overdue' },
@@ -250,8 +283,29 @@ export default {
       portfolio: 'deadlines/portfolio',
       reviewNeeded: 'deadlines/reviewNeeded',
       pagination: 'deadlines/pagination',
-      selectedAgency: 'users/selectedAgency',
+      selectedAgencyId: 'users/selectedAgencyId',
     }),
+    query() { return this.$route?.query ?? {}; },
+    hasDocumentScope() { return this.query.documentId !== undefined; },
+    documentScope() {
+      const context = documentContext({ query: this.query }, this.selectedAgencyId);
+      const documentId = recordId(this.query.documentId);
+      return context && documentId !== null ? { grantId: context.grantId, documentId } : null;
+    },
+    selectionError() {
+      if (organizationId(this.selectedAgencyId) === null) return 'Select a team to view its deadlines.';
+      if (this.hasDocumentScope && !this.documentScope) return 'Open the document for the selected team to view its deadlines.';
+      return '';
+    },
+    requestKey() {
+      return JSON.stringify([this.selectedAgencyId, this.hasDocumentScope, this.documentScope]);
+    },
+    returnToDocument() {
+      if (!this.documentScope) return null;
+      const location = grantDocumentLocation(this.documentScope.grantId, this.selectedAgencyId, this.query.matchRunId);
+      location.query.documentId = String(this.documentScope.documentId);
+      return location;
+    },
     sections() {
       return [
         ...PORTFOLIO_SECTIONS.map((section) => ({
@@ -278,7 +332,7 @@ export default {
     },
   },
   watch: {
-    selectedAgency() {
+    requestKey() {
       this.loadDeadlines();
     },
   },
@@ -292,18 +346,16 @@ export default {
     async loadDeadlines() {
       this.requestId += 1;
       const { requestId } = this;
-      this.loading = true;
+      this.expandedIds = [];
+      this.loading = !this.selectionError;
       this.loadError = false;
+      if (this.selectionError) return;
       try {
-        await this.fetchDeadlines();
+        await this.fetchDeadlines(this.documentScope);
       } catch (e) {
-        if (this.requestId === requestId) {
-          this.loadError = true;
-        }
+        if (this.requestId === requestId) this.loadError = true;
       } finally {
-        if (this.requestId === requestId) {
-          this.loading = false;
-        }
+        if (this.requestId === requestId) this.loading = false;
       }
     },
     isExpanded(item) {

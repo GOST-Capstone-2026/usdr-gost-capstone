@@ -326,6 +326,13 @@
         >
           {{ saving ? 'Saving…' : 'Save profile' }}
         </button>
+        <router-link
+          v-if="canFindMatches"
+          :to="{ name: 'grantMatches' }"
+          class="btn btn-link"
+        >
+          Find matches with saved profile
+        </router-link>
       </form>
     </template>
   </main>
@@ -334,6 +341,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import * as fetchApi from '@/helpers/fetchApi';
+import { grantMatchingEnabled } from '@/helpers/featureFlags';
 import {
   emptyProfileForm, profileToForm, buildProfilePayload, parseProfileError,
 } from '@/helpers/complianceProfileForm';
@@ -358,9 +366,14 @@ export default {
     ...mapGetters({
       selectedAgencyId: 'users/selectedAgencyId',
       selectedTeam: 'users/selectedAgency',
+      userRole: 'users/userRole',
     }),
     hasSelectedAgency() {
       return ![null, undefined, ''].includes(this.selectedAgencyId);
+    },
+    canFindMatches() {
+      return grantMatchingEnabled() && ['admin', 'staff'].includes(this.userRole)
+        && this.profileVersion > 0 && !this.saving && !this.versionConflict && !this.loadError;
     },
   },
   watch: {

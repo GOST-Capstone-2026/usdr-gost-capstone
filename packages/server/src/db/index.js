@@ -1926,13 +1926,20 @@ function deadlineChecklistItemsQuery(agencyId) {
  *
  * @param {Object} args
  * @param {number} args.agencyId
+ * @param {number} [args.documentId]
  * @param {string} [args.from] - YYYY-MM-DD, inclusive lower bound on due_date
  * @param {string} [args.through] - YYYY-MM-DD, inclusive upper bound on due_date
  * @return {Promise<Array>}
  */
-async function getDeadlineChecklistItems({ agencyId, from, through }) {
+async function getDeadlineChecklistItems({
+    agencyId, documentId, from, through,
+}) {
     const query = deadlineChecklistItemsQuery(agencyId)
         .orderByRaw(`${TABLES.checklist_items}.due_date asc nulls last, ${TABLES.checklist_items}.id asc`);
+
+    if (documentId !== undefined) {
+        query.where(`${TABLES.checklist_items}.document_id`, documentId);
+    }
 
     if (from || through) {
         query.andWhere((dateScope) => {
