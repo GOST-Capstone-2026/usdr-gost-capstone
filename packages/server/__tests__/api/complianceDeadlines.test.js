@@ -364,6 +364,96 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         });
     });
 
+    context('PATCH /compliance/deadlines/:checklistItemId/verification', () => {
+        let documentId;
+        let item;
+        const excerpt = 'Submit the application by November 20.';
+        const verify = (agencyId, expectedVersion, options = fetchOptions.admin) => fetchApi(
+            `/compliance/deadlines/${item.id}/verification`,
+            agencyId,
+            { ...options, method: 'PATCH', body: JSON.stringify({ expectedVersion }) },
+        );
+
+        before(async () => {
+            const [document] = await knex('grant_documents').insert({
+                agency_id: usdrAgencyId,
+                grant_id: '335255',
+                uploaded_by: 1,
+                filename: 'verification-notice.pdf',
+                mime_type: 'application/pdf',
+                size_bytes: 0,
+                sha256: 'verification-test',
+                storage_bucket: 'grant-documents',
+                storage_key: 'verification-notice.pdf',
+            }).returning('id');
+            documentId = document.id;
+            await knex('grant_document_pages').insert({
+                document_id: documentId, page_number: 1, text: excerpt, char_count: excerpt.length,
+            });
+        });
+
+        beforeEach(async () => {
+            [item] = await insertChecklistItems(documentId, [{
+                description: 'Submit the application',
+                found: true,
+                due_date: '2026-11-20',
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt }]),
+            }]);
+        });
+
+        afterEach(async () => {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+        });
+
+        after(async () => {
+            await knex('grant_documents').where({ id: documentId }).del();
+        });
+
+        it('moves the cited deadline to the portfolio and stamps the reviewer', async () => {
+            const response = await verify(usdrAgencyId, item.version);
+            expect(response.status).to.equal(200);
+            const { deadline } = await response.json();
+            expect(deadline).to.include({
+                verificationStatus: 'verified', version: item.version + 1, completionStatus: 'notStarted',
+            });
+            expect(deadline.verifiedBy).to.be.a('number');
+            expect(deadline.verifiedAt).to.be.a('string');
+            const result = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId });
+            const { data } = await result.json();
+            expect(data.portfolio.map(({ checklistItemId }) => checklistItemId)).to.deep.equal([item.id]);
+            expect(data.reviewNeeded).to.deep.equal([]);
+
+            const repeat = await verify(usdrAgencyId, deadline.version);
+            expect(repeat.status).to.equal(200);
+            expect((await repeat.json()).deadline).to.deep.equal(deadline);
+        });
+
+        it('rejects an obsolete version before changing the item', async () => {
+            const response = await verify(usdrAgencyId, item.version + 1);
+            expect(response.status).to.equal(409);
+            expect((await response.json()).error.code).to.equal('VERSION_CONFLICT');
+            expect((await knex('checklist_items').where({ id: item.id }).first()).verification_status).to.equal('unverified');
+        });
+
+        it('rejects an item if any cited excerpt is unsupported', async () => {
+            await knex('checklist_items').where({ id: item.id }).update({
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt }, { documentId, pageNumber: 1, excerpt: 'Invented wording.' }]),
+            });
+            const response = await verify(usdrAgencyId, item.version);
+            expect(response.status).to.equal(422);
+            expect((await response.json()).error.code).to.equal('SOURCE_NOT_VERIFIABLE');
+            expect((await knex('checklist_items').where({ id: item.id }).first()).verification_status).to.equal('unverified');
+        });
+
+        it('denies another team access to the item', async () => {
+            const cookie = await getSessionCookie('user2@nv.example.com');
+            const response = await verify(otherTenantAgencyId, item.version, {
+                headers: { ...fetchOptions.admin.headers, cookie },
+            });
+            expect(response.status).to.equal(404);
+        });
+    });
+
     context('PATCH /compliance/deadlines/:checklistItemId', () => {
         const patchDeadline = (agencyId, checklistItemId, payload, options = fetchOptions.admin) => fetchApi(
             `/compliance/deadlines/${checklistItemId}`,

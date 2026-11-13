@@ -15,8 +15,8 @@ const makeItem = (overrides) => ({
   ...overrides,
 });
 
-const mountDetails = (overrides, dispatch = vi.fn().mockResolvedValue(undefined)) => mount(DeadlineDetails, {
-  props: { item: makeItem(overrides) },
+const mountDetails = (overrides, dispatch = vi.fn().mockResolvedValue(undefined), canVerify = false) => mount(DeadlineDetails, {
+  props: { item: makeItem(overrides), canVerify },
   global: { mocks: { $store: { dispatch } } },
 });
 
@@ -47,6 +47,20 @@ describe('DeadlineDetails.vue', () => {
   it('shows Not yet verified for an unverified item', () => {
     const wrapper = mountDetails({ verificationStatus: 'unverified', verifiedAt: null });
     expect(wrapper.get('[data-testid="deadline-verification"]').text()).toBe('Not yet verified');
+  });
+
+  it('shows all citations and sends the reviewed version when verifying', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined);
+    const wrapper = mountDetails({
+      version: 3,
+      verificationStatus: 'unverified',
+      sources: [{ pageNumber: 4, excerpt: 'First citation.' }, { pageNumber: 8, excerpt: 'Second citation.' }],
+    }, dispatch, true);
+    expect(wrapper.get('[data-testid="deadline-source"]').text()).toContain('Page 8: "Second citation."');
+    await wrapper.get('[data-testid="action-verify"]').trigger('click');
+    expect(dispatch).toHaveBeenCalledWith('deadlines/updateDeadline', {
+      checklistItemId: 1, changes: { expectedVersion: 3 }, successMessage: 'Verified "Deadline" against its source.', verify: true,
+    });
   });
 
   describe('actions', () => {

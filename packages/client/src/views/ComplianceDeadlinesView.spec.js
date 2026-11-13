@@ -102,6 +102,7 @@ function mountView({
       'deadlines/reviewNeeded': () => reviewNeededItems,
       'deadlines/pagination': () => pagination,
       'users/selectedAgencyId': () => 0,
+      'users/userRole': () => 'admin',
     },
     actions: {
       'deadlines/fetchDeadlines': fetchDeadlines,
@@ -135,7 +136,10 @@ it('loads only the linked document and discards a late response after a team swi
   const store = createStore({
     modules: { deadlines },
     state: { agencyId: 0 },
-    getters: { 'users/selectedAgencyId': (state) => state.agencyId },
+    getters: {
+      'users/selectedAgencyId': (state) => state.agencyId,
+      'users/userRole': () => 'admin',
+    },
   });
   let finishFirstRequest;
   const firstResponse = new Promise((resolve) => { finishFirstRequest = resolve; });

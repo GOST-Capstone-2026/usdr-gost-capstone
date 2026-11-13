@@ -41,17 +41,19 @@ export default {
     },
     async updateDeadline({
       commit, dispatch, rootGetters, state,
-    }, { checklistItemId, changes, successMessage }) {
+    }, {
+      checklistItemId, changes, successMessage, verify = false,
+    }) {
       const agencyId = rootGetters['users/selectedAgencyId'];
       const { scope } = state;
       const isCurrentContext = () => rootGetters['users/selectedAgencyId'] === agencyId
         && sameScope(state.scope, scope);
-      const url = `/api/organizations/${agencyId}/compliance/deadlines/${checklistItemId}`;
+      const url = `/api/organizations/${agencyId}/compliance/deadlines/${checklistItemId}${verify ? '/verification' : ''}`;
       try {
         await fetchApi.patch(url, changes);
       } catch (error) {
-        if (error.response?.status === 404 && isCurrentContext()) {
-          await dispatch('fetchDeadlines', scope);
+        if ([404, 409].includes(error.response?.status) && isCurrentContext()) {
+          await dispatch('fetchDeadlines', scope).catch(() => {});
         }
         throw error;
       }

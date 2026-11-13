@@ -2,8 +2,13 @@
   <dl class="deadline-details small mb-0">
     <dt>Source</dt>
     <dd data-testid="deadline-source">
-      <template v-if="item.source">
-        Page {{ item.source.pageNumber }}: "{{ item.source.excerpt }}"
+      <template v-if="sources.length">
+        <div
+          v-for="(source, index) in sources"
+          :key="index"
+        >
+          Page {{ source.pageNumber }}: "{{ source.excerpt }}"
+        </div>
       </template>
       <span
         v-else
@@ -23,6 +28,16 @@
         v-if="!editingDate"
         class="deadline-actions"
       >
+        <button
+          v-if="canVerify && item.verificationStatus === 'unverified' && item.sources?.length && item.version"
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          :disabled="saving"
+          data-testid="action-verify"
+          @click="verifyItem"
+        >
+          Verify against source
+        </button>
         <button
           v-if="item.completionStatus !== 'completed'"
           type="button"
@@ -134,6 +149,10 @@ export default {
       type: Object,
       required: true,
     },
+    canVerify: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -144,6 +163,10 @@ export default {
     };
   },
   computed: {
+    sources() {
+      if (this.item.sources?.length) return this.item.sources;
+      return this.item.source ? [this.item.source] : [];
+    },
     verificationText() {
       if (this.item.verificationStatus !== 'verified') {
         return 'Not yet verified';
@@ -164,22 +187,34 @@ export default {
     ...mapActions({
       updateDeadline: 'deadlines/updateDeadline',
     }),
-    async save(changes, successMessage) {
+    async save(changes, successMessage, verify = false) {
       this.saving = true;
       this.errorMessage = null;
       try {
-        await this.updateDeadline({ checklistItemId: this.item.checklistItemId, changes, successMessage });
+        await this.updateDeadline({
+          checklistItemId: this.item.checklistItemId, changes, successMessage, ...(verify && { verify }),
+        });
         this.editingDate = false;
       } catch (error) {
-        this.errorMessage = error.response && error.response.status === 404
-          ? 'This deadline is no longer available.'
-          : 'The change could not be saved. Please try again.';
+        const messages = {
+          404: 'This deadline is no longer available.',
+          409: 'This item changed. Review the latest version before verifying.',
+          422: 'The cited text could not be verified against the document.',
+        };
+        this.errorMessage = messages[error.response?.status] || 'The change could not be saved. Please try again.';
       } finally {
         this.saving = false;
       }
     },
     setCompletion(completionStatus) {
       return this.save({ completionStatus }, COMPLETION_MESSAGES[completionStatus](this.item.title));
+    },
+    verifyItem() {
+      return this.save(
+        { expectedVersion: this.item.version },
+        `Verified "${this.item.title}" against its source.`,
+        true,
+      );
     },
     startDateEdit() {
       this.newDueDate = this.item.dueDate || '';

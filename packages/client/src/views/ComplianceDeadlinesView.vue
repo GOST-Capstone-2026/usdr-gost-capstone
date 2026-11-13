@@ -148,6 +148,7 @@
                   v-if="isExpanded(item)"
                   class="mt-1"
                   :item="item"
+                  :can-verify="canVerify"
                 />
               </template>
               <template #cell(dueDate)="{ item }">
@@ -284,7 +285,9 @@ export default {
       reviewNeeded: 'deadlines/reviewNeeded',
       pagination: 'deadlines/pagination',
       selectedAgencyId: 'users/selectedAgencyId',
+      userRole: 'users/userRole',
     }),
+    canVerify() { return ['admin', 'staff'].includes(this.userRole); },
     query() { return this.$route?.query ?? {}; },
     hasDocumentScope() { return this.query.documentId !== undefined; },
     documentScope() {
