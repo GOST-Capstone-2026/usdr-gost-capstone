@@ -588,6 +588,8 @@ Deadlines are a read and update view over non-rejected `checklist_items`; there 
 
 Supported query parameters are `from`, `through`, `status`, `currentPage`, and `perPage`. `from` and `through` bound `dueDate`; undated items are always returned because they cannot be placed in a range. `currentPage` and `perPage` apply to each group independently. The server calculates status at request time from `dueDate`, `completionStatus`, `completedAt`, `verificationStatus`, the current date in Eastern Time (America/New_York), and an organization-configured warning window that defaults to seven days.
 
+The document analysis page can scope this collection with a positive integer `documentId`. The API checks that the document belongs to the requested organization before filtering both groups and calculating their pagination. A successful scoped response also includes `document` with its `id` and `grantId`. A missing or inaccessible document returns `404 NOT_FOUND`.
+
 | Group | Membership | Calculated statuses |
 | --- | --- | --- |
 | `portfolio` | `verificationStatus` is `verified` and `dueDate` is not null | `overdue`, `dueToday`, `dueSoon`, `upcoming`, `completed`, `completedLate`, `notApplicable` |

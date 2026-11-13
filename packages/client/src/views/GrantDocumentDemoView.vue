@@ -104,6 +104,12 @@
         <p class="mt-2">
           Keep this page's URL to reopen the uploaded document without uploading it again.
         </p>
+        <router-link
+          v-if="deadlineLocation"
+          :to="deadlineLocation"
+        >
+          View deadlines for this document
+        </router-link>
       </section>
       <section
         v-if="analysisRun"
@@ -141,7 +147,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import * as fetchApi from '@/helpers/fetchApi';
-import { grantDocumentAnalysisEnabled, grantMatchingEnabled } from '@/helpers/featureFlags';
+import { complianceDeadlinesEnabled, grantDocumentAnalysisEnabled, grantMatchingEnabled } from '@/helpers/featureFlags';
 import {
   documentContext, checkedDocument, checkedAnalysisRun, documentAnalysisError, recordId,
 } from '@/helpers/grantDocumentHandoff';
@@ -171,6 +177,19 @@ export default {
     contextKey() { return JSON.stringify([this.canAnalyze, this.context, this.$route.query.documentId]); },
     busy() { return this.uploading || this.startingAnalysis || this.loadingDocument || this.polling; },
     isRunActive() { return ['queued', 'processing'].includes(this.analysisRun?.status); },
+    deadlineLocation() {
+      if (!this.context || !this.document || !complianceDeadlinesEnabled()) return null;
+      const matchRunId = recordId(this.$route.query.matchRunId);
+      return {
+        name: 'complianceDeadlines',
+        query: {
+          organizationId: String(this.context.organizationId),
+          grantId: this.context.grantId,
+          documentId: String(this.document.id),
+          ...(matchRunId === null ? {} : { matchRunId: String(matchRunId) }),
+        },
+      };
+    },
     returnToMatches() {
       const id = recordId(this.$route.query.matchRunId);
       return this.context && grantMatchingEnabled() && id !== null

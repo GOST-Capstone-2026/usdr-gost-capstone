@@ -49,6 +49,42 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         };
         const findByTitle = (items, title) => items.find((i) => i.title === title);
 
+        it('filters by document before calculating both groups and their pagination', async () => {
+            const [document] = await knex('grant_documents').insert({
+                agency_id: usdrAgencyId,
+                grant_id: '335255',
+                uploaded_by: 1,
+                filename: 'other-notice-same-grant.pdf',
+                mime_type: 'application/pdf',
+                size_bytes: 0,
+                sha256: 'c13-same-grant-document',
+                storage_bucket: 'grant-documents',
+                storage_key: 'c13-same-grant-document.pdf',
+            }).returning('*');
+            try {
+                await insertChecklistItems(document.id, [{
+                    description: 'A separate notice for the same grant',
+                    due_date: '2025-01-01',
+                    verification_status: 'verified',
+                }]);
+                const scoped = await getDeadlines({ documentId: seedDocumentId, perPage: 1 });
+                expect(scoped.document).to.deep.equal({ id: seedDocumentId, grantId: '335255' });
+                expect(scoped.pagination.portfolio.total).to.equal(4);
+                expect(scoped.pagination.reviewNeeded.total).to.equal(3);
+                expect(scoped.data.portfolio[0].documentId).to.equal(seedDocumentId);
+                expect(scoped.data.reviewNeeded[0].documentId).to.equal(seedDocumentId);
+            } finally {
+                await knex('grant_documents').where({ id: document.id }).del();
+            }
+        });
+
+        it('rejects malformed and unavailable document filters', async () => {
+            const invalid = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '1e2' });
+            expect(invalid.status).to.equal(400);
+            const missing = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '999999999' });
+            expect(missing.status).to.equal(404);
+        });
+
         it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
             expect(response.status).to.equal(200);

@@ -60,7 +60,7 @@ describe('deadlines store', () => {
         '/api/organizations/7/compliance/deadlines/42',
         { completionStatus: 'completed' },
       );
-      expect(context.dispatch).toHaveBeenCalledWith('fetchDeadlines');
+      expect(context.dispatch).toHaveBeenCalledWith('fetchDeadlines', null);
       expect(context.commit).toHaveBeenCalledWith(
         'alerts/addAlert',
         { text: 'Marked "Quarterly report" complete.', level: 'ok' },
@@ -74,7 +74,7 @@ describe('deadlines store', () => {
 
       await expect(deadlines.actions.updateDeadline(context, payload)).rejects.toMatchObject({ response: { status: 404 } });
 
-      expect(context.dispatch).toHaveBeenCalledWith('fetchDeadlines');
+      expect(context.dispatch).toHaveBeenCalledWith('fetchDeadlines', null);
       expect(context.commit).not.toHaveBeenCalled();
     });
 
@@ -101,11 +101,26 @@ describe('deadlines store', () => {
       );
     });
 
-    it('skips the refresh and alerts when the team changes while saving', async () => {
+    it('refreshes the same document after saving a deadline', async () => {
+      const scope = { documentId: 21, grantId: '335255' };
+      context.state.scope = scope;
+      fetchApi.patch.mockResolvedValue({ deadline: {} });
+
+      await deadlines.actions.updateDeadline(context, payload);
+
+      expect(context.dispatch).toHaveBeenCalledWith('fetchDeadlines', scope);
+    });
+
+    it.each(['team', 'document'])('skips refreshing and showing an alert when the %s changes while saving', async (scopeType) => {
       let finishPatch;
       fetchApi.patch.mockReturnValue(new Promise((resolve) => { finishPatch = resolve; }));
+      context.state.scope = { documentId: 21, grantId: '335255' };
       const saving = deadlines.actions.updateDeadline(context, payload);
-      context.rootGetters['users/selectedAgencyId'] = 8;
+      if (scopeType === 'team') {
+        context.rootGetters['users/selectedAgencyId'] = 8;
+      } else {
+        context.state.scope = { documentId: 22, grantId: '335255' };
+      }
       finishPatch({ deadline: {} });
 
       await saving;

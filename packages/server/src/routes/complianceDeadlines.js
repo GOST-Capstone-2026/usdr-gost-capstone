@@ -72,7 +72,7 @@ function serializeDeadline(row, status) {
 router.get('/deadlines', requireUser, async (req, res) => {
     const { selectedAgency } = req.session;
     const {
-        from, through, status, currentPage, perPage,
+        from, through, status, currentPage, perPage, documentId,
     } = req.query;
 
     if (status && !ALLOWED_STATUSES.includes(status)) {
@@ -95,7 +95,22 @@ router.get('/deadlines', requireUser, async (req, res) => {
         ]);
     }
 
-    const rows = await db.getDeadlineChecklistItems({ agencyId: selectedAgency, from, through });
+    let document;
+    if (documentId !== undefined) {
+        if (typeof documentId !== 'string' || !/^[1-9]\d*$/.test(documentId) || Number(documentId) > 2147483647) {
+            return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
+                { field: 'documentId', issue: 'must be a positive document ID' },
+            ]);
+        }
+        document = await db.getGrantDocument({ documentId: Number(documentId), agencyId: selectedAgency });
+        if (!document) {
+            return sendError(req, res, 404, 'NOT_FOUND', 'Document not found.');
+        }
+    }
+
+    const rows = await db.getDeadlineChecklistItems({
+        agencyId: selectedAgency, from, through, documentId: document?.id,
+    });
 
     const today = getToday();
 
@@ -114,6 +129,7 @@ router.get('/deadlines', requireUser, async (req, res) => {
     const reviewNeeded = paginate(reviewNeededItems, page, size);
 
     return res.json({
+        ...(document && { document: { id: document.id, grantId: document.grant_id } }),
         data: {
             portfolio: portfolio.items,
             reviewNeeded: reviewNeeded.items,
