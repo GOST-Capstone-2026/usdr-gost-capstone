@@ -9,7 +9,7 @@ import * as api from '@/helpers/fetchApi';
 import * as flags from '@/helpers/featureFlags';
 
 vi.mock('@/helpers/fetchApi', () => ({
-  get: vi.fn(), post: vi.fn(), postFormData: vi.fn(), apiURL: vi.fn((url) => url),
+  get: vi.fn(), post: vi.fn(), patch: vi.fn(), postFormData: vi.fn(), apiURL: vi.fn((url) => url),
 }));
 vi.mock('@/helpers/featureFlags', () => ({
   complianceDeadlinesEnabled: vi.fn(),
@@ -56,6 +56,14 @@ beforeEach(() => {
   api.postFormData.mockResolvedValue({ document: document() });
   api.get.mockImplementation(async (url) => {
     if (url.endsWith('/brief')) throw Object.assign(new Error('Not found'), { response: { status: 404 } });
+    if (url.endsWith('/checklist-items')) {
+      return {
+        data: [],
+        pagination: {
+          currentPage: 1, perPage: 1, total: 0, lastPage: 1,
+        },
+      };
+    }
     return { document: document() };
   });
   api.post.mockResolvedValue({ analysisRun: { id: 12, documentId: 7, status: 'queued' } });

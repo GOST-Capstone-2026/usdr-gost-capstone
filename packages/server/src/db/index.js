@@ -1253,17 +1253,31 @@ async function createInitialChecklistItems({ documentId, items }) {
     });
 }
 
+// Shared base for reading checklist items scoped to the organization that owns the parent
+// document, so one organization cannot reach another's checklist by guessing an id. Unlike
+// deadlineChecklistItemsQuery (M-03's read model), this does not exclude rejected items: AN-15's
+// checklist view is the one place a rejected item's generation and revision history stays
+// visible (Checklist Update Request contract), the deadline tracker is not.
+function checklistItemsQuery(agencyId) {
+    return knex(TABLES.checklist_items)
+        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.checklist_items}.document_id`)
+        .where(`${TABLES.grant_documents}.agency_id`, agencyId)
+        .select(`${TABLES.checklist_items}.*`, `${TABLES.grant_documents}.grant_id`, `${TABLES.grant_documents}.agency_id`);
+}
+
 // Every checklist item generated for one document, scoped to the organization that owns the
 // document so one organization cannot read another's checklist by guessing a document id.
 async function getChecklistItemsForDocument({ documentId, agencyId }) {
-    return knex(TABLES.checklist_items)
-        .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.checklist_items}.document_id`)
-        .where({
-            [`${TABLES.checklist_items}.document_id`]: documentId,
-            [`${TABLES.grant_documents}.agency_id`]: agencyId,
-        })
-        .select(`${TABLES.checklist_items}.*`)
+    return checklistItemsQuery(agencyId)
+        .where(`${TABLES.checklist_items}.document_id`, documentId)
         .orderBy(`${TABLES.checklist_items}.id`);
+}
+
+// One checklist item by its own id, scoped the same way, for the Checklist Contract's
+// PATCH /checklist-items/:itemId (AN-15), which addresses an item directly rather than through
+// its document.
+async function getChecklistItem({ itemId, agencyId }) {
+    return checklistItemsQuery(agencyId).where(`${TABLES.checklist_items}.id`, itemId).first();
 }
 
 // Applies an edit, annotation, or verification/rejection to one checklist item (the Checklist
@@ -2023,6 +2037,7 @@ module.exports = {
     createChecklistItems,
     createInitialChecklistItems,
     getChecklistItemsForDocument,
+    getChecklistItem,
     getDeadlineChecklistItem,
     getGrantDocumentPages,
     updateChecklistItem,
