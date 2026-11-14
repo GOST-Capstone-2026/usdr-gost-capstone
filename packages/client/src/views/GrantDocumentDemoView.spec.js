@@ -8,7 +8,9 @@ import GrantDocumentDemoView from '@/views/GrantDocumentDemoView.vue';
 import * as api from '@/helpers/fetchApi';
 import * as flags from '@/helpers/featureFlags';
 
-vi.mock('@/helpers/fetchApi', () => ({ get: vi.fn(), post: vi.fn(), postFormData: vi.fn() }));
+vi.mock('@/helpers/fetchApi', () => ({
+  get: vi.fn(), post: vi.fn(), postFormData: vi.fn(), apiURL: vi.fn((url) => url),
+}));
 vi.mock('@/helpers/featureFlags', () => ({
   complianceDeadlinesEnabled: vi.fn(),
   grantDocumentAnalysisEnabled: vi.fn(),
@@ -40,9 +42,15 @@ const brief = (overrides = {}) => ({
 let wrapper;
 let store;
 let router;
+let originalLocation;
 beforeEach(() => {
   vi.resetAllMocks();
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  // window.location is not normally reassignable in jsdom; redefined as a plain writable
+  // property so exportChecklist's top-level navigation can be asserted on without triggering a
+  // real (unsupported) navigation.
+  originalLocation = window.location;
+  Object.defineProperty(window, 'location', { writable: true, configurable: true, value: '' });
   flags.grantDocumentAnalysisEnabled.mockReturnValue(true);
   flags.grantMatchingEnabled.mockReturnValue(true);
   api.postFormData.mockResolvedValue({ document: document() });
@@ -51,6 +59,7 @@ beforeEach(() => {
     return { document: document() };
   });
   api.post.mockResolvedValue({ analysisRun: { id: 12, documentId: 7, status: 'queued' } });
+  api.apiURL.mockImplementation((url) => url);
   store = createStore({
     state: { selected: '0', role: 'staff' },
     getters: { 'users/selectedAgencyId': (state) => state.selected, 'users/userRole': (state) => state.role },
@@ -65,7 +74,10 @@ beforeEach(() => {
     ],
   });
 });
-afterEach(() => { wrapper?.unmount(); vi.useRealTimers(); });
+afterEach(() => {
+  wrapper?.unmount(); vi.useRealTimers();
+  Object.defineProperty(window, 'location', { writable: true, configurable: true, value: originalLocation });
+});
 async function render(query = {}, grantId = '364009') {
   await router.push({ name: 'grantDocumentAnalysis', params: { grantId }, query: { organizationId: '0', matchRunId: '9', ...query } });
   wrapper = mount(GrantDocumentDemoView, { global: { plugins: [store, router] } });
@@ -88,6 +100,14 @@ describe('C-12 selected grant document workflow', () => {
     expect(wrapper.text()).toContain('View deadlines for this document');
     expect(router.resolve(wrapper.vm.deadlineLocation).href)
       .toBe('/compliance/deadlines?organizationId=0&grantId=364009&documentId=7&matchRunId=9');
+  });
+  it('exports the checklist as a CSV via a top-level navigation, not a fetch', async () => {
+    await render({ documentId: '7' });
+    const callsBeforeExport = api.get.mock.calls.length;
+    const button = wrapper.findAll('button').find((candidate) => candidate.text() === 'Export checklist (CSV)');
+    await button.trigger('click');
+    expect(window.location).toBe('/api/organizations/0/compliance/documents/7/checklist-export');
+    expect(api.get).toHaveBeenCalledTimes(callsBeforeExport); // the export is a navigation, not a fetch call
   });
   it('shows the selected grant/team and does not upload, analyze or fetch automatically', async () => {
     await render();
