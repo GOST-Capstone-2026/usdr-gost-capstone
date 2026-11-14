@@ -19,6 +19,7 @@
     <p
       v-else-if="loadError"
       role="alert"
+      class="text-danger"
       data-testid="checklist-load-error"
     >
       {{ loadError }}
@@ -93,6 +94,7 @@
           <p
             v-if="itemError(item.id)"
             role="alert"
+            class="text-danger"
             data-testid="checklist-item-error"
           >
             {{ itemError(item.id) }}
@@ -159,6 +161,7 @@
           <p
             v-if="itemError(item.id)"
             role="alert"
+            class="text-danger"
             data-testid="checklist-item-error"
           >
             {{ itemError(item.id) }}
