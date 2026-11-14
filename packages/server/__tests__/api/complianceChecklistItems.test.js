@@ -448,3 +448,123 @@ describe('checklist items API', () => {
         });
     });
 });
+
+// AN-16: the Checklist Contract's GET .../checklist-export, a readable CSV download over the
+// same storage the tests above exercise directly, following the CSV download convention
+// routes/grants.js already uses rather than inventing a new export mechanism.
+describe('checklist export API', () => {
+    const agencyId = 0;
+    const otherAgencyId = 384;
+    const baseUrl = `/api/organizations/${agencyId}/compliance`;
+    const otherBaseUrl = `/api/organizations/${otherAgencyId}/compliance`;
+    let server;
+    let cookie;
+    let nvCookie;
+    let adminUser;
+    let documentId;
+    let emptyDocumentId;
+
+    before(async function beforeHook() {
+        this.timeout(15000);
+        cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
+        nvCookie = await getSessionCookie('user2@nv.example.com');
+        adminUser = await knex('users').select('id', 'name', 'email').where({ email: 'grant-admin@usdigitalresponse.org' }).first();
+        server = await makeTestServer();
+
+        const upload = await server.post(`${baseUrl}/documents`)
+            .set('Cookie', cookie)
+            .field('grantId', '335255')
+            .attach('file', FIXTURE_PDF_PATH);
+        documentId = upload.body.document.id;
+
+        // A second real upload of the same fixture bytes would collide on the (agencyId, sha256)
+        // unique constraint (AN-05), so the empty-checklist case is a document row inserted
+        // directly instead, needing no real PDF content since nothing here reads it.
+        [{ id: emptyDocumentId }] = await knex('grant_documents').insert({
+            agency_id: agencyId,
+            grant_id: '335255',
+            uploaded_by: adminUser.id,
+            filename: 'empty-checklist-notice.pdf',
+            mime_type: 'application/pdf',
+            size_bytes: 0,
+            sha256: 'an16-empty-checklist-document',
+            storage_bucket: 'grant-documents',
+            storage_key: 'an16-empty-checklist-document.pdf',
+        }).returning('id');
+
+        await knex('checklist_items').insert([
+            {
+                document_id: documentId,
+                category: 'reporting',
+                description: 'Submit quarterly performance reports within 30 days after each quarter.',
+                found: true,
+                sources: JSON.stringify([{ documentId, pageNumber: 14, excerpt: 'Quarterly reports are due...' }]),
+                possibly_affected_by_quality_issue: false,
+                due_date: '2026-12-31',
+                completion_status: 'inProgress',
+                user_notes: 'Confirmed with the program officer.',
+                is_user_edited: true,
+                verification_status: 'verified',
+                verified_by: adminUser.id,
+                verified_at: new Date(),
+            },
+            {
+                document_id: documentId,
+                category: 'costShare',
+                description: 'Not found in the processed notice.',
+                found: false,
+                sources: JSON.stringify([]),
+                completion_status: 'notStarted',
+            },
+        ]);
+    });
+
+    after(async () => {
+        if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+            await knex('grant_documents').where({ id: documentId }).del();
+        }
+        if (emptyDocumentId) {
+            await knex('grant_documents').where({ id: emptyDocumentId }).del();
+        }
+        server.stop();
+    });
+
+    it('downloads a readable CSV with one row per checklist item', async () => {
+        const response = await server.get(`${baseUrl}/documents/${documentId}/checklist-export`).set('Cookie', cookie);
+
+        expect(response.status).to.equal(200);
+        expect(response.headers['content-type']).to.match(/text\/csv/);
+        expect(response.headers['content-disposition']).to.equal(`attachment; filename=checklist-document-${documentId}.csv`);
+
+        const lines = response.text.trim().split('\n');
+        expect(lines).to.have.length(3);
+        expect(lines[0]).to.equal('Category,Description,Found,Source Citations,Possibly Affected By Quality Issue,Due Date,Completion Status,Verification Status,Verified By,Verified At,User Notes,Edited By User');
+
+        expect(response.text).to.include('Reporting,Submit quarterly performance reports within 30 days after each quarter.,Yes,p.14: Quarterly reports are due...,No,2026-12-31,In progress,verified,');
+        expect(response.text).to.include(adminUser.name || adminUser.email);
+        // verifiedAt must be a real readable date, not a Date object silently cast to an epoch
+        // number by csv-stringify.
+        expect(response.text).to.match(/,\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z,Confirmed with the program officer\.,Yes/);
+        expect(response.text).to.include('Cost share,Not found in the processed notice.,No,,No,,Not started,unverified,,,,No');
+    });
+
+    it('still returns a well-formed CSV with just a header when the document has no checklist items yet', async () => {
+        const response = await server.get(`${baseUrl}/documents/${emptyDocumentId}/checklist-export`).set('Cookie', cookie);
+
+        expect(response.status).to.equal(200);
+        const lines = response.text.trim().split('\n');
+        expect(lines[0]).to.equal('Category,Description,Found,Source Citations,Possibly Affected By Quality Issue,Due Date,Completion Status,Verification Status,Verified By,Verified At,User Notes,Edited By User');
+        expect(lines).to.have.length(2);
+    });
+
+    it('returns 404 for a document that does not exist', async () => {
+        const response = await server.get(`${baseUrl}/documents/999999999/checklist-export`).set('Cookie', cookie);
+        expect(response.status).to.equal(404);
+    });
+
+    it('does not let a different organization export another organization\'s checklist', async () => {
+        const response = await server.get(`${otherBaseUrl}/documents/${documentId}/checklist-export`).set('Cookie', nvCookie);
+        expect(response.status).to.equal(404);
+    });
+});

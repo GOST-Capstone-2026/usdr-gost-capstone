@@ -4,6 +4,8 @@
 const express = require('express');
 const multer = require('multer');
 const { DateTime } = require('luxon');
+// eslint-disable-next-line import/no-unresolved
+const { stringify: csvStringify } = require('csv-stringify/sync');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { requireUser } = require('../lib/access-helpers');
 const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-context');
@@ -91,6 +93,49 @@ function serializeChecklistItem(row) {
         version: row.version,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+    };
+}
+
+const CHECKLIST_EXPORT_CATEGORY_LABELS = {
+    eligibility: 'Eligibility',
+    applicationMaterial: 'Application material',
+    submission: 'Submission',
+    costShare: 'Cost share',
+    reporting: 'Reporting',
+    recordRetention: 'Record retention',
+    deadline: 'Deadline',
+    other: 'Other',
+};
+
+const CHECKLIST_EXPORT_COMPLETION_LABELS = {
+    notStarted: 'Not started',
+    inProgress: 'In progress',
+    completed: 'Completed',
+    notApplicable: 'Not applicable',
+};
+
+// One readable row per checklist item for the Checklist Contract's
+// GET .../checklist-export (AN-16). The contract specifies the route but not a column format,
+// so this follows the same human-readable CSV convention routes/grants.js already uses
+// (csv-stringify, Content-Disposition attachment) rather than inventing a new export mechanism.
+function checklistExportRow(row, verifierName) {
+    const sources = Array.isArray(row.sources) ? row.sources : [];
+    return {
+        category: CHECKLIST_EXPORT_CATEGORY_LABELS[row.category] || row.category,
+        description: row.description,
+        found: row.found ? 'Yes' : 'No',
+        sourceCitations: sources.map((source) => `p.${source.pageNumber}: ${source.excerpt}`).join(' | '),
+        possiblyAffectedByQualityIssue: row.possibly_affected_by_quality_issue ? 'Yes' : 'No',
+        dueDate: row.due_date || '',
+        completionStatus: CHECKLIST_EXPORT_COMPLETION_LABELS[row.completion_status] || row.completion_status,
+        verificationStatus: row.verification_status,
+        verifiedBy: verifierName || '',
+        // Explicitly re-serialized rather than handed to csv-stringify as-is: a timestamptz
+        // column can come back as a real Date object, which csv-stringify would otherwise cast
+        // to a raw epoch number instead of a readable date.
+        verifiedAt: row.verified_at ? new Date(row.verified_at).toISOString() : '',
+        userNotes: row.user_notes || '',
+        isUserEdited: row.is_user_edited ? 'Yes' : 'No',
     };
 }
 
@@ -245,6 +290,57 @@ router.get('/documents/:documentId/checklist-items', requireUser, async (req, re
             currentPage: 1, perPage: data.length || 1, total: data.length, lastPage: 1,
         },
     });
+});
+
+// GET /api/organizations/:organizationId/compliance/documents/:documentId/checklist-export
+// Downloads the document's current checklist as a readable CSV, the same Content-Disposition
+// download convention routes/grants.js already uses, rather than returning JSON for a browser
+// to turn into a file itself.
+router.get('/documents/:documentId/checklist-export', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const document = await db.getGrantDocument({
+        documentId: req.params.documentId,
+        agencyId: selectedAgency,
+    });
+
+    if (!document) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Document not found.');
+    }
+
+    const items = await db.getChecklistItemsForDocument({ documentId: document.id, agencyId: selectedAgency });
+
+    const verifierIds = [...new Set(items.map((item) => item.verified_by).filter((id) => id != null))];
+    const verifiers = verifierIds.length > 0 ? await db.getUsersEmailAndName(verifierIds) : [];
+    const verifierNames = new Map(verifiers.map((verifier) => [verifier.id, verifier.name || verifier.email]));
+
+    const rows = items.map((item) => checklistExportRow(item, verifierNames.get(item.verified_by)));
+    // Matches routes/grants.js's own CSV exports: with zero rows, csv-stringify would not even
+    // emit the header, producing a confusing, totally empty file.
+    if (rows.length === 0) rows.push({});
+
+    const csv = csvStringify(rows, {
+        header: true,
+        columns: [
+            { key: 'category', header: 'Category' },
+            { key: 'description', header: 'Description' },
+            { key: 'found', header: 'Found' },
+            { key: 'sourceCitations', header: 'Source Citations' },
+            { key: 'possiblyAffectedByQualityIssue', header: 'Possibly Affected By Quality Issue' },
+            { key: 'dueDate', header: 'Due Date' },
+            { key: 'completionStatus', header: 'Completion Status' },
+            { key: 'verificationStatus', header: 'Verification Status' },
+            { key: 'verifiedBy', header: 'Verified By' },
+            { key: 'verifiedAt', header: 'Verified At' },
+            { key: 'userNotes', header: 'User Notes' },
+            { key: 'isUserEdited', header: 'Edited By User' },
+        ],
+    });
+
+    const filename = `checklist-document-${document.id}.csv`;
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Length', csv.length);
+    return res.send(csv);
 });
 
 const CHECKLIST_ITEM_PATCH_FIELDS = ['expectedVersion', 'description', 'dueDate', 'completionStatus', 'userNotes', 'verificationStatus'];

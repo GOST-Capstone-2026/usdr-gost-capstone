@@ -110,6 +110,13 @@
         >
           View deadlines for this document
         </router-link>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm ml-2"
+          @click="exportChecklist"
+        >
+          Export checklist (CSV)
+        </button>
       </section>
       <section
         v-if="analysisRun"
@@ -367,6 +374,13 @@ export default {
       } finally {
         if (sequence === this.sequence) this.startingAnalysis = false;
       }
+    },
+    // Mirrors grants/exportCSV (store/modules/grants.js): a plain top-level navigation so the
+    // browser handles the download via Content-Disposition, rather than fetching the CSV as
+    // text and building a Blob/object URL for it here.
+    exportChecklist() {
+      if (!this.context || !this.document) return;
+      window.location = fetchApi.apiURL(`${this.base(this.context)}/documents/${this.document.id}/checklist-export`);
     },
     schedulePoll() {
       this.stopPolling();
