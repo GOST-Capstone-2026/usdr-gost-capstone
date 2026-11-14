@@ -180,6 +180,12 @@
           v-if="brief"
           :brief="brief"
         />
+        <checklist-items
+          v-if="context"
+          :organization-id="context.organizationId"
+          :document-id="document.id"
+          :can-verify="canAnalyze"
+        />
       </template>
     </template>
   </main>
@@ -188,6 +194,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import SavedGrantBrief from '@/components/SavedGrantBrief.vue';
+import ChecklistItems from '@/components/ChecklistItems.vue';
 import * as fetchApi from '@/helpers/fetchApi';
 import { complianceDeadlinesEnabled, grantDocumentAnalysisEnabled, grantMatchingEnabled } from '@/helpers/featureFlags';
 import {
@@ -197,7 +204,7 @@ import {
 const POLL_INTERVAL_MS = 1500;
 
 export default {
-  components: { SavedGrantBrief },
+  components: { SavedGrantBrief, ChecklistItems },
   data() {
     return {
       selectedFile: null,

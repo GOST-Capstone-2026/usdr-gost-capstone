@@ -22,9 +22,8 @@ function buildChecklistItem({
 
 const FIXTURE_PDF_PATH = path.join(__dirname, '..', 'fixtures', 'an08-sample.pdf');
 
-// AN-12 added the real checklist_items storage functions, but the HTTP routes that will call
-// them (AN-14's generation, AN-15's edit/verify controls) do not exist yet. This test exercises
-// the storage layer directly, the same way it will eventually be reached through those routes.
+// AN-12 added the real checklist_items storage functions; AN-14's generation and AN-15's HTTP
+// routes reach them the same way this test exercises the storage layer directly.
 describe('checklist item storage', () => {
     const agencyId = 0;
     const baseUrl = `/api/organizations/${agencyId}/compliance`;
@@ -196,5 +195,256 @@ describe('checklist item storage', () => {
         });
 
         expect(result).to.equal(null);
+    });
+});
+
+// AN-15: the Checklist Contract's HTTP routes over the same storage layer the test above
+// exercises directly. GET lists a document's items; PATCH edits, annotates, verifies, or rejects
+// one by its own id, matching docs/g32-shared-api-contracts.md, "Checklist Contract".
+describe('checklist items API', () => {
+    const agencyId = 0;
+    const otherAgencyId = 384;
+    const baseUrl = `/api/organizations/${agencyId}/compliance`;
+    const otherBaseUrl = `/api/organizations/${otherAgencyId}/compliance`;
+    let server;
+    let cookie;
+    let nvCookie;
+    let adminUserId;
+    let documentId;
+    let verifiableItem;
+    let unverifiableItem;
+    let notFoundItem;
+
+    const PAGE_TEXT = 'Quarterly performance reports are due within 30 days after each quarter ends.';
+
+    before(async function beforeHook() {
+        this.timeout(15000);
+        cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
+        nvCookie = await getSessionCookie('user2@nv.example.com');
+        adminUserId = await knex('users').select('id').where({ email: 'grant-admin@usdigitalresponse.org' })
+            .first()
+            .then((row) => row.id);
+        server = await makeTestServer();
+
+        const uploadResponse = await server.post(`${baseUrl}/documents`)
+            .set('Cookie', cookie)
+            .field('grantId', '335255')
+            .attach('file', FIXTURE_PDF_PATH);
+        documentId = uploadResponse.body.document.id;
+
+        await knex('grant_document_pages').insert({
+            document_id: documentId, page_number: 1, text: PAGE_TEXT, char_count: PAGE_TEXT.length,
+        });
+
+        const [verifiable, unverifiable, notFound] = await knex('checklist_items').insert([
+            {
+                document_id: documentId,
+                category: 'reporting',
+                description: 'Submit quarterly performance reports within 30 days after each quarter.',
+                found: true,
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt: PAGE_TEXT }]),
+                completion_status: 'notStarted',
+            },
+            {
+                document_id: documentId,
+                category: 'costShare',
+                description: 'A 10% local cost share is required.',
+                found: true,
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt: 'This sentence never appears on the page.' }]),
+                completion_status: 'notStarted',
+            },
+            {
+                document_id: documentId,
+                category: 'eligibility',
+                description: 'Not found in the processed notice.',
+                found: false,
+                sources: JSON.stringify([]),
+                completion_status: 'notStarted',
+            },
+        ]).returning('*');
+        verifiableItem = verifiable;
+        unverifiableItem = unverifiable;
+        notFoundItem = notFound;
+    });
+
+    after(async () => {
+        if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+            await knex('grant_document_pages').where({ document_id: documentId }).del();
+            await knex('grant_documents').where({ id: documentId }).del();
+        }
+        server.stop();
+    });
+
+    describe('GET /documents/:documentId/checklist-items', () => {
+        it('returns every item for the document, including one with no citation', async () => {
+            const response = await server.get(`${baseUrl}/documents/${documentId}/checklist-items`).set('Cookie', cookie);
+            expect(response.status).to.equal(200);
+            expect(response.body.data).to.have.length(3);
+            expect(response.body.pagination).to.deep.equal({
+                currentPage: 1, perPage: 3, total: 3, lastPage: 1,
+            });
+
+            const item = response.body.data.find((row) => row.id === verifiableItem.id);
+            expect(item).to.deep.include({
+                id: verifiableItem.id,
+                organizationId: agencyId,
+                documentId,
+                grantId: '335255',
+                category: 'reporting',
+                found: true,
+                completionStatus: 'notStarted',
+                isUserEdited: false,
+                verificationStatus: 'unverified',
+                verifiedBy: null,
+                version: 1,
+            });
+            expect(item.sources).to.deep.equal([{ documentId, pageNumber: 1, excerpt: PAGE_TEXT }]);
+        });
+
+        it('returns 404 for a document that does not exist', async () => {
+            const response = await server.get(`${baseUrl}/documents/999999999/checklist-items`).set('Cookie', cookie);
+            expect(response.status).to.equal(404);
+        });
+
+        it('does not let a different organization list another organization\'s checklist items', async () => {
+            const response = await server.get(`${otherBaseUrl}/documents/${documentId}/checklist-items`).set('Cookie', nvCookie);
+            expect(response.status).to.equal(404);
+        });
+    });
+
+    describe('PATCH /checklist-items/:itemId', () => {
+        it('rejects an unknown field', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1, category: 'other' });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details).to.deep.equal([{ field: 'category', issue: 'unsupported field' }]);
+        });
+
+        it('requires expectedVersion', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ userNotes: 'missing a version' });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details).to.deep.equal([{ field: 'expectedVersion', issue: 'must be a positive integer' }]);
+        });
+
+        it('requires at least one editable field', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1 });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details[0].field).to.equal('body');
+        });
+
+        it('rejects an invalid dueDate', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1, dueDate: 'not-a-date' });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details).to.deep.equal([{ field: 'dueDate', issue: 'must be a valid YYYY-MM-DD date, or null' }]);
+        });
+
+        it('rejects an invalid completionStatus', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1, completionStatus: 'done' });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details).to.deep.equal([{ field: 'completionStatus', issue: 'must be one of notStarted, inProgress, completed, notApplicable' }]);
+        });
+
+        it('rejects an invalid verificationStatus', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1, verificationStatus: 'approved' });
+            expect(response.status).to.equal(400);
+            expect(response.body.error.details).to.deep.equal([{ field: 'verificationStatus', issue: 'must be one of unverified, verified, rejected' }]);
+        });
+
+        it('returns 404 for an item that does not exist', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/999999999`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: 1, userNotes: 'anything' });
+            expect(response.status).to.equal(404);
+        });
+
+        it('does not let a different organization patch another organization\'s checklist item', async () => {
+            const response = await server.patch(`${otherBaseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', nvCookie)
+                .send({ expectedVersion: 1, userNotes: 'should not apply' });
+            expect(response.status).to.equal(404);
+        });
+
+        it('edits the description and notes, marking the item user-edited without touching verification', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${notFoundItem.id}`)
+                .set('Cookie', cookie)
+                .send({
+                    expectedVersion: notFoundItem.version,
+                    description: 'Confirmed not applicable to this notice.',
+                    userNotes: 'Checked with the program officer.',
+                });
+            expect(response.status).to.equal(200);
+            expect(response.body.checklistItem).to.deep.include({
+                id: notFoundItem.id,
+                description: 'Confirmed not applicable to this notice.',
+                userNotes: 'Checked with the program officer.',
+                isUserEdited: true,
+                verificationStatus: 'unverified',
+                version: notFoundItem.version + 1,
+            });
+            notFoundItem = { ...notFoundItem, version: notFoundItem.version + 1 };
+        });
+
+        it('clears a due date by sending null', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${verifiableItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: verifiableItem.version, dueDate: null });
+            expect(response.status).to.equal(200);
+            expect(response.body.checklistItem.dueDate).to.equal(null);
+            verifiableItem = { ...verifiableItem, version: verifiableItem.version + 1 };
+        });
+
+        it('rejects a stale expectedVersion with a version conflict instead of overwriting it', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${verifiableItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: verifiableItem.version - 1, userNotes: 'should not be saved' });
+            expect(response.status).to.equal(409);
+            expect(response.body.error.code).to.equal('VERSION_CONFLICT');
+        });
+
+        it('refuses to verify a found item whose citation does not check out', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${unverifiableItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: unverifiableItem.version, verificationStatus: 'verified' });
+            expect(response.status).to.equal(422);
+            expect(response.body.error.code).to.equal('SOURCE_NOT_VERIFIABLE');
+        });
+
+        it('rejects an item without needing its citation to check out, since rejecting is not endorsing it', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${unverifiableItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: unverifiableItem.version, verificationStatus: 'rejected' });
+            expect(response.status).to.equal(200);
+            expect(response.body.checklistItem.verificationStatus).to.equal('rejected');
+            expect(response.body.checklistItem.verifiedBy).to.equal(adminUserId);
+        });
+
+        it('verifies a found item whose citation checks out against the real page text', async () => {
+            const response = await server.patch(`${baseUrl}/checklist-items/${verifiableItem.id}`)
+                .set('Cookie', cookie)
+                .send({ expectedVersion: verifiableItem.version, verificationStatus: 'verified' });
+            expect(response.status).to.equal(200);
+            expect(response.body.checklistItem).to.deep.include({
+                id: verifiableItem.id,
+                verificationStatus: 'verified',
+                verifiedBy: adminUserId,
+                // Already true from the earlier "clears a due date" test on this same item;
+                // verifying an item is not itself a content edit, but it also does not undo one.
+                isUserEdited: true,
+                version: verifiableItem.version + 1,
+            });
+            expect(response.body.checklistItem.verifiedAt).to.not.equal(null);
+        });
     });
 });

@@ -1,14 +1,17 @@
 // F1 — Grant Analysis and Compliance Checklist subsystem.
-// Routes here implement docs/g32-shared-api-contracts.md, "Grant Document Contract".
-// Mounted at /api/organizations/:organizationId/compliance in configure.js.
+// Routes here implement docs/g32-shared-api-contracts.md, "Grant Document Contract" and
+// "Checklist Contract". Mounted at /api/organizations/:organizationId/compliance in configure.js.
 const express = require('express');
 const multer = require('multer');
+const { DateTime } = require('luxon');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { requireUser } = require('../lib/access-helpers');
 const { ensureAsyncContext } = require('../arpa_reporter/lib/ensure-async-context');
 const { getGrantDocumentsS3Client } = require('../lib/gost-aws');
 const { validateGrantDocumentUpload, sha256Hex } = require('../lib/grantDocumentValidation');
 const { runAnalysis } = require('../lib/analysisRuns');
+const { canVerifyFoundItem } = require('../lib/sourceCitationValidation');
+const { COMPLETION_STATUSES, VERIFICATION_STATUSES } = require('../lib/checklistItemSchema');
 const db = require('../db');
 
 const router = express.Router({ mergeParams: true });
@@ -61,6 +64,33 @@ function serializeGrantBrief(row, document) {
         model: row.model,
         promptVersion: row.prompt_version,
         generatedAt: row.generated_at,
+    };
+}
+
+// Matches docs/g32-shared-api-contracts.md, "Checklist Contract" > "Checklist item". `row` comes
+// from a query joined against grant_documents (checklistItemsQuery), which is where
+// organizationId and grantId are read from; they are not duplicated on checklist_items itself.
+function serializeChecklistItem(row) {
+    return {
+        id: row.id,
+        organizationId: row.agency_id,
+        documentId: row.document_id,
+        grantId: row.grant_id,
+        category: row.category,
+        description: row.description,
+        found: row.found,
+        sources: row.sources,
+        possiblyAffectedByQualityIssue: row.possibly_affected_by_quality_issue,
+        dueDate: row.due_date,
+        completionStatus: row.completion_status,
+        userNotes: row.user_notes,
+        isUserEdited: row.is_user_edited,
+        verificationStatus: row.verification_status,
+        verifiedBy: row.verified_by,
+        verifiedAt: row.verified_at,
+        version: row.version,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
     };
 }
 
@@ -192,6 +222,123 @@ router.get('/documents/:documentId/brief', requireUser, async (req, res) => {
     }
 
     return res.json({ brief: serializeGrantBrief(brief, document) });
+});
+
+// GET /api/organizations/:organizationId/compliance/documents/:documentId/checklist-items
+router.get('/documents/:documentId/checklist-items', requireUser, async (req, res) => {
+    const { selectedAgency } = req.session;
+    const document = await db.getGrantDocument({
+        documentId: req.params.documentId,
+        agencyId: selectedAgency,
+    });
+
+    if (!document) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Document not found.');
+    }
+
+    const items = await db.getChecklistItemsForDocument({ documentId: document.id, agencyId: selectedAgency });
+    const data = items.map(serializeChecklistItem);
+
+    return res.json({
+        data,
+        pagination: {
+            currentPage: 1, perPage: data.length || 1, total: data.length, lastPage: 1,
+        },
+    });
+});
+
+const CHECKLIST_ITEM_PATCH_FIELDS = ['expectedVersion', 'description', 'dueDate', 'completionStatus', 'userNotes', 'verificationStatus'];
+const CHECKLIST_ITEM_EDITABLE_FIELDS = ['description', 'dueDate', 'completionStatus', 'userNotes', 'verificationStatus'];
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// PATCH /api/organizations/:organizationId/compliance/checklist-items/:itemId
+// Addresses a checklist item directly (not nested under its document), matching the Checklist
+// Contract. Edit, annotation, verification, and rejection are one route: the server decides
+// what changed from which fields are present, same as updateChecklistItem (AN-12) already does.
+router.patch('/checklist-items/:itemId', requireUser, async (req, res) => {
+    const { selectedAgency, user } = req.session;
+    const itemId = Number(req.params.itemId);
+
+    if (!Number.isInteger(itemId) || itemId < 1) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
+            { field: 'itemId', issue: 'must be a positive integer' },
+        ]);
+    }
+
+    const body = req.body || {};
+    const unknownFields = Object.keys(body).filter((field) => !CHECKLIST_ITEM_PATCH_FIELDS.includes(field));
+    if (unknownFields.length > 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', unknownFields.map((field) => ({ field, issue: 'unsupported field' })));
+    }
+
+    const {
+        expectedVersion, description, dueDate, completionStatus, userNotes, verificationStatus,
+    } = body;
+    const details = [];
+
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
+        details.push({ field: 'expectedVersion', issue: 'must be a positive integer' });
+    }
+    if (!CHECKLIST_ITEM_EDITABLE_FIELDS.some((field) => body[field] !== undefined)) {
+        details.push({ field: 'body', issue: `must include at least one of ${CHECKLIST_ITEM_EDITABLE_FIELDS.join(', ')}` });
+    }
+    if (description !== undefined && (typeof description !== 'string' || !description.trim())) {
+        details.push({ field: 'description', issue: 'must be a non-empty string' });
+    }
+    if (dueDate !== undefined && dueDate !== null
+        && (typeof dueDate !== 'string' || !ISO_DATE_PATTERN.test(dueDate) || !DateTime.fromISO(dueDate).isValid)) {
+        details.push({ field: 'dueDate', issue: 'must be a valid YYYY-MM-DD date, or null' });
+    }
+    if (completionStatus !== undefined && !COMPLETION_STATUSES.includes(completionStatus)) {
+        details.push({ field: 'completionStatus', issue: `must be one of ${COMPLETION_STATUSES.join(', ')}` });
+    }
+    if (userNotes !== undefined && userNotes !== null && typeof userNotes !== 'string') {
+        details.push({ field: 'userNotes', issue: 'must be a string or null' });
+    }
+    if (verificationStatus !== undefined && !VERIFICATION_STATUSES.includes(verificationStatus)) {
+        details.push({ field: 'verificationStatus', issue: `must be one of ${VERIFICATION_STATUSES.join(', ')}` });
+    }
+
+    if (details.length > 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', details);
+    }
+
+    // Confirming or rejecting an AI claim is a trust decision, not a plain correction, so it's
+    // held to the same admin/staff restriction Connor's deadline-verification action uses.
+    if (verificationStatus !== undefined && !['admin', 'staff'].includes(user.role_name)) {
+        return sendError(req, res, 403, 'FORBIDDEN', 'Only administrators and staff can verify or reject a checklist item.');
+    }
+
+    const item = await db.getChecklistItem({ itemId, agencyId: selectedAgency });
+    if (!item) {
+        return sendError(req, res, 404, 'NOT_FOUND', 'Checklist item not found.');
+    }
+
+    if (verificationStatus === 'verified') {
+        const pages = await db.getGrantDocumentPages({ documentId: item.document_id, agencyId: selectedAgency });
+        if (!canVerifyFoundItem({ found: item.found, sources: item.sources }, pages, { expectedDocumentId: item.document_id })) {
+            return sendError(req, res, 422, 'SOURCE_NOT_VERIFIABLE', 'The cited text could not be verified against the document.');
+        }
+    }
+
+    const updated = await db.updateChecklistItem({
+        itemId,
+        agencyId: selectedAgency,
+        expectedVersion,
+        verifiedByUserId: user.id,
+        description,
+        dueDate,
+        userNotes,
+        completionStatus,
+        verificationStatus,
+    });
+
+    if (!updated) {
+        return sendError(req, res, 409, 'VERSION_CONFLICT', 'This item changed. Review the latest version before editing.');
+    }
+
+    const row = { ...updated, grant_id: item.grant_id, agency_id: item.agency_id };
+    return res.json({ checklistItem: serializeChecklistItem(row) });
 });
 
 // POST /api/organizations/:organizationId/compliance/documents/:documentId/analysis-runs

@@ -15,6 +15,11 @@ const CHECKLIST_CATEGORIES = [
 // Verification and Completion States").
 const COMPLETION_STATUSES = ['notStarted', 'inProgress', 'completed', 'notApplicable'];
 
+// A person's three possible verdicts on an AI-generated checklist item (AN-15). Rejecting one
+// keeps its original generation and revision history rather than deleting it (Checklist Update
+// Request contract).
+const VERIFICATION_STATUSES = ['unverified', 'verified', 'rejected'];
+
 /**
  * Builds one AI-identified compliance obligation, not yet saved. `found` and `sources` follow
  * the same source traceability contract as grant-brief fields: a claim marked found carries at
@@ -64,4 +69,6 @@ function createChecklistItem({
     };
 }
 
-module.exports = { CHECKLIST_CATEGORIES, COMPLETION_STATUSES, createChecklistItem };
+module.exports = {
+    CHECKLIST_CATEGORIES, COMPLETION_STATUSES, VERIFICATION_STATUSES, createChecklistItem,
+};
