@@ -183,7 +183,66 @@ describe('C-12 selected grant document workflow', () => {
       .mockResolvedValueOnce({ document: document() })
       .mockResolvedValueOnce({ brief: brief() });
     await vi.advanceTimersByTimeAsync(1500); await flushPromises();
-    expect(wrapper.text()).toContain('Run 12 completed. The latest saved brief is from run 11.');
+    expect(wrapper.text()).toContain('Run 12 completed. The run produced no new brief.');
+    expect(wrapper.text()).toContain('Showing the saved brief from run 11.');
+  });
+  it('keeps the prior brief visible when the new brief cannot be loaded', async () => {
+    api.get.mockResolvedValueOnce({ document: document() }).mockResolvedValueOnce({ brief: brief() });
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    expect(wrapper.text()).toContain('Waiting to start.');
+    expect(wrapper.text()).toContain('Showing the saved brief from run 11.');
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document() })
+      .mockRejectedValueOnce(new Error('brief request failed'));
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('The saved grant brief could not be loaded.');
+    expect(wrapper.text()).toContain('Showing the saved brief from run 11.');
+    api.get.mockResolvedValueOnce({ brief: brief({ runId: 12 }) });
+    const retry = wrapper.findAll('button').find((button) => button.text() === 'Retry loading the brief');
+    await retry.trigger('click'); await flushPromises();
+    expect(wrapper.text()).toContain('Analysis run 12 · Unverified');
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+  it('loads the brief even when completed document metadata temporarily fails', async () => {
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockRejectedValueOnce(new Error('metadata request failed'))
+      .mockResolvedValueOnce({ brief: brief({ runId: 12 }) });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('updated page count and extraction quality could not be loaded');
+    expect(wrapper.text()).toContain('Analysis run 12 · Unverified');
+    api.get.mockResolvedValueOnce({ document: document({ pageCount: 17, extractionQuality: 'readable' }) });
+    const retry = wrapper.findAll('button').find((button) => button.text() === 'Refresh analysis status');
+    await retry.trigger('click'); await flushPromises();
+    expect(wrapper.text()).toContain('Page count: 17');
+    expect(wrapper.text()).not.toContain('could not be loaded');
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+  it('gives a recovery action for a completed run on an unreadable PDF', async () => {
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document({ extractionQuality: 'unreadable' }) });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('Upload a text-readable copy');
+    expect(wrapper.text()).not.toContain('Choose Start Analysis to retry.');
+  });
+  it('allows a failed analysis to be retried without uploading again', async () => {
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get.mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'failed' } });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('Analysis failed.');
+    expect(startButton().element.disabled).toBe(false);
+    api.post.mockResolvedValueOnce({ analysisRun: { id: 13, documentId: 7, status: 'queued' } });
+    await startButton().trigger('click'); await flushPromises();
+    expect(wrapper.text()).toContain('Run 13: queued');
+    expect(api.postFormData).not.toHaveBeenCalled();
   });
   it('discards a delayed brief after switching teams', async () => {
     const pending = deferred();
@@ -225,6 +284,29 @@ describe('C-12 selected grant document workflow', () => {
     expect(api.get.mock.calls.filter(([url]) => url.includes('analysis-runs'))).toHaveLength(1);
     request.resolve({ analysisRun: { id: 12, documentId: 7, status: 'queued' } }); await flushPromises();
     expect(vi.getTimerCount()).toBe(1);
+  });
+  it('loads the newly generated checklist after the first successful analysis', async () => {
+    await render({ documentId: '7' });
+    expect(wrapper.find('[data-testid="checklist-empty"]').exists()).toBe(true);
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document({ pageCount: 17 }) })
+      .mockResolvedValueOnce({ brief: brief({ runId: 12 }) })
+      .mockResolvedValueOnce({
+        data: [{
+          id: 1,
+          category: 'submission',
+          description: 'Submit the application in JustGrants.',
+          verificationStatus: 'unverified',
+          completionStatus: 'notStarted',
+          sources: [],
+        }],
+      });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.get('[data-testid="checklist-description"]').text()).toBe('Submit the application in JustGrants.');
+    expect(api.get.mock.calls.filter(([url]) => url.endsWith('/checklist-items'))).toHaveLength(2);
+    expect(api.post).toHaveBeenCalledTimes(1);
   });
   it('catches polling failures and resumes by GET without starting a second analysis', async () => {
     await render({ documentId: '7' });

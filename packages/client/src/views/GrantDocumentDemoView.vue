@@ -128,21 +128,29 @@
         <p role="status">
           Run {{ analysisRun.id }}: {{ analysisRun.status }}
         </p>
+        <p v-if="isRunActive">
+          {{ analysisRun.status === 'queued' ? 'Waiting to start.' : 'Reading the PDF and preparing the analysis results.' }}
+        </p>
         <p
           v-if="analysisRun.status === 'failed'"
           role="alert"
         >
-          Analysis failed. Review the document and try again.
+          Analysis failed. Choose Start Analysis to retry this PDF, or upload another notice.
         </p>
         <template v-if="analysisRun.status === 'completed'">
-          <p>Processing completed. Page count: {{ document.pageCount ?? 'Unknown' }}. Chunk count: {{ analysisRun.chunkCount ?? 'Unknown' }}.</p>
+          <p v-if="documentRefreshError">
+            The run finished, but the updated page count and extraction quality could not be loaded.
+          </p>
+          <p v-else>
+            Processing completed. Page count: {{ document.pageCount ?? 'Unknown' }}. Chunk count: {{ analysisRun.chunkCount ?? 'Unknown' }}.
+          </p>
           <p>Processing completion does not verify the extracted content. Review its source before relying on it.</p>
         </template>
         <button
-          v-if="analysisRun.status !== 'failed' && errorMessage"
+          v-if="documentRefreshError || (isRunActive && errorMessage)"
           class="btn btn-outline-primary"
           :disabled="busy"
-          @click="refreshAnalysis"
+          @click="documentRefreshError ? refreshCompletedDocument() : refreshAnalysis()"
         >
           Refresh analysis status
         </button>
@@ -171,17 +179,24 @@
           </button>
         </div>
         <p
+          v-else-if="briefMissingForRun"
+          class="mt-4"
+          role="status"
+        >
+          {{ missingBriefMessage }}
+        </p>
+        <p
           v-else-if="!brief && !isRunActive"
           class="mt-4"
         >
           No grant brief is saved for this document.
         </p>
         <p
-          v-if="brief && analysisRun?.status === 'completed' && brief.runId !== analysisRun.id"
+          v-if="brief && analysisRun && !briefMissingForRun && recordId(brief.runId) !== analysisRun.id"
           class="mt-4"
           role="status"
         >
-          Run {{ analysisRun.id }} completed. The latest saved brief is from run {{ brief.runId }}.
+          Showing the saved brief from run {{ brief.runId }}.
         </p>
         <saved-grant-brief
           v-if="brief"
@@ -189,6 +204,7 @@
         />
         <checklist-items
           v-if="context"
+          ref="checklist"
           :organization-id="context.organizationId"
           :document-id="document.id"
           :can-verify="canAnalyze"
@@ -222,6 +238,7 @@ export default {
       startingAnalysis: false,
       loadingDocument: false,
       polling: false,
+      documentRefreshError: false,
       errorMessage: '',
       pollHandle: null,
       sequence: 0,
@@ -238,6 +255,18 @@ export default {
     contextKey() { return JSON.stringify([this.canAnalyze, this.context, this.$route.query.documentId]); },
     busy() { return this.uploading || this.startingAnalysis || this.loadingDocument || this.polling; },
     isRunActive() { return ['queued', 'processing'].includes(this.analysisRun?.status); },
+    briefMissingForRun() {
+      return this.analysisRun?.status === 'completed' && !this.briefLoading && !this.briefError
+        && recordId(this.brief?.runId) !== this.analysisRun.id;
+    },
+    missingBriefMessage() {
+      const run = this.analysisRun.id;
+      const reason = !this.documentRefreshError && this.document.extractionQuality === 'unreadable'
+        ? 'The PDF has no readable text. Upload a text-readable copy to generate a brief.'
+        : 'The run produced no new brief. Choose Start Analysis to retry.';
+      const prior = this.brief ? ` Showing the saved brief from run ${this.brief.runId}.` : '';
+      return `Run ${run} completed. ${reason}${prior}`;
+    },
     deadlineLocation() {
       if (!this.context || !this.document || !complianceDeadlinesEnabled()) return null;
       const matchRunId = recordId(this.$route.query.matchRunId);
@@ -260,6 +289,7 @@ export default {
   watch: { contextKey: { immediate: true, handler: 'resetSelection' } },
   beforeUnmount() { this.sequence += 1; this.stopPolling(); },
   methods: {
+    recordId,
     base(context) { return `/api/organizations/${context.organizationId}/compliance`; },
     stopPolling() { clearTimeout(this.pollHandle); this.pollHandle = null; },
     async resetSelection() {
@@ -277,6 +307,7 @@ export default {
       this.startingAnalysis = false;
       this.loadingDocument = false;
       this.polling = false;
+      this.documentRefreshError = false;
       if (!this.canAnalyze || !this.context || this.$route.query.documentId === undefined) return;
       const id = recordId(this.$route.query.documentId);
       if (id === null) { this.errorMessage = 'Enter a valid saved document ID.'; return; }
@@ -313,8 +344,8 @@ export default {
         this.brief = brief;
       } catch (error) {
         if (!isCurrent()) return;
-        this.brief = null;
-        if (error.response?.status !== 404) this.briefError = 'The saved grant brief could not be loaded.';
+        if (error.response?.status === 404) this.brief = null;
+        else this.briefError = 'The saved grant brief could not be loaded.';
       } finally {
         if (isCurrent()) this.briefLoading = false;
       }
@@ -339,6 +370,7 @@ export default {
       this.errorMessage = '';
       this.document = null;
       this.analysisRun = null;
+      this.documentRefreshError = false;
       this.brief = null;
       this.briefLoading = false;
       this.briefError = '';
@@ -368,6 +400,7 @@ export default {
         const response = await fetchApi.post(`${this.base(context)}/documents/${document.id}/analysis-runs`);
         if (sequence !== this.sequence) return;
         this.analysisRun = checkedAnalysisRun(response.analysisRun, document.id);
+        this.documentRefreshError = false;
         this.schedulePoll();
       } catch (error) {
         if (sequence === this.sequence) this.errorMessage = documentAnalysisError(error);
@@ -386,6 +419,20 @@ export default {
       this.stopPolling();
       if (this.isRunActive) this.pollHandle = setTimeout(() => this.refreshAnalysis(), POLL_INTERVAL_MS);
     },
+    async refreshCompletedDocument() {
+      const { sequence, context, document } = this;
+      this.polling = true;
+      this.documentRefreshError = false;
+      try {
+        const saved = await fetchApi.get(`${this.base(context)}/documents/${document.id}`);
+        if (sequence !== this.sequence) return;
+        this.document = checkedDocument(saved.document, context, document.id);
+      } catch {
+        if (sequence === this.sequence) this.documentRefreshError = true;
+      } finally {
+        if (sequence === this.sequence) this.polling = false;
+      }
+    },
     async refreshAnalysis() {
       if (!this.canAnalyze || !this.context || !this.document || !this.analysisRun || this.busy) return;
       this.stopPolling();
@@ -399,10 +446,10 @@ export default {
         if (sequence !== this.sequence) return;
         this.analysisRun = checkedAnalysisRun(response.analysisRun, document.id, analysisRun.id);
         if (this.analysisRun.status === 'completed') {
-          const saved = await fetchApi.get(`${this.base(context)}/documents/${document.id}`);
+          await this.refreshCompletedDocument();
           if (sequence !== this.sequence) return;
-          this.document = checkedDocument(saved.document, context, document.id);
           this.loadBrief();
+          this.$refs.checklist?.refreshAfterAnalysis();
         }
         this.schedulePoll();
       } catch (error) {
