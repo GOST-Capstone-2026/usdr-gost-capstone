@@ -1,0 +1,440 @@
+{
+  "version": "faithfulness-v1",
+  "builtFrom": {
+    "listings": "seeds/demo/opportunities.json (fetched 2026-10-10)",
+    "pdf": "an08-sample.pdf"
+  },
+  "note": "null in a gold field = not graded. false = the notice does not say it, so reporting it counts as invented.",
+  "documents": [
+    {
+      "id": "listing-364009",
+      "grantId": "364009",
+      "source": "https://www.grants.gov/search-results-detail/364009",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Fiscal Year 2026 Wildlife Crossings Pilot Program\nOpportunity Number: FHWA-WCPP-26-002\nAgency: DOT Federal Highway Administration\nPosted Date: Sep 30, 2026\nClose Date for Applications: Nov 16, 2026\nArchive Date: Dec 16, 2026\nCost Sharing or Matching Requirement: Yes\nAward Ceiling: $80,000,000\nAward Floor: $0\nExpected Number of Awards: 8\nEligible Applicants: State governments; City or township governments; County governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Native American tribal governments (Federally recognized)"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\nThe purpose of the WCPP is to provide funding to eligible entities for projects seeking to improve safety of the traveling public by reducing the number of wildlife-vehicle collisions (WVC) and, in doing so, improve habitat connectivity for terrestrial and aquatic species.\nThis NOFO will award approximately $80 million in Fiscal Year (FY) 2026 funding via cost reimbursable grants. DOT may also award any remaining and available funds from previous fiscal years under this opportunity.\n\nThe actual amount available to be awarded under this notice will be subject to the availability of funds.\n\nNOTE: The information under 'Award' on this page requires the specification of a minimum and maximum dollar value for anticipated awards due to Grants.gov system requirements. However, as stated in the NOFO, there are no minimum or maximum award sizes."
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 8000000000,
+          "minimumAmountCents": null
+        },
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-11-16"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-09-30",
+          "2026-12-16"
+        ]
+      }
+    },
+    {
+      "id": "listing-364037",
+      "grantId": "364037",
+      "source": "https://www.grants.gov/search-results-detail/364037",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism\nOpportunity Number: O-BJA-2026-172770\nAgency: Bureau of Justice Assistance\nPosted Date: Oct 7, 2026\nClose Date for Applications: Nov 20, 2026\nCost Sharing or Matching Requirement: No\nAward Ceiling: $4,000,000\nAward Floor: $0\nEligible Applicants: Special district governments; Native American tribal governments (Federally recognized); City or township governments; County governments; State governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\nThis is a notice of funding opportunity (NOFO) for the BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism. This opportunity will support state, local, and tribal government efforts to reduce wasteful spending and inefficient uses of funds across justice system operations and redirect that funding to target crime and other public safety and/or justice system challenges. Applicants should propose projects that address one or more urgent local justice system challenge. Applicants should use existing data and information to identify the specific challenges they will focus on and how they will refocus resources on the strategies and populations most likely to reduce crime. Jurisdictions may consider addressing challenges across the judicial system, including those related to law enforcement, prosecution, sentencing, jails and prisons, probation, and parole."
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 400000000,
+          "minimumAmountCents": null
+        },
+        "costShare": {
+          "required": false
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-11-20"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-10-07"
+        ]
+      }
+    },
+    {
+      "id": "listing-364035",
+      "grantId": "364035",
+      "source": "https://www.grants.gov/search-results-detail/364035",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities\nOpportunity Number: O-OJJDP-2026-172735\nAgency: Office of Juvenile Justice Delinquency Prevention\nPosted Date: Oct 7, 2026\nClose Date for Applications: Nov 16, 2026\nCost Sharing or Matching Requirement: No\nEstimated Total Program Funding: $432,833\nAward Ceiling: $250,000\nAward Floor: $0\nExpected Number of Awards: 2\nEligible Applicants: County governments; City or township governments; Native American tribal governments (Federally recognized); Special district governments; State governments"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\nThis is a notice of funding opportunity (NOFO) for the OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities program. This opportunity will support the development, improvement, and/or implementation of emergency planning activities for state, Tribal, county, and local juvenile justice residential facilities. Emergency planning activities should prepare facilities to prioritize the safety and well-being of youth and staff, keep families informed, continue operations, and reduce risk to the facility during and after an emergency. The goal of the program is to help facilities improve their ability to respond to and recover from these incidents. For the purposes of this program, emergency is defined as an incident—natural, technological, or nonnatural—that requires a response to protect life and property."
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 25000000,
+          "minimumAmountCents": null
+        },
+        "costShare": {
+          "required": false
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-11-16"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-10-07"
+        ]
+      }
+    },
+    {
+      "id": "listing-363696",
+      "grantId": "363696",
+      "source": "https://www.grants.gov/search-results-detail/363696",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Fiscal Year (FY) 2027 AmeriCorps State and National Competitive Grants\nOpportunity Number: AC-08-28-26\nAgency: AmeriCorps\nPosted Date: Aug 28, 2026\nClose Date for Applications: Jan 13, 2027\nArchive Date: Jan 14, 2027\nCost Sharing or Matching Requirement: Yes\nEligible Applicants: Special district governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments; County governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; City or township governments; Public and State controlled institutions of higher education; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); Private institutions of higher education"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>AmeriCorps improves lives, strengthens communities, and fosters civic engagement through service and volunteering. AmeriCorps brings people together to tackle some of the country’s most pressing challenges through national service and volunteerism. AmeriCorps members serve with organizations dedicated to the improvement of communities and those serving. AmeriCorps grants are awarded to eligible organizations that engage AmeriCorps members in evidence-based or evidence-informed interventions to strengthen communities. An AmeriCorps member is a person who does community service through AmeriCorps. Members may receive a living allowance and other benefits. After successful completion of their service, members earn a Segal AmeriCorps Education Award they can use to pay for higher education expenses or apply to qualified student loans.</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": false,
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2027-01-13"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-08-28",
+          "2027-01-14"
+        ]
+      }
+    },
+    {
+      "id": "listing-361418",
+      "grantId": "361418",
+      "source": "https://www.grants.gov/search-results-detail/361418",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Great Lakes Restoration Initiative: Community Forest and Open Space Conservation Program\nOpportunity Number: USDA-FS-2026-GLRI-CFP\nAgency: Forest Service\nPosted Date: Jul 22, 2026\nClose Date for Applications: Dec 8, 2026\nArchive Date: Jan 7, 2027\nCost Sharing or Matching Requirement: Yes\nEstimated Total Program Funding: $3,500,000\nAward Ceiling: $1,000,000\nExpected Number of Awards: 6\nEligible Applicants: County governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal governments (Federally recognized); City or township governments"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>Federally recognized Indian Tribes, local government entities, and nonprofit organizations that are qualified to acquire and manage land may apply for up to $1,000,000 for the fee simple acquisition of private forest land in portions of the Lake Superior Basin of Michigan and Wisconsin. Projects submitted for funding consideration must be forested properties at least five acres in size that are threatened by conversion to non-forest uses and that provide community benefits including economic, environmental, educational, and recreational benefits. An additional focus of this opportunity is to protect, enhance and increase resilience of habitats necessary for sustaining native aquatic and terrestrial species important to the Lake Superior ecosystem. Competitive proposals will be those that demonstrate exceptional public benefits, meaningful community engagement, and strategic contributions to terrestrial habitat connectivity within the defined Terrestrial Habitat Connectivity Pilot Area.</p><p><br></p><p>For additional information and requirements, please refer to the Notice of Funding Opportunity document linked in both the \"Related Documents\" tab and the \"Instructions\" link located in the \"Package\" tab.</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 100000000,
+          "minimumAmountCents": null
+        },
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-12-08"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-07-22",
+          "2027-01-07"
+        ]
+      }
+    },
+    {
+      "id": "listing-362034",
+      "grantId": "362034",
+      "source": "https://www.grants.gov/search-results-detail/362034",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "2026 Alaska Marine Education and Training Mini-Grant Program\nOpportunity Number: NOAA-NMFS-AK-2026-33268\nAgency: DOC NOAA - ERA Production\nPosted Date: Apr 23, 2026\nClose Date for Applications: May 1, 2028\nArchive Date: May 31, 2028\nCost Sharing or Matching Requirement: No\nEstimated Total Program Funding: $600,000\nAward Ceiling: $75,000\nAward Floor: $15,000\nEligible Applicants: Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Private institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Public and State controlled institutions of higher education; Small businesses; State governments; Native American tribal governments (Federally recognized); County governments; For profit organizations other than small businesses; City or township governments; Native American tribal organizations (other than Federally recognized tribal governments); Individuals"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>This announcement supports Executive Order 14276, Restoring America’s Seafood Competitiveness, by soliciting projects that support: workforce development for marine-related professions in marine science, aquaculture/mariculture, and maritime operations; enhancing seafood safety and management through training in seafood best practices, marketing, and fishery management; technological innovation in fishing practices; outreach and education for consumers on quality and sustainability of wild caught fish or products farmed through aquaculture/mariculture; enhanced regionally-specific management of fishery resources based on local knowledge; and strengthening the seafood supply chain through partnerships with industry, researchers, and community organizations to build relationships that increase the sustainability and competitiveness of the marine community in Alaska. Proposed projects must be conducted in Alaska.&nbsp;</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 7500000,
+          "minimumAmountCents": 1500000
+        },
+        "costShare": {
+          "required": false
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2028-05-01"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-04-23",
+          "2028-05-31"
+        ]
+      }
+    },
+    {
+      "id": "listing-363856",
+      "grantId": "363856",
+      "source": "https://www.grants.gov/search-results-detail/363856",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "F26AS00030 Cooperative Endangered Species Conservation Fund: Recovery Land Acquisition Grant Program\nOpportunity Number: F26AS00030\nAgency: Fish and Wildlife Service\nPosted Date: Sep 14, 2026\nClose Date for Applications: Nov 20, 2026\nArchive Date: Nov 27, 2026\nCost Sharing or Matching Requirement: Yes\nEstimated Total Program Funding: $14,162,000\nAward Ceiling: $14,162,000\nAward Floor: $10,000\nExpected Number of Awards: 15\nEligible Applicants: State governments"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\nFirst awarded in fiscal year (FY) 2001, Recovery Land Acquisition grants promote State and Federal cooperation in listed species conservation by leveraging funds to acquire specific parcels of land, through fee simple or conservation easement, in support of U.S. Fish and Wildlife Service (FWS)-approved recovery plans and outlines. The Endangered Species Act (ESA) conveys the importance of recovery plans as a central organizing tool for guiding the recovery process by requiring their development for every listed species."
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 1416200000,
+          "minimumAmountCents": 1000000
+        },
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-11-20"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-09-14",
+          "2026-11-27"
+        ]
+      }
+    },
+    {
+      "id": "listing-363151",
+      "grantId": "363151",
+      "source": "https://www.grants.gov/search-results-detail/363151",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Fiscal Year 2026 Flood Mitigation Assistance Swift Current\nOpportunity Number: DHS-26-MT-144-000-99\nAgency: Department of Homeland Security - FEMA\nPosted Date: Jul 14, 2026\nClose Date for Applications: Jan 31, 2028\nArchive Date: Mar 1, 2028\nCost Sharing or Matching Requirement: Yes\nEstimated Total Program Funding: $600,000,000\nEligible Applicants: Native American tribal governments (Federally recognized); Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>FMA Swift Current aims to better align the delivery of FMA flood mitigation funding to the disaster survivor experience. The FMA grant program makes federal funds available to states, U.S. territories, federally recognized Indian/Native American Tribal Governments,&nbsp;and local governments to reduce or eliminate the risk of repetitive flood damage to buildings and structures insured under the National Flood Insurance Program (NFIP), and within NFIP-participating communities. FMA funds a variety of flood mitigation activities that are designed to reduce flood risk to NFIP policyholders in an effort to reduce the NFIP’s financial exposure.&nbsp;</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": null,
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2028-01-31"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-07-14",
+          "2028-03-01"
+        ]
+      }
+    },
+    {
+      "id": "listing-355417",
+      "grantId": "355417",
+      "source": "https://www.grants.gov/search-results-detail/355417",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Occupational Safety and Health Education and Research Centers (T42)\nOpportunity Number: RFA-OH-25-002\nAgency: Centers for Disease Control and Prevention - ERA\nPosted Date: Oct 7, 2024\nClose Date for Applications: Oct 26, 2028\nArchive Date: Nov 25, 2028\nCost Sharing or Matching Requirement: No\nEstimated Total Program Funding: $32,000,000\nAward Ceiling: $9,000,000\nAward Floor: $4,500,000\nExpected Number of Awards: 18\nEligible Applicants: Public and State controlled institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Independent school districts; Unrestricted (i.e., open to any type of entity above), subject to any clarification in text field entitled \"Additional Information on Eligibility\"; For profit organizations other than small businesses; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); State governments; City or township governments; Public housing authorities/Indian housing authorities; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; County governments; Small businesses; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Private institutions of higher education"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>The National Institute for Occupational Safety and Health (NIOSH), Centers for Disease Control and Prevention (CDC), invites grant applications for Education and Research Centers (ERCs) that are focused on occupational safety and health training. NIOSH is mandated to provide an adequate supply of qualified personnel to carry out the purposes of the Occupational Safety and Health Act, and the ERCs are one of the primary means for meeting this mandate. ERCs are academic institutions that provide high-quality interdisciplinary graduate and post-graduate training, research training, continuing education, and outreach in the core occupational safety and health disciplines of industrial hygiene, occupational health nursing, occupational medicine, and occupational safety, as well as allied disciplines. Research and research training are integral components of ERCs, with ERC faculty and NIOSH trainees conducting research on issues related to the NIOSH National Occupational Research Agenda (NORA) and emerging issues to advance the field of occupational safety and health. NIOSH ERCs have regional presence to further diversify the occupational safety and health profession through their core values, mission statements, and outputs. ERCs serve as resources for our nation's workforce through continuing education, outreach and strong collaboration with professional associations, worker advocacy groups, businesses, industries, and public health agencies. ERCs work with other institutions and organizations, including Minority Serving Institutions and other NIOSH supported training programs to have a positive impact on worker health, safety, and well-being.</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 900000000,
+          "minimumAmountCents": 450000000
+        },
+        "costShare": {
+          "required": false
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2028-10-26"
+          }
+        ],
+        "otherAllowedDates": [
+          "2024-10-07",
+          "2028-11-25"
+        ]
+      }
+    },
+    {
+      "id": "listing-363815",
+      "grantId": "363815",
+      "source": "https://www.grants.gov/search-results-detail/363815",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Accelerating Scale-up and Pre-piloting of Emerging Chemical Technologies (ASPECT)\nOpportunity Number: DE-FOA-0003647\nAgency: Golden Field Office\nPosted Date: Sep 4, 2026\nClose Date for Applications: Dec 1, 2026\nArchive Date: Dec 31, 2026\nCost Sharing or Matching Requirement: Yes\nEstimated Total Program Funding: $58,000,000\nAward Ceiling: $20,000,000\nAward Floor: $2,000,000\nExpected Number of Awards: 10\nEligible Applicants: Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); For profit organizations other than small businesses; State governments; Individuals; County governments; Public and State controlled institutions of higher education; Private institutions of higher education; Independent school districts; City or township governments; Small businesses; Public housing authorities/Indian housing authorities; Special district governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\nModification 000002:\n\nUpdated Appendix A and the definition of “Construction and demolition waste”, also denoted as “C&D Waste”, to align with the programmatic authorizing statute for the Alternative Fuels and Feedstocks Office listed in NOFO Part 1, Section III.G. Statutory Authority.\n\n• “Construction and demolition waste,” for the purposes of this NOFO and consistent with the statutory authorities1, refers to waste organic materials from buildings, roads and bridges, and other sectors, but not included in municipal solid waste. It includes wood waste materials, including waste pallets, crates, dunnage, manufacturing and construction wood wastes (other than pressure-treated, chemically-treated, or painted wood wastes), and landscape or right-of-way tree trimmings.\n\nUpdated Section III.D. Key Requirements and Section III.F. Applications Specifically Not of Interest to specify that target chemicals should have global annual markets or potential markets of at least 1 million metric tons.\n• Previously this metric was given as U.S. production of at least 1 million metric tons.\n\nModification 000001:\n\nMoved the application content requirement for Letter(s) of Commitment (LOCs) from Stage 2 to Stage 1.\n\n• Added a clause in Section III.D indicating that LOCs are to be submitted with Stage 1 applications.\n\n• Updated the summary table in Section IV.D.2 to reflect the above (added Stage 1 LOC requirement)\n\n• Updated the summary table in Section IV.E.1 to reflect the above (added “(as needed, in addition to Stage 1 submittals)”).\n\nDOE CMEI is dedicated to securing America’s energy future by reinforcing domestic critical mineral supply chains, driving next-generation energy technology and manufacturing research, and promoting affordable, consumer-friendly solutions. CMEI’s AFFO is issuing this ASPECT NOFO, DE-FOA-0003647, to support research, development, and pre-pilot testing of innovative technologies that produce chemicals from alternative and waste feedstocks, mobilizing America’s abundant alternative feedstocks resources.\n \nThe goal of this Notice of Funding Opportunity (NOFO) is to advance promising chemical technologies that utilize alternative feedstocks through multiple levels of maturity and, in some cases, to pre-pilot scale. To accomplish this, the NOFO is divided into two topic areas, each divided into two subtopic areas designed to provide different on-ramps for technologies at different stages of development.\n \nTopic Area 1 supports the progression of technologies in the R&D phase. Subtopic Area 1a supports advancing early-stage research to bench scale. Subtopic Area 1b is intended to move projects closer to pre-pilot scale, to a point where critical unit operations must be further developed and demonstrated.\n \nTopic Area 2 provides an on-ramp for technologies ready to move from R&D to full pre-pilot scale and operations. Projects applying to Topic Area 2 should aim to advance their technology to design, construct, and operate pre-pilot scale facilities. Both subtopic areas have the same goal—to move technologies into integrated pre-pilot systems and operate them—but allow for two different points of entry. Subtopic Area 2a targets preliminary pre-pilot scale testing of critical unit operations before engineering and design can commence for the entire system while Subtopic Area 2b projects will involve technologies that are ready for design and construction of an integrated pre-pilot facility.\n\nPlease see the full NOFO document at eere-exchange.energy.gov.\n\nQuestions regarding the NOFO must be submitted to ASPECT@doe.gov.\n\nThe required Concept Paper due date for this NOFO is 10/09/2026 at 5PM ET. The Full Application due date for this NOFO is 12/01/2026 at 5PM ET.\n\nAs stated in the Notice of Intent (search DE-FOA-0003646 in eXCHANGE), a Teaming Partner List has been compiled to encourage collaboration and facilitate the formation of new project teams. Visit: TPL-0000073 Teaming Partner List for DE-FOA-0003646 NOI to Publish DE-FOA-0003647\n\nThe eXCHANGE system is currently designed to enforce hard deadlines for Concept Paper and Full Application submissions. The APPLY and SUBMIT buttons automatically disable at the defined submission deadlines. The intention of this design is to consistently enforce a standard deadline for all applicants.\n\nApplicants that experience issues with submissions PRIOR to the NOFO Deadline: In the event that an Applicant experiences technical difficulties with a submission, the Applicant should contact the eXCHANGE helpdesk for assistance (exchangehelp@hq.doe.gov). The eXCHANGE helpdesk and/or the EERE eXCHANGE System Administrators (eXCHANGE@ee.doe.gov) will assist the Applicant in resolving all issues.\n\nApplicants that experience issues with submissions that result in a late submission: In the event that an Applicant experiences technical difficulties with a submission that results in a late submission, the Applicant should contact the eXCHANGE helpdesk for assistance (exchangehelp@hq.doe.gov). The eXCHANGE helpdesk and/or the EERE eXCHANGE System Administrators (eXCHANGE@ee.doe.gov) will assist the Applicant in resolving all issues (including finalizing the submission on behalf of, and with the Applicant's concurrence). DOE will only accept late applications when the Applicant has a) encountered technical difficulties beyond their control; b) has contacted the eXCHANGE helpdesk for assistance; and c) has submitted the application through eXCHANGE within 24 hours of the NOFO's posted deadline."
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 2000000000,
+          "minimumAmountCents": 200000000
+        },
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-12-01"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-09-04",
+          "2026-12-31",
+          "2026-10-09",
+          "2026-12-01"
+        ]
+      }
+    },
+    {
+      "id": "listing-364026",
+      "grantId": "364026",
+      "source": "https://www.grants.gov/search-results-detail/364026",
+      "kind": "listing",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "Silicon Carbide Cladding Lead Test Rod Development-Phase 1\nOpportunity Number: DE-FOA-0003577\nAgency: Idaho Field Office\nPosted Date: Oct 5, 2026\nClose Date for Applications: Dec 7, 2026\nArchive Date: Jan 6, 2027\nCost Sharing or Matching Requirement: Yes\nEstimated Total Program Funding: $50,000,000\nAward Ceiling: $62,500,000\nAward Floor: $0\nExpected Number of Awards: 1\nEligible Applicants: Special district governments; County governments; Native American tribal governments (Federally recognized); Public and State controlled institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal organizations (other than Federally recognized tribal governments); City or township governments; Private institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; For profit organizations other than small businesses; Small businesses; State governments"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Description\n<p>Silicon Carbide Cladding Lead Test Rod Development-Phase 1Research, development, and fabrication of Silicon Carbide cladding specimens for research reactor insertion, irradiation, and post-irradiation examinations by 2030. The objective of this program is to advance the scientific and technological maturity of silicon carbide cladding for nuclear fuel rods for future use in commercial light water reactors.</p>"
+        }
+      ],
+      "gold": {
+        "purpose": true,
+        "eligibility": true,
+        "fundingRange": {
+          "maximumAmountCents": 6250000000,
+          "minimumAmountCents": null
+        },
+        "costShare": {
+          "required": true
+        },
+        "keyDates": [
+          {
+            "label": "application close",
+            "date": "2026-12-07"
+          }
+        ],
+        "otherAllowedDates": [
+          "2026-10-05",
+          "2027-01-06"
+        ]
+      }
+    },
+    {
+      "id": "hud-pro-housing-sample",
+      "grantId": null,
+      "source": "packages/server/__tests__/fixtures/an08-sample.pdf (first 2 of 107 pages of HUD CPD-2600-DC-0098)",
+      "kind": "pdf",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "text": "z\nCPD-2600-DC-0098\nApplications are due by 11:59:59 PM Eastern Time on 08/03/2026.\nCommunity Planning and Development\nU.S. Department of Housing\nand Urban Development\nFY26 Pathways to Removing Obstacles to\nHousing (PRO Housing)"
+        },
+        {
+          "pageNumber": 2,
+          "text": "Table Of Contents CPD-2600-DC-0098 Page 2 of 107\nI. BASIC INFORMATION ..........................................5\nA. Summary ...............................................................5\nB. Agency Contact(s) ................................................6\nII. ELIGIBILITY ..........................................................8\nA. Eligible Applicants .................................................8\nB. Eligible Applications ..............................................9\nC. Cost Sharing or Matching .....................................9\nIII. PROGRAM DESCRIPTION ...............................11\nA. Purpose ...............................................................11\nB. Goals and Objectives ..........................................11\nC. Authority ..............................................................12\nD. Unallowable Costs ..............................................12\nE. Indirect Costs ......................................................12\nF. PRO Housing Program History ...........................13\nG. PRO Housing Other Information ........................14\nIV. APPLICATION CONTENTS AND FORMAT .....20\nA. Standard Forms, Assurances, and Certifications 20\nB. Budget .................................................................24\nC. Narratives and Other Attachments .....................25\nD. Other Application Content ..................................25\nV. APPLICATION REVIEW INFORMATION ..........30\nA. Threshold Review ...............................................30\nB. Merit Review .......................................................31\nC. Risk Review ........................................................50\nD. Selection Process ...............................................50\nE. Award Notices .....................................................53\nVI. SUBMISSION REQUIREMENTS AND\nDEADLINES ............................................................56\nA. Deadlines ............................................................56\nB. Submission Methods ...........................................58\nC. Other Submission Information ............................59\nD. False Statements ................................................59\nVII. POST-AWARD REQUIREMENTS AND\nADMINISTRATION .................................................62\nA. Administrative, National and Departmental Policy\nRequirements, and General Terms and Conditions\n............................................................................62\nB. Environmental Requirements .............................64\nC. Remedies for Noncompliance ............................65\nD. Reporting ............................................................66\nVIII. CONTACT AND SUPPORT ............................70\nA. Agency Contact ...................................................70\nB. Grants.gov ..........................................................70\nC. SAM.gov .............................................................70\nD. Debriefing ...........................................................70\nE. Applicant Experience Survey ..............................70\nF. Other Online Resources ......................................71\nAPPENDIX ..............................................................73\nAppendix I. Definitions ............................................73\nTABLE OF CONTENTS"
+        }
+      ],
+      "gold": {
+        "purpose": null,
+        "eligibility": false,
+        "fundingRange": false,
+        "costShare": false,
+        "keyDates": [
+          {
+            "label": "application due",
+            "date": "2026-08-03"
+          }
+        ],
+        "otherAllowedDates": []
+      }
+    }
+  ]
+}
