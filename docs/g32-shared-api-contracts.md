@@ -585,8 +585,13 @@ Deadlines are a read and update view over non-rejected `checklist_items`; there 
 | --- | --- | --- |
 | `GET` | `/api/organizations/:organizationId/compliance/deadlines` | Return non-rejected checklist items, grouped into `portfolio` and `reviewNeeded` |
 | `PATCH` | `/api/organizations/:organizationId/compliance/deadlines/:checklistItemId` | Correct the underlying due date or completion status |
+| `PATCH` | `/api/organizations/:organizationId/compliance/deadlines/:checklistItemId/verification` | Verify the cited checklist item as an administrator or staff member |
+
+The verification request takes only `expectedVersion`. The server checks all citations against the stored extracted pages and records the authenticated reviewer. An outdated version returns `409 VERSION_CONFLICT`. Missing or unsupported citations return `422 SOURCE_NOT_VERIFIABLE`. A successful verification returns the updated `deadline` and does not change its completion status. Deadline responses include `version` and the reviewable `sources` array. The existing `source` field continues to provide the first citation.
 
 Supported query parameters are `from`, `through`, `status`, `currentPage`, and `perPage`. `from` and `through` bound `dueDate`; undated items are always returned because they cannot be placed in a range. `currentPage` and `perPage` apply to each group independently. The server calculates status at request time from `dueDate`, `completionStatus`, `completedAt`, `verificationStatus`, the current date in Eastern Time (America/New_York), and an organization-configured warning window that defaults to seven days.
+
+The document analysis page can scope this collection with a positive integer `documentId`. The API checks that the document belongs to the requested organization before filtering both groups and calculating their pagination. A successful scoped response also includes `document` with its `id` and `grantId`. A missing or inaccessible document returns `404 NOT_FOUND`.
 
 | Group | Membership | Calculated statuses |
 | --- | --- | --- |
@@ -789,3 +794,10 @@ Changes to a shared field, enum, state transition, or route require a pull-reque
 8. Retries create new processing-run records and preserve prior completed results and failures.
 9. External services are accessed only through server-side adapters.
 10. Secrets and provider internals are never returned in API responses or ordinary logs.
+
+
+## C-12 selected grant document handoff
+
+The C-11 result action navigates to the named `grantDocumentAnalysis` route at `/compliance/grants/:grantId/documents`, with explicit `organizationId` and optional `matchRunId` query parameters. This is navigation context, not an authorization credential. Upload uses the selected grant ID with the existing organization-scoped document endpoints. No fixed sample ID is used.
+
+On upload or reopen, document organization, grant and document IDs must match the current selection before displaying or analyzing the record. The document URL retains `documentId`; the return link retains the saved matching run. Opening a document does not trigger analysis, change eligibility, or verify a match explanation. The existing API's authorization and feature controls remain authoritative. The former bare `/grant-document-demo` URL now requires explicit grant/team context and the document-analysis flags.

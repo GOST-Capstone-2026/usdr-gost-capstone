@@ -23,7 +23,9 @@ function joinTextItems(items) {
  */
 async function extractPages(buffer) {
     const pages = [];
-    const result = await pdfParse(buffer, {
+    // The bundled PDF.js parser expects Uint8Array behavior when reading compressed streams.
+    const bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const result = await pdfParse(bytes, {
         pagerender: async (pageData) => {
             const content = await pageData.getTextContent({ normalizeWhitespace: true });
             const text = joinTextItems(content.items);

@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import BaseLayout from '@/components/BaseLayout.vue';
 import {
-  grantMatchingEnabled,
+  grantMatchingEnabled, grantDocumentAnalysisEnabled,
   shareTerminologyEnabled, newTerminologyEnabled, newGrantsDetailPageEnabled, followNotesEnabled,
   organizationProfilesEnabled,
   complianceDeadlinesEnabled,
@@ -188,13 +188,19 @@ export const routes = [
         },
       },
       {
-        // AN-08 demo-prep page for the Oct 13 first demo. Not linked from navigation; the real,
-        // full-featured checklist UI is AN-15's job later. Reachable by URL for the demo walkthrough.
+        path: '/compliance/grants/:grantId/documents',
+        name: 'grantDocumentAnalysis',
+        component: () => import('@/views/GrantDocumentDemoView.vue'),
+        meta: { requiresAuth: true, requiresGrantDocumentAnalysisEnabled: true, hideLayoutTabs: true },
+      },
+      {
+        // Retained demo URL requires explicit grant/team query parameters; no fixed sample grant.
         path: '/grant-document-demo',
         name: 'grantDocumentDemo',
         component: () => import('@/views/GrantDocumentDemoView.vue'),
         meta: {
           requiresAuth: true,
+          requiresGrantDocumentAnalysisEnabled: true,
           hideLayoutTabs: true,
         },
       },
@@ -232,7 +238,8 @@ router.beforeEach((to, from, next) => {
   } else if (to.meta.requiresGrantMatchingEnabled && !grantMatchingEnabled()) {
     next({ name: 'grants' });
   } else if (
-    (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())
+    (to.meta.requiresGrantDocumentAnalysisEnabled && !grantDocumentAnalysisEnabled())
+    || (to.meta.requiresNewTerminologyEnabled && !newTerminologyEnabled())
     || (to.meta.requiresNewGrantsDetailPageEnabled && !newGrantsDetailPageEnabled())
     || (to.meta.requiresShareTerminologyEnabled && !shareTerminologyEnabled())
     || (to.meta.requiresOrganizationProfilesEnabled && !organizationProfilesEnabled())

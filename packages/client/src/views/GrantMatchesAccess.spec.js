@@ -73,3 +73,22 @@ describe('C-11 route and navigation flags', () => {
     expect(router.currentRoute.value.name).toBe('grantMatches');
   });
 });
+
+describe('C-12 document-analysis route guards', () => {
+  it('requires login for the selected-grant URL', async () => {
+    store.commit('users/SET_LOGGED_IN_USER', null);
+    await router.push('/compliance/grants/364009/documents?organizationId=0');
+    expect(router.currentRoute.value.name).toBe('login');
+  });
+  it('requires both master and document flags for direct and retained demo URLs', async () => {
+    store.commit('users/SET_LOGGED_IN_USER', { role: { name: 'staff' }, agency: { id: 0 } });
+    await router.push('/compliance/grants/364009/documents?organizationId=0');
+    expect(router.currentRoute.value.name).toBe('grants');
+    window.APP_CONFIG.featureFlags.grantDocumentAnalysisEnabled = true;
+    await router.push('/compliance/grants/364009/documents?organizationId=0');
+    expect(router.currentRoute.value.name).toBe('grantDocumentAnalysis');
+    window.APP_CONFIG.featureFlags.grantComplianceEnabled = false;
+    await router.push('/grant-document-demo?grantId=364009&organizationId=0');
+    expect(router.currentRoute.value.name).toBe('grants');
+  });
+});

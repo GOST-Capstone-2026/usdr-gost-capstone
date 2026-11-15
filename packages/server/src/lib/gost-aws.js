@@ -33,6 +33,24 @@ function getS3Client() {
     return s3;
 }
 
+function getGrantDocumentsS3Client() {
+    const endpoint = process.env.GRANT_DOCUMENTS_S3_ENDPOINT;
+    if (!endpoint) {
+        return getS3Client();
+    }
+    const accessKeyId = process.env.GRANT_DOCUMENTS_S3_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.GRANT_DOCUMENTS_S3_SECRET_ACCESS_KEY;
+    if (!accessKeyId || !secretAccessKey) {
+        throw new Error('The grant document S3 endpoint requires both storage credential settings.');
+    }
+    return new S3Client({
+        endpoint,
+        region: process.env.GRANT_DOCUMENTS_S3_REGION || 'us-east-1',
+        forcePathStyle: true,
+        credentials: { accessKeyId, secretAccessKey },
+    });
+}
+
 /**
  *  This function is a wrapper around the getSignedUrl function from the @aws-sdk/s3-request-presigner package.
  *  Exists to organize the imports and to make it easier to mock in tests.
@@ -136,6 +154,7 @@ function getSQSClient() {
 
 module.exports = {
     getS3Client,
+    getGrantDocumentsS3Client,
     getSignedUrl,
     getSESClient,
     sendEmail,

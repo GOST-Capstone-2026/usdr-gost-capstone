@@ -9,6 +9,10 @@
 const { createEmptyBrief, computeNotFoundFields } = require('./grantBriefSchema');
 const { log } = require('./logging');
 
+const APPLICANT_CERTIFICATION = /\bCertification by the Chief Executive Officer\b/i;
+const STATE_LOCAL_GOVERNMENT_APPLICANTS = /\bstate (?:or|and) local government (?:entity|entities|applicants?)\b/i;
+const REQUIRED_CHECKLIST_LABEL = /\brequired\**\s*$/i;
+
 const SYSTEM_PROMPT = 'You are extracting compliance information from a U.S. federal grant notice '
     + 'for a nonprofit or local government reader. Only report a fact if it is explicitly present '
     + 'in the text you are given. Never guess or infer a value that is not stated. Respond with '
@@ -86,6 +90,32 @@ function mergeListField(target, candidateList, documentId) {
     return [...target, ...additions];
 }
 
+function startsWithApplicantCertification(excerpt) {
+    return APPLICANT_CERTIFICATION.exec(String(excerpt || '').trimStart())?.index === 0;
+}
+
+function mergeEligibility(target, candidateList, documentId) {
+    if (!Array.isArray(candidateList)) return target;
+    // A citation headed by this certification describes who must submit the form.
+    const applicants = candidateList.filter((entry) => !startsWithApplicantCertification(entry?.excerpt));
+    return mergeListField(target, applicants, documentId);
+}
+
+function removeUnqualifiedCertificationDuplicates(requirements) {
+    const hasScopedCertification = requirements.some(({ value, sources }) => (
+        STATE_LOCAL_GOVERNMENT_APPLICANTS.test(value)
+        && sources.some(({ excerpt }) => APPLICANT_CERTIFICATION.test(excerpt)
+            && STATE_LOCAL_GOVERNMENT_APPLICANTS.test(excerpt))
+    ));
+    if (!hasScopedCertification) return requirements;
+
+    return requirements.filter(({ sources }) => !sources.some(({ excerpt }) => (
+        startsWithApplicantCertification(excerpt)
+        && REQUIRED_CHECKLIST_LABEL.test(excerpt)
+        && !STATE_LOCAL_GOVERNMENT_APPLICANTS.test(excerpt)
+    )));
+}
+
 function mergeKeyDates(target, candidateList, documentId) {
     if (!Array.isArray(candidateList)) return target;
     const additions = candidateList
@@ -123,12 +153,13 @@ async function synthesizeGrantBrief({
             purpose: mergeSingleField(brief.purpose, candidate.purpose, documentId),
             fundingRange: mergeFundingRange(brief.fundingRange, candidate.fundingRange, documentId),
             costShare: mergeCostShare(brief.costShare, candidate.costShare, documentId),
-            eligibility: mergeListField(brief.eligibility, candidate.eligibility, documentId),
+            eligibility: mergeEligibility(brief.eligibility, candidate.eligibility, documentId),
             keyRequirements: mergeListField(brief.keyRequirements, candidate.keyRequirements, documentId),
             keyDates: mergeKeyDates(brief.keyDates, candidate.keyDates, documentId),
         };
     }
 
+    brief.keyRequirements = removeUnqualifiedCertificationDuplicates(brief.keyRequirements);
     brief.notFoundFields = computeNotFoundFields(brief);
     brief.generatedAt = new Date().toISOString();
     return brief;

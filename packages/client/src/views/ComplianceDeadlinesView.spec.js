@@ -1,10 +1,11 @@
 import {
   describe, beforeEach, afterEach, it, expect, vi,
 } from 'vitest';
-import { h } from 'vue';
+import { h, reactive } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createStore } from 'vuex';
 import ComplianceDeadlinesView from '@/views/ComplianceDeadlinesView.vue';
+import deadlines from '@/store/modules/deadlines';
 
 const BTableStub = {
   props: ['items', 'fields', 'emptyText'],
@@ -84,23 +85,28 @@ const paginationFor = (portfolioTotal, reviewNeededTotal) => ({
 
 let wrapper;
 let fetchDeadlines;
+let updateDeadline;
 
 function mountView({
   portfolioItems = portfolio,
   reviewNeededItems = reviewNeeded,
   pagination = paginationFor(portfolioItems.length, reviewNeededItems.length),
   fetchImpl = () => Promise.resolve(),
+  updateImpl = () => Promise.resolve(),
 } = {}) {
   fetchDeadlines = vi.fn(fetchImpl);
+  updateDeadline = vi.fn(updateImpl);
   const store = createStore({
     getters: {
       'deadlines/portfolio': () => portfolioItems,
       'deadlines/reviewNeeded': () => reviewNeededItems,
       'deadlines/pagination': () => pagination,
-      'users/selectedAgency': () => undefined,
+      'users/selectedAgencyId': () => 0,
+      'users/userRole': () => 'admin',
     },
     actions: {
       'deadlines/fetchDeadlines': fetchDeadlines,
+      'deadlines/updateDeadline': updateDeadline,
     },
   });
   wrapper = mount(ComplianceDeadlinesView, {
@@ -116,7 +122,56 @@ const section = (key) => wrapper.get(`[data-testid="deadline-section-${key}"]`);
 const rowTitles = (key) => section(key).findAll('[data-testid="deadline-title"]').map((title) => title.text());
 
 afterEach(() => {
+  wrapper?.unmount();
+  vi.unstubAllGlobals();
   wrapper = undefined;
+});
+
+it('loads only the linked document and discards a late response after a team switch', async () => {
+  const route = reactive({
+    query: {
+      organizationId: '0', grantId: '335255', documentId: '7', matchRunId: '9',
+    },
+  });
+  const store = createStore({
+    modules: { deadlines },
+    state: { agencyId: 0 },
+    getters: {
+      'users/selectedAgencyId': (state) => state.agencyId,
+      'users/userRole': () => 'admin',
+    },
+  });
+  let finishFirstRequest;
+  const firstResponse = new Promise((resolve) => { finishFirstRequest = resolve; });
+  const response = (title) => ({
+    ok: true,
+    json: async () => ({
+      document: { id: 7, grantId: '335255' },
+      data: { portfolio: [makeItem({ title })], reviewNeeded: [] },
+      pagination: paginationFor(1, 0),
+    }),
+  });
+  const fetch = vi.fn().mockReturnValueOnce(firstResponse).mockResolvedValueOnce(response('Current team deadline'));
+  vi.stubGlobal('fetch', fetch);
+  wrapper = mount(ComplianceDeadlinesView, {
+    global: { plugins: [store], stubs, mocks: { $route: route } },
+  });
+  await flushPromises();
+  expect(fetch.mock.calls[0][0]).toContain('/organizations/0/compliance/deadlines?perPage=500&documentId=7');
+  expect(wrapper.vm.returnToDocument.query).toEqual({ organizationId: '0', documentId: '7', matchRunId: '9' });
+
+  store.state.agencyId = 4;
+  await flushPromises();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(wrapper.text()).toContain('Open the document for the selected team');
+  route.query = {};
+  await flushPromises();
+  expect(fetch.mock.calls[1][0]).toContain('/organizations/4/compliance/deadlines?perPage=500');
+  expect(rowTitles('upcoming')).toEqual(['Current team deadline']);
+
+  finishFirstRequest(response('Obsolete team deadline'));
+  await flushPromises();
+  expect(rowTitles('upcoming')).toEqual(['Current team deadline']);
 });
 
 describe('ComplianceDeadlinesView.vue', () => {
@@ -297,10 +352,66 @@ describe('ComplianceDeadlinesView.vue', () => {
     });
   });
 
+  describe('acting on a deadline from the list', () => {
+    const openDetails = async (key) => {
+      await section(key).get('[data-testid="toggle-details"]').trigger('click');
+    };
+
+    it('sends the change for the expanded deadline', async () => {
+      await mountView();
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+      await flushPromises();
+
+      expect(updateDeadline).toHaveBeenCalledTimes(1);
+      expect(updateDeadline.mock.calls[0][1]).toEqual({
+        checklistItemId: 4,
+        changes: { completionStatus: 'completed' },
+        successMessage: 'Marked "Later report" complete.',
+      });
+    });
+
+    it('keeps the dashboard and the open details on screen while the change saves', async () => {
+      let finish;
+      await mountView({ updateImpl: () => new Promise((resolve) => { finish = resolve; }) });
+      await openDetails('upcoming');
+
+      await section('upcoming').get('[data-testid="action-complete"]').trigger('click');
+
+      expect(wrapper.find('[data-testid="deadline-section-overdue"]').exists()).toBe(true);
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
+      expect(fetchDeadlines).toHaveBeenCalledTimes(1);
+
+      finish();
+      await flushPromises();
+      expect(section('upcoming').find('[data-testid="deadline-actions"]').exists()).toBe(true);
+    });
+  });
+
   describe('when more deadlines exist than were returned', () => {
     it('shows a truncation warning', async () => {
       await mountView({ pagination: paginationFor(portfolio.length + 1, reviewNeeded.length) });
       expect(wrapper.text()).toContain('Not every deadline is shown');
+    });
+  });
+
+  describe('when an earlier load finishes after a newer one', () => {
+    it('keeps the newer result instead of showing the earlier error', async () => {
+      let failEarlier;
+      const earlier = new Promise((resolve, reject) => { failEarlier = reject; });
+      await mountView({ fetchImpl: () => Promise.resolve() });
+      fetchDeadlines.mockImplementationOnce(() => earlier);
+
+      const earlierLoad = wrapper.vm.loadDeadlines();
+      await wrapper.vm.loadDeadlines();
+      failEarlier(new Error('previous team request failed'));
+      await earlierLoad;
+      await flushPromises();
+
+      expect(wrapper.vm.loadError).toBe(false);
+      expect(wrapper.vm.loading).toBe(false);
+      expect(rowTitles('overdue')).toEqual(['Overdue report']);
     });
   });
 

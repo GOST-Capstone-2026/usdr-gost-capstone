@@ -17,10 +17,22 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
     let testServer;
     let fetchApi;
+    let seedDocumentId;
+
+    const insertChecklistItems = (documentId, rows) => knex('checklist_items').insert(rows.map((row) => ({
+        document_id: documentId,
+        category: 'other',
+        found: false,
+        sources: JSON.stringify([]),
+        completion_status: 'notStarted',
+        ...row,
+    }))).returning('*');
 
     before(async function beforeHook() {
         this.timeout(9000);
         fetchOptions.admin.headers.cookie = await getSessionCookie('alex@usdigitalresponse.org');
+        const seedDocument = await knex('grant_documents').where({ filename: 'seed-sample-grant-notice.pdf' }).first();
+        seedDocumentId = seedDocument.id;
 
         testServer = await makeTestServer();
         fetchApi = testServer.fetchApi;
@@ -36,6 +48,42 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             return response.json();
         };
         const findByTitle = (items, title) => items.find((i) => i.title === title);
+
+        it('filters by document before calculating both groups and their pagination', async () => {
+            const [document] = await knex('grant_documents').insert({
+                agency_id: usdrAgencyId,
+                grant_id: '335255',
+                uploaded_by: 1,
+                filename: 'other-notice-same-grant.pdf',
+                mime_type: 'application/pdf',
+                size_bytes: 0,
+                sha256: 'c13-same-grant-document',
+                storage_bucket: 'grant-documents',
+                storage_key: 'c13-same-grant-document.pdf',
+            }).returning('*');
+            try {
+                await insertChecklistItems(document.id, [{
+                    description: 'A separate notice for the same grant',
+                    due_date: '2025-01-01',
+                    verification_status: 'verified',
+                }]);
+                const scoped = await getDeadlines({ documentId: seedDocumentId, perPage: 1 });
+                expect(scoped.document).to.deep.equal({ id: seedDocumentId, grantId: '335255' });
+                expect(scoped.pagination.portfolio.total).to.equal(4);
+                expect(scoped.pagination.reviewNeeded.total).to.equal(3);
+                expect(scoped.data.portfolio[0].documentId).to.equal(seedDocumentId);
+                expect(scoped.data.reviewNeeded[0].documentId).to.equal(seedDocumentId);
+            } finally {
+                await knex('grant_documents').where({ id: document.id }).del();
+            }
+        });
+
+        it('rejects malformed and unavailable document filters', async () => {
+            const invalid = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '1e2' });
+            expect(invalid.status).to.equal(400);
+            const missing = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '999999999' });
+            expect(missing.status).to.equal(404);
+        });
 
         it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
@@ -123,6 +171,44 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(item.source.pageNumber).to.equal(27);
         });
 
+        it('fills grantId and documentId from the checklist item\'s grant document', async () => {
+            const { data } = await getDeadlines();
+            [...data.portfolio, ...data.reviewNeeded].forEach((item) => {
+                expect(item.grantId).to.equal('335255');
+                expect(item.documentId).to.equal(seedDocumentId);
+            });
+        });
+
+        context('with several sources on one checklist item', () => {
+            let itemId;
+
+            before(async () => {
+                const [row] = await insertChecklistItems(seedDocumentId, [{
+                    description: 'Multiple sources test item',
+                    due_date: '2031-03-01',
+                    verification_status: 'verified',
+                    found: true,
+                    sources: JSON.stringify([
+                        { documentId: seedDocumentId, pageNumber: 3, excerpt: 'First cited excerpt.' },
+                        { documentId: seedDocumentId, pageNumber: 9, excerpt: 'Second cited excerpt.' },
+                    ]),
+                }]);
+                itemId = row.id;
+            });
+
+            after(async () => {
+                await knex('checklist_items').where({ id: itemId }).del();
+            });
+
+            it('returns the first source', async () => {
+                const { data } = await getDeadlines();
+                expect(findByTitle(data.portfolio, 'Multiple sources test item').source).to.deep.equal({
+                    pageNumber: 3,
+                    excerpt: 'First cited excerpt.',
+                });
+            });
+        });
+
         it('keeps undated items when a date range is requested', async () => {
             const { data } = await getDeadlines({ from: '2000-01-01', through: '2000-12-31' });
             expect(data.portfolio.length).to.equal(0);
@@ -186,17 +272,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             let extraIds;
 
             before(async () => {
-                const inserted = await knex('checklist_items_placeholder').insert(extraRows.map((row) => ({
-                    agency_id: usdrAgencyId,
-                    category: 'Compliance',
-                    completion_status: 'notStarted',
-                    ...row,
-                }))).returning('id');
+                const inserted = await insertChecklistItems(seedDocumentId, extraRows);
                 extraIds = inserted.map((row) => row.id);
             });
 
             after(async () => {
-                await knex('checklist_items_placeholder').whereIn('id', extraIds).del();
+                await knex('checklist_items').whereIn('id', extraIds).del();
             });
 
             it('computes dueToday for a verified item due today in Eastern Time', async () => {
@@ -283,6 +364,96 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         });
     });
 
+    context('PATCH /compliance/deadlines/:checklistItemId/verification', () => {
+        let documentId;
+        let item;
+        const excerpt = 'Submit the application by November 20.';
+        const verify = (agencyId, expectedVersion, options = fetchOptions.admin) => fetchApi(
+            `/compliance/deadlines/${item.id}/verification`,
+            agencyId,
+            { ...options, method: 'PATCH', body: JSON.stringify({ expectedVersion }) },
+        );
+
+        before(async () => {
+            const [document] = await knex('grant_documents').insert({
+                agency_id: usdrAgencyId,
+                grant_id: '335255',
+                uploaded_by: 1,
+                filename: 'verification-notice.pdf',
+                mime_type: 'application/pdf',
+                size_bytes: 0,
+                sha256: 'verification-test',
+                storage_bucket: 'grant-documents',
+                storage_key: 'verification-notice.pdf',
+            }).returning('id');
+            documentId = document.id;
+            await knex('grant_document_pages').insert({
+                document_id: documentId, page_number: 1, text: excerpt, char_count: excerpt.length,
+            });
+        });
+
+        beforeEach(async () => {
+            [item] = await insertChecklistItems(documentId, [{
+                description: 'Submit the application',
+                found: true,
+                due_date: '2026-11-20',
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt }]),
+            }]);
+        });
+
+        afterEach(async () => {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+        });
+
+        after(async () => {
+            await knex('grant_documents').where({ id: documentId }).del();
+        });
+
+        it('moves the cited deadline to the portfolio and stamps the reviewer', async () => {
+            const response = await verify(usdrAgencyId, item.version);
+            expect(response.status).to.equal(200);
+            const { deadline } = await response.json();
+            expect(deadline).to.include({
+                verificationStatus: 'verified', version: item.version + 1, completionStatus: 'notStarted',
+            });
+            expect(deadline.verifiedBy).to.be.a('number');
+            expect(deadline.verifiedAt).to.be.a('string');
+            const result = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId });
+            const { data } = await result.json();
+            expect(data.portfolio.map(({ checklistItemId }) => checklistItemId)).to.deep.equal([item.id]);
+            expect(data.reviewNeeded).to.deep.equal([]);
+
+            const repeat = await verify(usdrAgencyId, deadline.version);
+            expect(repeat.status).to.equal(200);
+            expect((await repeat.json()).deadline).to.deep.equal(deadline);
+        });
+
+        it('rejects an obsolete version before changing the item', async () => {
+            const response = await verify(usdrAgencyId, item.version + 1);
+            expect(response.status).to.equal(409);
+            expect((await response.json()).error.code).to.equal('VERSION_CONFLICT');
+            expect((await knex('checklist_items').where({ id: item.id }).first()).verification_status).to.equal('unverified');
+        });
+
+        it('rejects an item if any cited excerpt is unsupported', async () => {
+            await knex('checklist_items').where({ id: item.id }).update({
+                sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt }, { documentId, pageNumber: 1, excerpt: 'Invented wording.' }]),
+            });
+            const response = await verify(usdrAgencyId, item.version);
+            expect(response.status).to.equal(422);
+            expect((await response.json()).error.code).to.equal('SOURCE_NOT_VERIFIABLE');
+            expect((await knex('checklist_items').where({ id: item.id }).first()).verification_status).to.equal('unverified');
+        });
+
+        it('denies another team access to the item', async () => {
+            const cookie = await getSessionCookie('user2@nv.example.com');
+            const response = await verify(otherTenantAgencyId, item.version, {
+                headers: { ...fetchOptions.admin.headers, cookie },
+            });
+            expect(response.status).to.equal(404);
+        });
+    });
+
     context('PATCH /compliance/deadlines/:checklistItemId', () => {
         const patchDeadline = (agencyId, checklistItemId, payload, options = fetchOptions.admin) => fetchApi(
             `/compliance/deadlines/${checklistItemId}`,
@@ -291,7 +462,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
         );
 
         const findIdByDescription = async (description) => {
-            const row = await knex('checklist_items_placeholder').where({ description }).first();
+            const row = await knex('checklist_items').where({ description }).first();
             return row.id;
         };
 
@@ -459,30 +630,71 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(moved.status).to.equal(patched.status);
         });
 
+        it('bumps the checklist item version on every update so checklist edits detect the change', async () => {
+            const id = await findIdByDescription('Submit close-out financial report');
+            const rowBefore = await knex('checklist_items').where({ id }).first();
+
+            const response = await patchDeadline(usdrAgencyId, id, { completionStatus: 'completed' });
+            expect(response.status).to.equal(200);
+
+            const rowAfter = await knex('checklist_items').where({ id }).first();
+            expect(rowAfter.version).to.equal(rowBefore.version + 1);
+        });
+
+        it('marks the item user-edited only when its due date changes', async () => {
+            const id = await findIdByDescription('Submit quarterly financial status report');
+            await knex('checklist_items').where({ id }).update({ is_user_edited: false });
+
+            await patchDeadline(usdrAgencyId, id, { completionStatus: 'inProgress' });
+            const afterCompletion = await knex('checklist_items').where({ id }).first();
+            expect(afterCompletion.is_user_edited).to.equal(false);
+
+            await patchDeadline(usdrAgencyId, id, { dueDate: afterCompletion.due_date });
+            const afterDate = await knex('checklist_items').where({ id }).first();
+            expect(afterDate.is_user_edited).to.equal(true);
+        });
+
         context('cross-organization access to a real checklist item', () => {
+            let otherOrgDocumentId;
             let otherOrgItemId;
 
             before(async () => {
-                const [row] = await knex('checklist_items_placeholder').insert({
+                const [document] = await knex('grant_documents').insert({
                     agency_id: otherTenantAgencyId,
-                    category: 'Compliance',
+                    grant_id: '335255',
+                    uploaded_by: 1,
+                    filename: 'other-org-notice.pdf',
+                    mime_type: 'application/pdf',
+                    size_bytes: 0,
+                    sha256: 'other-org-deadline-test',
+                    storage_bucket: 'grant-documents',
+                    storage_key: 'other-org-deadline-test.pdf',
+                }).returning('*');
+                otherOrgDocumentId = document.id;
+                const [row] = await insertChecklistItems(otherOrgDocumentId, [{
                     description: 'Cross-organization isolation test item',
                     due_date: '2031-01-01',
-                    completion_status: 'notStarted',
                     verification_status: 'verified',
-                }).returning('*');
+                }]);
                 otherOrgItemId = row.id;
             });
 
             after(async () => {
-                await knex('checklist_items_placeholder').where({ id: otherOrgItemId }).del();
+                await knex('grant_documents').where({ id: otherOrgDocumentId }).del();
+            });
+
+            it('does not return another organization\'s items', async () => {
+                const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin);
+                const { data } = await response.json();
+                const ids = [...data.portfolio, ...data.reviewNeeded].map((item) => item.checklistItemId);
+                expect(ids).to.not.include(otherOrgItemId);
             });
 
             it('returns 404 and leaves the item unchanged when patched through a different organization\'s route', async () => {
                 const response = await patchDeadline(usdrAgencyId, otherOrgItemId, { completionStatus: 'completed' });
                 expect(response.status).to.equal(404);
 
-                const row = await knex('checklist_items_placeholder').where({ id: otherOrgItemId }).first();
+                const row = await knex('checklist_items').where({ id: otherOrgItemId }).first();
                 expect(row.completion_status).to.equal('notStarted');
             });
         });
@@ -491,19 +703,16 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             let rejectedItemId;
 
             before(async () => {
-                const [row] = await knex('checklist_items_placeholder').insert({
-                    agency_id: usdrAgencyId,
-                    category: 'Compliance',
+                const [row] = await insertChecklistItems(seedDocumentId, [{
                     description: 'Rejected patch test item',
                     due_date: '2031-04-01',
-                    completion_status: 'notStarted',
                     verification_status: 'rejected',
-                }).returning('*');
+                }]);
                 rejectedItemId = row.id;
             });
 
             after(async () => {
-                await knex('checklist_items_placeholder').where({ id: rejectedItemId }).del();
+                await knex('checklist_items').where({ id: rejectedItemId }).del();
             });
 
             it('returns 404 and keeps the item rejected when its due date is corrected', async () => {
@@ -512,7 +721,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 const json = await response.json();
                 expect(json.error.code).to.equal('NOT_FOUND');
 
-                const row = await knex('checklist_items_placeholder').where({ id: rejectedItemId }).first();
+                const row = await knex('checklist_items').where({ id: rejectedItemId }).first();
                 expect(row.verification_status).to.equal('rejected');
                 expect(row.due_date).to.equal('2031-04-01');
             });
@@ -521,7 +730,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
                 const response = await patchDeadline(usdrAgencyId, rejectedItemId, { completionStatus: 'completed' });
                 expect(response.status).to.equal(404);
 
-                const row = await knex('checklist_items_placeholder').where({ id: rejectedItemId }).first();
+                const row = await knex('checklist_items').where({ id: rejectedItemId }).first();
                 expect(row.completion_status).to.equal('notStarted');
                 expect(row.completed_at).to.equal(null);
             });
