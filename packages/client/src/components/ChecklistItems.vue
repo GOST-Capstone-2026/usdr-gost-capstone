@@ -319,6 +319,9 @@ export default {
       delete rest[id];
       this.itemErrors = rest;
     },
+    refreshAfterAnalysis() {
+      if (!this.items.length) this.load();
+    },
     async load() {
       if (!Number.isInteger(this.documentId)) { this.items = []; return; }
       this.sequence += 1;
