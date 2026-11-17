@@ -7,6 +7,7 @@ const path = require('path');
 const { configureApp } = require('./configure');
 const emailService = require('./lib/email');
 const { hasOutstandingMigrations } = require('./db/helpers');
+const { loadDemoOpportunitiesOnBoot } = require('./scripts/loadDemoOpportunities');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -43,6 +44,8 @@ cleanGeneratedPdfCron.start();
 
 hasOutstandingMigrations().then((hasMigrations) => {
     if (!hasMigrations) {
+        // loading demo grants only once the tables are ready
+        loadDemoOpportunitiesOnBoot();
         return;
     }
     console.error('There are outstanding db migrations. Run \'docker compose exec app yarn db:migrate\' before trying again');
