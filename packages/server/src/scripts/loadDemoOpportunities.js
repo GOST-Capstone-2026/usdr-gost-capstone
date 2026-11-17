@@ -41,6 +41,21 @@ async function main() {
     if (Number(count) !== ids.length) process.exitCode = 1;
 }
 
+// loading the demo grants when the server starts, only if LOAD_DEMO_OPPORTUNITIES=true.
+// never throws, so a bad load can't take the app down
+async function loadDemoOpportunitiesOnBoot(db = knex) {
+    if (process.env.LOAD_DEMO_OPPORTUNITIES !== 'true') return null;
+    try {
+        const results = await loadDemoOpportunities(db, demoData.opportunities);
+        const loaded = results.filter((r) => r.result === 'loaded').length;
+        console.log(`demo grants on boot: ${loaded} loaded, ${results.length - loaded} already there`);
+        return results;
+    } catch (err) {
+        console.error('demo grants on boot failed:', err.message);
+        return null;
+    }
+}
+
 if (require.main === module) {
     main()
         .catch((err) => {
@@ -50,4 +65,4 @@ if (require.main === module) {
         .finally(() => knex.destroy());
 }
 
-module.exports = { loadDemoOpportunities };
+module.exports = { loadDemoOpportunities, loadDemoOpportunitiesOnBoot };

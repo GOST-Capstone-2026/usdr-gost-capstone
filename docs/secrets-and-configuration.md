@@ -16,6 +16,10 @@ A **secret** is anything that grants access or would cost money or data if leake
 | `NODEMAILER_EMAIL_PW` | secret | SMTP password |
 | `DD_API_KEY` | secret | Datadog (prod only) |
 | `COECS_BASE_URL`, `AI_PROVIDER`, `AI_MODEL`, `AI_MAX_OUTPUT_TOKENS`, `AI_TEMPERATURE`, `AI_TIMEOUT_MS`, `AI_MAX_RETRIES` | config | AI adapter behavior, safe to commit defaults |
+| `GRANT_DOCUMENTS_S3_ACCESS_KEY_ID` / `GRANT_DOCUMENTS_S3_SECRET_ACCESS_KEY` | secret | keys for the private storage that holds grant PDFs (OwlCloud) |
+| `GRANT_DOCUMENTS_S3_ENDPOINT`, `GRANT_DOCUMENTS_S3_REGION` | config | where that PDF storage lives |
+| `NODEMAILER_AUTH`, `NODEMAILER_REQUIRE_TLS` | config | email settings, OwlCloud's relay uses `NODEMAILER_AUTH=false` and `NODEMAILER_REQUIRE_TLS=true` |
+| `LOAD_DEMO_OPPORTUNITIES` | config | `true` loads the 11 demo grants when the server starts (skips ones already saved). Leave it off outside the demo |
 | `WEBSITE_DOMAIN`, `ENABLE_*`, queue URLs, etc. | config | app behavior |
 
 ## Local development
