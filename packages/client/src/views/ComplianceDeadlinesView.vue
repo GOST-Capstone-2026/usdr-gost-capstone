@@ -123,10 +123,7 @@
           v-for="section in sections"
           :key="section.key"
           class="dl-card dl-stat"
-          :class="{
-            'dl-stat--bad': section.key === 'overdue' && section.items.length,
-            'dl-stat--pending': section.key === 'reviewNeeded',
-          }"
+          :class="{ 'dl-stat--bad': section.key === 'overdue' && section.items.length }"
           :data-testid="`summary-${section.key}`"
         >
           <span class="dl-label">{{ section.title }}</span>
@@ -236,6 +233,26 @@
                         data-testid="deadline-title"
                       >{{ item.title }}</span>
                       <span class="dl-cell-sub">{{ sourceText(item) }}</span>
+                      <span
+                        class="dl-row-meta"
+                        data-testid="deadline-row-meta"
+                      >
+                        <span class="dl-cell-sub dl-row-meta__date">{{ item.dueDate ? `Due ${formatDate(item.dueDate)}` : 'No due date' }}</span>
+                        <span
+                          v-if="hasColumn(card, 'status')"
+                          class="dl-chip"
+                          :class="chipClass(item.status)"
+                        >{{ statusLabel(item.status) }}</span>
+                        <span
+                          v-if="hasColumn(card, 'verification')"
+                          class="dl-chip"
+                          :class="verificationChipClass(item)"
+                        >{{ verificationLabel(item) }}</span>
+                        <span
+                          v-if="hasColumn(card, 'completedAt') && item.completionStatus !== 'notApplicable'"
+                          class="dl-cell-sub"
+                        >{{ item.completedAt ? `Completed ${formatDateTime(item.completedAt)}` : 'Completion time not recorded' }}</span>
+                      </span>
                     </template>
                     <template v-else-if="column.key === 'dueDate'">
                       <span
@@ -256,9 +273,9 @@
                     <template v-else-if="column.key === 'verification'">
                       <span
                         class="dl-chip"
-                        :class="item.verificationStatus === 'verified' ? 'dl-chip--solid' : 'dl-chip--pending'"
+                        :class="verificationChipClass(item)"
                       >
-                        {{ item.verificationStatus === 'verified' ? 'Verified' : 'Unverified' }}
+                        {{ verificationLabel(item) }}
                       </span>
                       <span
                         v-if="item.verificationStatus === 'verified' && item.verifiedAt"
@@ -338,14 +355,14 @@ const REVIEW_COLUMNS = [COLUMN.title, COLUMN.dueDate, COLUMN.status, COLUMN.veri
 const CLOSED_COLUMNS = [COLUMN.title, COLUMN.dueDate, COLUMN.completedAt, COLUMN.status];
 
 const CHIP_BY_STATUS = {
-  overdue: 'dl-chip--alert',
-  dueToday: 'dl-chip--outline',
-  dueSoon: 'dl-chip--outline',
-  upcoming: 'dl-chip--soft',
-  completed: 'dl-chip--solid',
-  completedLate: 'dl-chip--solid',
+  overdue: 'dl-chip--overdue',
+  dueToday: 'dl-chip--today',
+  dueSoon: 'dl-chip--soon',
+  upcoming: 'dl-chip--upcoming',
+  completed: 'dl-chip--done',
+  completedLate: 'dl-chip--done',
   notApplicable: 'dl-chip--muted',
-  reviewNeeded: 'dl-chip--pending',
+  reviewNeeded: 'dl-chip--review',
 };
 
 export default {
@@ -481,6 +498,15 @@ export default {
     chipClass(status) {
       return CHIP_BY_STATUS[status.replace(/Unverified$/, '')] || 'dl-chip--muted';
     },
+    hasColumn(card, key) {
+      return card.columns.some((column) => column.key === key);
+    },
+    verificationLabel(item) {
+      return item.verificationStatus === 'verified' ? 'Verified' : 'Unverified';
+    },
+    verificationChipClass(item) {
+      return item.verificationStatus === 'verified' ? 'dl-chip--done' : 'dl-chip--review';
+    },
     statusLabel,
     formatDate,
     formatDateTime,
@@ -589,7 +615,6 @@ export default {
   border-radius: var(--radius-pill);
   background: var(--brand);
   transform: translateX(calc(100% * var(--index)));
-  transition: transform var(--dur-base) var(--ease-spring);
 }
 .dl-range__option {
   position: relative;
@@ -714,11 +739,6 @@ export default {
 .dl-stat--bad .dl-figure {
   color: var(--bad);
 }
-.dl-stat--pending {
-  border-style: dashed;
-  border-color: var(--blue-400);
-  background: repeating-linear-gradient(-45deg, var(--blue-50) 0 6px, var(--surface) 6px 12px);
-}
 
 .dl-section {
   margin-bottom: 0.75rem;
@@ -828,6 +848,9 @@ export default {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.dl-row-meta {
+  display: none;
+}
 
 .dl-toggle {
   padding: 0;
@@ -866,42 +889,33 @@ export default {
   font-weight: 700;
   white-space: nowrap;
 }
-.dl-chip--solid {
-  background: var(--brand);
-  color: var(--on-brand);
-}
-.dl-chip--outline {
-  border-color: var(--brand-deep);
-  background: var(--surface);
-  color: var(--text);
-}
-.dl-chip--outline::before {
-  content: "";
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: 50%;
-  background: var(--link);
-}
-.dl-chip--pending {
-  border: 1px dashed var(--blue-400);
-  background: repeating-linear-gradient(-45deg, var(--blue-50) 0 4px, var(--surface) 4px 8px);
-  color: var(--brand-deep);
-}
-.dl-chip--alert {
+.dl-chip--overdue {
   background: var(--bad-tint);
   color: var(--bad);
 }
-.dl-chip--alert::before {
-  content: "!";
-  font-weight: 700;
+.dl-chip--today {
+  background: $raw-yellow-200;
+  color: $raw-yellow-800;
 }
-.dl-chip--soft {
-  background: var(--blue-100);
-  color: var(--brand-deep);
+.dl-chip--soon {
+  background: $raw-yellow-50;
+  color: $raw-yellow-700;
+}
+.dl-chip--upcoming {
+  background: $raw-blue-100;
+  color: $raw-blue-800;
+}
+.dl-chip--done {
+  background: $raw-green-100;
+  color: $raw-green-700;
+}
+.dl-chip--review {
+  background: $raw-gray-200;
+  color: $raw-gray-700;
 }
 .dl-chip--muted {
-  background: var(--canvas-deep);
-  color: var(--text-muted);
+  background: $raw-gray-100;
+  color: $raw-gray-600;
 }
 
 .dl-details-row td {
@@ -971,12 +985,22 @@ export default {
   .dl-card {
     padding: 1rem;
   }
+  .dl-col-dueDate,
   .dl-col-verification,
   .dl-col-status,
   .dl-col-completedAt {
     display: none;
   }
-  .dl-col-dueDate { width: 7rem; }
+  .dl-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.4rem;
+  }
+  .dl-row-meta__date {
+    flex-basis: 100%;
+  }
   .dl-col-action { width: 6.5rem; }
   .dl-details-row :deep(.deadline-details) {
     grid-template-columns: minmax(0, 1fr);
