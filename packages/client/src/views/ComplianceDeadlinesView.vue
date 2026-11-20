@@ -981,7 +981,7 @@ export default {
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 991px) {
   .dl-card {
     padding: 1rem;
   }
