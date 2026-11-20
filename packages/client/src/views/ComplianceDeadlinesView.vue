@@ -985,10 +985,21 @@ export default {
   .dl-card {
     padding: 1rem;
   }
-  .dl-col-dueDate,
-  .dl-col-verification,
-  .dl-col-status,
-  .dl-col-completedAt {
+  .dl-table .dl-col-dueDate,
+  .dl-table .dl-col-verification,
+  .dl-table .dl-col-status,
+  .dl-table .dl-col-completedAt {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-size: 0;
+    line-height: 0;
+  }
+  .dl-table .dl-col-dueDate > *,
+  .dl-table .dl-col-verification > *,
+  .dl-table .dl-col-status > *,
+  .dl-table .dl-col-completedAt > * {
     display: none;
   }
   .dl-row-meta {
