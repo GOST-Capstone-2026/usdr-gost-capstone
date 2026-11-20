@@ -124,6 +124,9 @@ function routes(urlOrg, ids) {
     ];
 }
 
+const DEADLINE_FLAGS = ['ENABLE_GRANT_DOCUMENT_ANALYSIS', 'ENABLE_COMPLIANCE_CHECKLISTS', 'ENABLE_COMPLIANCE_DEADLINES'];
+const oldDeadlineFlags = {};
+
 describe('A-13 organization isolation and authorization', () => {
     let server;
     let cookies;
@@ -165,6 +168,10 @@ describe('A-13 organization isolation and authorization', () => {
         oldProfile = process.env.ENABLE_ORGANIZATION_PROFILES;
         process.env.ENABLE_GRANT_COMPLIANCE = 'true';
         process.env.ENABLE_ORGANIZATION_PROFILES = 'true';
+        DEADLINE_FLAGS.forEach((flag) => {
+            oldDeadlineFlags[flag] = process.env[flag];
+            process.env[flag] = 'true';
+        });
 
         const rows = await knex('users').select('id', 'email').whereIn('email', Object.values(USERS));
         userIds = Object.fromEntries(Object.entries(USERS).map(([key, email]) => [key, rows.find((r) => r.email === email).id]));
@@ -192,6 +199,10 @@ describe('A-13 organization isolation and authorization', () => {
         else process.env.ENABLE_GRANT_COMPLIANCE = oldMaster;
         if (oldProfile === undefined) delete process.env.ENABLE_ORGANIZATION_PROFILES;
         else process.env.ENABLE_ORGANIZATION_PROFILES = oldProfile;
+        DEADLINE_FLAGS.forEach((flag) => {
+            if (oldDeadlineFlags[flag] === undefined) delete process.env[flag];
+            else process.env[flag] = oldDeadlineFlags[flag];
+        });
     });
 
     context('positive controls: org members reach their own data', () => {
