@@ -2,6 +2,7 @@ const express = require('express');
 const { DateTime } = require('luxon');
 const { requireUser } = require('../lib/access-helpers');
 const { canVerifyFoundItem } = require('../lib/sourceCitationValidation');
+const { deadlinesEnabled } = require('../lib/complianceConfig');
 const {
     ALLOWED_STATUSES, getToday, isPortfolioItem, computeStatus,
 } = require('../lib/deadlineStatus');
@@ -13,6 +14,12 @@ const DEFAULT_PER_PAGE = 25;
 const ALLOWED_COMPLETION_STATUSES = ['notStarted', 'inProgress', 'completed', 'notApplicable'];
 const ALLOWED_PATCH_FIELDS = ['dueDate', 'completionStatus'];
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_ID = 2147483647;
+
+function isCalendarDate(value) {
+    return typeof value === 'string' && ISO_DATE_PATTERN.test(value)
+        && DateTime.fromISO(value).isValid && !value.startsWith('0000-');
+}
 
 function sendError(req, res, status, code, message, details) {
     return res.status(status).json({
@@ -24,6 +31,13 @@ function sendError(req, res, status, code, message, details) {
             details: details || [],
         },
     });
+}
+
+function requireDeadlinesEnabled(req, res, next) {
+    if (!deadlinesEnabled()) {
+        return sendError(req, res, 404, 'FEATURE_DISABLED', 'This feature is not currently available.');
+    }
+    return next();
 }
 
 function paginate(items, page, size) {
@@ -63,6 +77,7 @@ function serializeDeadline(row, status) {
         completedAt: toIsoOrNull(row.completed_at),
         verificationStatus: row.verification_status,
         verifiedBy: row.verified_by,
+        verifiedByName: row.verified_by_name ?? null,
         verifiedAt: toIsoOrNull(row.verified_at),
         version: row.version,
         source: first?.pageNumber == null || first.excerpt == null
@@ -75,7 +90,7 @@ function serializeDeadline(row, status) {
 // Returns the authenticated user's organization's deadline items in two groups:
 // portfolio (verified and dated) and reviewNeeded (unverified or undated), each
 // annotated with a real-time computed status. Rejected items are excluded.
-router.get('/deadlines', requireUser, async (req, res) => {
+router.get('/deadlines', requireUser, requireDeadlinesEnabled, async (req, res) => {
     const { selectedAgency } = req.session;
     const {
         from, through, status, currentPage, perPage, documentId,
@@ -85,6 +100,13 @@ router.get('/deadlines', requireUser, async (req, res) => {
         return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
             { field: 'status', issue: `must be one of ${ALLOWED_STATUSES.join(', ')}` },
         ]);
+    }
+
+    const invalidDates = [['from', from], ['through', through]]
+        .filter(([, value]) => value !== undefined && !isCalendarDate(value))
+        .map(([field]) => ({ field, issue: 'must be a valid YYYY-MM-DD date' }));
+    if (invalidDates.length > 0) {
+        return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', invalidDates);
     }
 
     const page = currentPage ? Number(currentPage) : 1;
@@ -147,11 +169,11 @@ router.get('/deadlines', requireUser, async (req, res) => {
     });
 });
 
-router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
+router.patch('/deadlines/:checklistItemId', requireUser, requireDeadlinesEnabled, async (req, res) => {
     const { selectedAgency } = req.session;
     const checklistItemId = Number(req.params.checklistItemId);
 
-    if (!Number.isInteger(checklistItemId) || checklistItemId < 1) {
+    if (!/^[1-9]\d*$/.test(req.params.checklistItemId) || checklistItemId > MAX_ID) {
         return sendError(req, res, 400, 'VALIDATION_ERROR', 'The request contains invalid fields.', [
             { field: 'checklistItemId', issue: 'must be a positive integer' },
         ]);
@@ -174,8 +196,7 @@ router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
     const { dueDate, completionStatus } = body;
     const details = [];
 
-    if (dueDate !== undefined
-        && (dueDate === null || typeof dueDate !== 'string' || !ISO_DATE_PATTERN.test(dueDate) || !DateTime.fromISO(dueDate).isValid)) {
+    if (dueDate !== undefined && !isCalendarDate(dueDate)) {
         details.push({ field: 'dueDate', issue: 'must be a valid YYYY-MM-DD date' });
     }
 
@@ -203,7 +224,7 @@ router.patch('/deadlines/:checklistItemId', requireUser, async (req, res) => {
     return res.json({ deadline });
 });
 
-router.patch('/deadlines/:checklistItemId/verification', requireUser, async (req, res) => {
+router.patch('/deadlines/:checklistItemId/verification', requireUser, requireDeadlinesEnabled, async (req, res) => {
     const { selectedAgency, user } = req.session;
     if (!['admin', 'staff'].includes(user.role_name)) {
         return sendError(req, res, 403, 'FORBIDDEN', 'Only administrators and staff can verify a checklist item.');
@@ -245,7 +266,7 @@ router.patch('/deadlines/:checklistItemId/verification', requireUser, async (req
         return sendError(req, res, 409, 'VERSION_CONFLICT', 'This item changed. Review the latest version before verifying.');
     }
 
-    const row = { ...updated, grant_id: item.grant_id };
+    const row = { ...updated, grant_id: item.grant_id, verified_by_name: user.name || user.email };
     return res.json({ deadline: serializeDeadline(row, computeStatus(row, getToday())) });
 });
 
