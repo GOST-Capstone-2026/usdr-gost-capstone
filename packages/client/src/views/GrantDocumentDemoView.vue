@@ -208,6 +208,7 @@
           :organization-id="context.organizationId"
           :document-id="document.id"
           :can-verify="canAnalyze"
+          :focus-item-id="focusItemId"
         />
       </template>
     </template>
@@ -253,6 +254,7 @@ export default {
     canAnalyze() { return grantDocumentAnalysisEnabled() && ['admin', 'staff'].includes(this.userRole); },
     context() { return documentContext(this.$route, this.selectedAgencyId); },
     contextKey() { return JSON.stringify([this.canAnalyze, this.context, this.$route.query.documentId]); },
+    focusItemId() { return recordId(this.$route.query.checklistItemId); },
     busy() { return this.uploading || this.startingAnalysis || this.loadingDocument || this.polling; },
     isRunActive() { return ['queued', 'processing'].includes(this.analysisRun?.status); },
     briefMissingForRun() {

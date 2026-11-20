@@ -184,6 +184,7 @@ export default {
       const location = grantDocumentLocation(this.item.grantId, this.$store?.getters?.['users/selectedAgencyId']);
       if (!location) return null;
       location.query.documentId = String(documentId);
+      location.query.checklistItemId = String(this.item.checklistItemId);
       return location;
     },
     verificationText() {
