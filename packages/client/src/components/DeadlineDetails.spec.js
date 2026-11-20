@@ -1,8 +1,11 @@
 import {
   describe, it, expect, vi,
 } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils';
 import DeadlineDetails from '@/components/DeadlineDetails.vue';
+import { grantDocumentAnalysisEnabled } from '@/helpers/featureFlags';
+
+vi.mock('@/helpers/featureFlags', () => ({ grantDocumentAnalysisEnabled: vi.fn(() => false) }));
 
 const makeItem = (overrides) => ({
   checklistItemId: 1,
@@ -17,7 +20,10 @@ const makeItem = (overrides) => ({
 
 const mountDetails = (overrides, dispatch = vi.fn().mockResolvedValue(undefined), canVerify = false) => mount(DeadlineDetails, {
   props: { item: makeItem(overrides), canVerify },
-  global: { mocks: { $store: { dispatch } } },
+  global: {
+    mocks: { $store: { dispatch, getters: { 'users/selectedAgencyId': 0 } } },
+    stubs: { 'router-link': RouterLinkStub },
+  },
 });
 
 const httpError = (status) => Object.assign(new Error('request failed'), { response: { status } });
@@ -37,6 +43,37 @@ describe('DeadlineDetails.vue', () => {
   it('shows the verified date for a verified item', () => {
     const wrapper = mountDetails();
     expect(wrapper.get('[data-testid="deadline-verification"]').text()).toBe('Verified on Sep 20, 2026');
+  });
+
+  describe('link to the source document', () => {
+    const documentLink = (wrapper) => wrapper.find('[data-testid="deadline-document-link"]');
+
+    it('links to the document analysis page for its grant and document', () => {
+      grantDocumentAnalysisEnabled.mockReturnValueOnce(true);
+      const wrapper = mountDetails({ grantId: '335255', documentId: 6 });
+      expect(documentLink(wrapper).text()).toBe('Open document');
+      expect(wrapper.getComponent(RouterLinkStub).props('to')).toEqual({
+        name: 'grantDocumentAnalysis',
+        params: { grantId: '335255' },
+        query: { organizationId: '0', documentId: '6' },
+      });
+    });
+
+    it('is hidden when document analysis is turned off', () => {
+      const wrapper = mountDetails({ grantId: '335255', documentId: 6 });
+      expect(documentLink(wrapper).exists()).toBe(false);
+    });
+
+    it('is hidden when the deadline has no document', () => {
+      grantDocumentAnalysisEnabled.mockReturnValueOnce(true);
+      const wrapper = mountDetails({ grantId: '335255', documentId: null });
+      expect(documentLink(wrapper).exists()).toBe(false);
+    });
+  });
+
+  it('shows who verified the item and when', () => {
+    const wrapper = mountDetails({ verifiedByName: 'Alex Allain' });
+    expect(wrapper.get('[data-testid="deadline-verification"]').text()).toBe('Verified by Alex Allain on Sep 20, 2026');
   });
 
   it('shows Verified without a date when no verified time is recorded', () => {
@@ -101,9 +138,21 @@ describe('DeadlineDetails.vue', () => {
       expect(dispatch.mock.calls[0][1].changes).toEqual({ completionStatus: 'notApplicable' });
     });
 
-    it('reopens a closed item as not started', async () => {
+    it('reopens a completed item as in progress, since work on it had started', async () => {
       const dispatch = vi.fn().mockResolvedValue(undefined);
       const wrapper = mountDetails({ completionStatus: 'completed' }, dispatch);
+
+      await wrapper.get('[data-testid="action-reopen"]').trigger('click');
+
+      expect(dispatch.mock.calls[0][1]).toMatchObject({
+        changes: { completionStatus: 'inProgress' },
+        successMessage: 'Reopened "Deadline" as in progress.',
+      });
+    });
+
+    it('reopens a not applicable item as not started', async () => {
+      const dispatch = vi.fn().mockResolvedValue(undefined);
+      const wrapper = mountDetails({ completionStatus: 'notApplicable' }, dispatch);
 
       await wrapper.get('[data-testid="action-reopen"]').trigger('click');
 
@@ -203,6 +252,19 @@ describe('DeadlineDetails.vue', () => {
       await wrapper.get('[data-testid="due-date-save"]').trigger('click');
 
       expect(dispatch.mock.calls[0][1].changes).toEqual({ dueDate: '2027-01-15' });
+    });
+
+    it('says the item still needs verifying when it was never verified', async () => {
+      const dispatch = vi.fn().mockResolvedValue(undefined);
+      const wrapper = mountDetails({
+        title: 'Monitoring plan', dueDate: null, verificationStatus: 'unverified', verifiedAt: null,
+      }, dispatch);
+      await wrapper.get('[data-testid="action-change-date"]').trigger('click');
+      await wrapper.get('[data-testid="due-date-input"]').setValue('2027-01-15');
+      await wrapper.get('[data-testid="due-date-save"]').trigger('click');
+
+      expect(dispatch.mock.calls[0][1].successMessage)
+        .toBe('Changed the due date of "Monitoring plan" to Jan 15, 2027. It still needs to be verified.');
     });
 
     it('keeps the editor open with an error when saving the date fails', async () => {
