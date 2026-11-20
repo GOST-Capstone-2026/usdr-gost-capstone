@@ -55,7 +55,7 @@ describe('DeadlineDetails.vue', () => {
       expect(wrapper.getComponent(RouterLinkStub).props('to')).toEqual({
         name: 'grantDocumentAnalysis',
         params: { grantId: '335255' },
-        query: { organizationId: '0', documentId: '6' },
+        query: { organizationId: '0', documentId: '6', checklistItemId: '1' },
       });
     });
 

@@ -58,6 +58,30 @@ describe('ChecklistItems.vue', () => {
     expect(wrapper.get('[data-testid="checklist-completion"]').text()).toBe('Not started');
   });
 
+  it('scrolls to and outlines the item a deadline link points to', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    api.get.mockResolvedValue({ data: [makeItem({ id: 104 }), makeItem({ id: 105 })], pagination: paginationFor(2) });
+    const wrapper = mount(ChecklistItems, {
+      props: {
+        organizationId: 0, documentId: 27, focusItemId: 105,
+      },
+      attachTo: document.body,
+    });
+    await flushPromises();
+
+    const [other, focused] = wrapper.findAll('[data-testid="checklist-item"]');
+    expect(focused.attributes('id')).toBe('checklist-item-105');
+    expect(focused.classes()).toContain('border-primary');
+    expect(other.classes()).not.toContain('border-primary');
+    expect(focused.get('details').element.open).toBe(true);
+    expect(other.get('details').element.open).toBe(false);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(focused.element);
+    wrapper.unmount();
+    delete Element.prototype.scrollIntoView;
+  });
+
   it('shows an empty state when the document has no checklist items', async () => {
     const wrapper = await mountList([]);
     expect(wrapper.get('[data-testid="checklist-empty"]').text())

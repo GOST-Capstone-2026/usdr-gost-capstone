@@ -37,8 +37,10 @@
     >
       <li
         v-for="item in items"
+        :id="`checklist-item-${item.id}`"
         :key="item.id"
         class="border rounded p-3 mb-3"
+        :class="{ 'border-primary': item.id === focusItemId }"
         data-testid="checklist-item"
       >
         <p class="small text-muted mb-1">
@@ -135,7 +137,10 @@
           >
             Notes: {{ item.userNotes }}
           </p>
-          <details v-if="item.sources && item.sources.length">
+          <details
+            v-if="item.sources && item.sources.length"
+            :open="item.id === focusItemId"
+          >
             <summary class="small">
               Source citations
             </summary>
@@ -278,6 +283,7 @@ export default {
     // Passed in by the parent rather than read from Vuex here, the same way DeadlineDetails.vue
     // takes canVerify as a prop: this component stays agnostic about where the role check lives.
     canVerify: { type: Boolean, default: false },
+    focusItemId: { type: Number, default: null },
   },
   data() {
     return {
@@ -296,6 +302,12 @@ export default {
   },
   watch: {
     documentId: { immediate: true, handler: 'load' },
+    loading: {
+      flush: 'post',
+      handler(isLoading) {
+        if (!isLoading) this.scrollToFocusedItem();
+      },
+    },
   },
   methods: {
     base() { return `/api/organizations/${this.organizationId}/compliance`; },
@@ -318,6 +330,10 @@ export default {
       const rest = { ...this.itemErrors };
       delete rest[id];
       this.itemErrors = rest;
+    },
+    scrollToFocusedItem() {
+      if (this.focusItemId === null) return;
+      this.$el?.querySelector?.(`#checklist-item-${this.focusItemId}`)?.scrollIntoView?.({ block: 'center' });
     },
     refreshAfterAnalysis() {
       if (!this.items.length) this.load();
