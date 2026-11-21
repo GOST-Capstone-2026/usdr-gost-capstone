@@ -68,8 +68,18 @@ async function generateChecklistItems({
 
     // eslint-disable-next-line no-restricted-syntax
     for (const chunk of chunks) {
-        // eslint-disable-next-line no-await-in-loop
-        const response = await generateText({ system: SYSTEM_PROMPT, prompt: buildPrompt(chunk) });
+        let response;
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            response = await generateText({ system: SYSTEM_PROMPT, prompt: buildPrompt(chunk) });
+        } catch (err) {
+            // A longer document means more chunks, and more chunks means more chances for one AI
+            // call to fail transiently (timeout, rate limit). Losing every obligation already
+            // found over one bad call would be worse than just missing what that chunk could add.
+            log.warn({ documentId, chunkIndex: chunk.chunkIndex, err }, 'AI call failed for chunk, skipping it');
+            // eslint-disable-next-line no-continue
+            continue;
+        }
         const candidates = parseChunkResponse(response.text);
 
         if (!candidates) {

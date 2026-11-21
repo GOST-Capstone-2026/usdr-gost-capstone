@@ -204,4 +204,85 @@ describe('generateChecklistItems', () => {
 
         expect(items).to.deep.equal([]);
     });
+
+    it('drops a non-object entry in the obligations array instead of crashing', async () => {
+        const chunks = [chunk(0, [{ pageNumber: 1, text: 'Submit the attached form.' }])];
+        const generateText = fakeAi([JSON.stringify([
+            null,
+            'just a string',
+            42,
+            {
+                category: 'submission', description: 'Submit the attached form.', dueDate: null, pageNumber: 1, excerpt: 'Submit the attached form.',
+            },
+        ])]);
+
+        const items = await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText,
+        });
+
+        expect(items).to.have.length(1);
+        expect(items[0].category).to.equal('submission');
+    });
+
+    it('returns no items, not an error, when every chunk comes back malformed', async () => {
+        const chunks = [
+            chunk(0, [{ pageNumber: 1, text: 'page one' }]),
+            chunk(1, [{ pageNumber: 2, text: 'page two' }]),
+            chunk(2, [{ pageNumber: 3, text: 'page three' }]),
+        ];
+        const generateText = fakeAi(['not json', '{ "category": "submission" }', '']);
+
+        const items = await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText,
+        });
+
+        expect(items).to.deep.equal([]);
+    });
+
+    it('skips a chunk whose AI call throws instead of failing the whole document', async () => {
+        const chunks = [
+            chunk(0, [{ pageNumber: 1, text: 'A 10% local cost share is required.' }]),
+            chunk(1, [{ pageNumber: 2, text: 'Submit the attached form.' }]),
+        ];
+        let callIndex = 0;
+        const generateText = async () => {
+            callIndex += 1;
+            if (callIndex === 1) throw new Error('simulated timeout');
+            return {
+                text: JSON.stringify([{
+                    category: 'submission', description: 'Submit the attached form.', dueDate: null, pageNumber: 2, excerpt: 'Submit the attached form.',
+                }]),
+            };
+        };
+
+        const items = await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText,
+        });
+
+        expect(items).to.have.length(1);
+        expect(items[0].category).to.equal('submission');
+    });
+
+    it('collects obligations scattered across a long document of many chunks', async () => {
+        const chunkCount = 25;
+        const chunks = Array.from({ length: chunkCount }, (_, i) => chunk(i, [{ pageNumber: i + 1, text: `page ${i + 1}` }]));
+        const responses = Array.from({ length: chunkCount }, (_, i) => {
+            if (i === 0 || i === 12 || i === 24) {
+                return JSON.stringify([{
+                    category: 'reporting', description: `Obligation from chunk ${i}`, dueDate: null, pageNumber: i + 1, excerpt: `page ${i + 1}`,
+                }]);
+            }
+            return JSON.stringify([]);
+        });
+        const generateText = fakeAi(responses);
+
+        const items = await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText,
+        });
+
+        expect(items).to.have.length(3);
+        expect(items.map((item) => item.description)).to.deep.equal([
+            'Obligation from chunk 0', 'Obligation from chunk 12', 'Obligation from chunk 24',
+        ]);
+    });
 });

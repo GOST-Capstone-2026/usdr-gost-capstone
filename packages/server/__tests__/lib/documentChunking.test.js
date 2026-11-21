@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { chunkPages } = require('../../src/lib/documentChunking');
+const { chunkPages, MAX_CHUNK_CHARS } = require('../../src/lib/documentChunking');
 
 function page(pageNumber, text) {
     return { pageNumber, text, charCount: text.length };
@@ -60,5 +60,21 @@ describe('chunkPages', () => {
             { pageNumber: 1, text: 'first page text' },
             { pageNumber: 2, text: 'second page text' },
         ]);
+    });
+
+    it('produces many ordered, contiguous chunks for a long document at the real default chunk size', () => {
+        // 107 pages at ~2,800 chars/page, the median density measured on the real 107-page HUD
+        // notice used for manual testing, exercised against the actual production MAX_CHUNK_CHARS
+        // rather than a small overridden size like the other tests above.
+        const pages = Array.from({ length: 107 }, (_, i) => page(i + 1, 'x'.repeat(2800)));
+        const chunks = chunkPages(pages);
+
+        expect(chunks.length).to.be.greaterThan(1);
+        chunks.forEach((c) => expect(c.charCount).to.be.at.most(MAX_CHUNK_CHARS));
+
+        const coveredPages = chunks.flatMap((c) => (
+            Array.from({ length: c.endPage - c.startPage + 1 }, (_, i) => c.startPage + i)
+        ));
+        expect(coveredPages).to.deep.equal(Array.from({ length: 107 }, (_, i) => i + 1));
     });
 });
