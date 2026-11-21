@@ -232,19 +232,20 @@ describe('A-17 failure handling', () => {
             expect(brief.purpose.found).to.equal(true);
         });
 
-        it('loses the whole brief when one chunk\'s ai call errors, even if earlier chunks worked', async () => {
-            // current behavior: run completes but GET .../brief is 404 (AN-10 finding, A-17 doc)
+        it('keeps the facts from earlier chunks when a later chunk\'s ai call errors (AN-17 fix)', async () => {
+            // AN-17 fixed the gap the A-17 doc flagged: a thrown AI error now just skips that
+            // chunk, the same way an unparseable reply already did, instead of losing the brief.
             let i = 0;
             const generateText = async () => {
                 i += 1;
                 if (i === 2) throw new AiProviderError('coecs timed out after 30000ms', { code: 'timeout', retryable: true });
                 return { text: good };
             };
-            const err = await errorOf(synthesizeGrantBrief({
+            const brief = await synthesizeGrantBrief({
                 documentId: 1, runId: 1, chunks: [0, 1, 2].map(goodChunk), generateText,
-            }));
-            expect(err.code).to.equal('timeout');
-            expect(i).to.equal(2);
+            });
+            expect(brief.purpose.found).to.equal(true);
+            expect(i).to.equal(3);
         });
     });
 
@@ -287,18 +288,19 @@ describe('A-17 failure handling', () => {
             expect(items).to.have.length(1);
         });
 
-        it('loses the whole checklist when one chunk\'s ai call errors, even if earlier chunks worked', async () => {
-            // current behavior, same as the brief (open item, A-17 doc)
+        it('keeps the items from earlier chunks when a later chunk\'s ai call errors (AN-17 fix)', async () => {
+            // Same AN-17 fix as the brief above, applied to checklist generation.
             let i = 0;
             const generateText = async () => {
                 i += 1;
                 if (i === 2) throw new AiProviderError('coecs timed out after 30000ms', { code: 'timeout', retryable: true });
                 return { text: JSON.stringify([realItem]) };
             };
-            const err = await errorOf(generateChecklistItems({
+            const items = await generateChecklistItems({
                 documentId: 1, grantId: '1', chunks: [0, 1, 2].map(goodChunk), generateText,
-            }));
-            expect(err.code).to.equal('timeout');
+            });
+            expect(items).to.have.length(2);
+            expect(i).to.equal(3);
         });
     });
 
