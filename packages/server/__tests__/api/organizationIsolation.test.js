@@ -62,28 +62,42 @@ function briefRow(documentId, runId, purpose) {
     };
 }
 
-// planting one document, run, brief, deadline and profile for an org, straight into the db (no s3 needed)
-async function seedOrg(agencyId, tenantId, userId, label) {
+// planting a grant document row for an agency, straight into the db (no s3 needed)
+async function insertDocument(agencyId, userId, label, filename) {
     const [document] = await knex('grant_documents').insert({
         agency_id: agencyId,
         grant_id: GRANT_ID,
         uploaded_by: userId,
-        filename: label === 'A' ? SECRET.filename : `a13-org-${label}.pdf`,
+        filename,
         mime_type: 'application/pdf',
         size_bytes: 1234,
         sha256: crypto.randomBytes(32).toString('hex'),
         storage_bucket: 'grant-documents',
         storage_key: `a13/${label}.pdf`,
     }).returning('*');
-    const [run] = await knex('analysis_runs').insert({ document_id: document.id, status: 'completed' }).returning('*');
-    await knex('grant_briefs').insert(briefRow(document.id, run.id, label === 'A' ? SECRET.briefPurpose : `org ${label} purpose`));
-    const [deadline] = await knex('checklist_items_placeholder').insert({
-        agency_id: agencyId,
+    return document;
+}
+
+// planting a verified checklist item on a document; the deadline api reads these through the document's agency
+async function insertChecklistItem(documentId, description, dueDate) {
+    const [item] = await knex('checklist_items').insert({
+        document_id: documentId,
         category: 'reporting',
-        description: label === 'A' ? SECRET.deadline : `a13 org ${label} deadline`,
-        due_date: '2026-12-15',
+        description,
+        found: true,
+        sources: JSON.stringify([]),
+        due_date: dueDate,
         verification_status: 'verified',
     }).returning('*');
+    return item;
+}
+
+// planting one document, run, brief, checklist item and profile for an org
+async function seedOrg(agencyId, tenantId, userId, label) {
+    const document = await insertDocument(agencyId, userId, label, label === 'A' ? SECRET.filename : `a13-org-${label}.pdf`);
+    const [run] = await knex('analysis_runs').insert({ document_id: document.id, status: 'completed' }).returning('*');
+    await knex('grant_briefs').insert(briefRow(document.id, run.id, label === 'A' ? SECRET.briefPurpose : `org ${label} purpose`));
+    const deadline = await insertChecklistItem(document.id, label === 'A' ? SECRET.deadline : `a13 org ${label} deadline`, '2026-12-15');
     await knex('organization_profiles').where('organization_id', agencyId).del();
     await knex('organization_profiles').insert(profileRow(agencyId, tenantId, userId, label === 'A' ? SECRET.focusArea : `org ${label} focus`));
     return { documentId: document.id, runId: run.id, deadlineId: deadline.id };
@@ -130,6 +144,7 @@ describe('A-13 organization isolation and authorization', () => {
     let userIds;
     let orgA;
     let orgB;
+    let siblingDocumentId;
     let siblingDeadlineId;
     let oldMaster;
     let oldProfile;
@@ -152,7 +167,7 @@ describe('A-13 organization isolation and authorization', () => {
     // snapshotting org A's rows so we can prove denied writes changed nothing
     async function snapshotOrgA() {
         return {
-            deadline: await knex('checklist_items_placeholder').where('id', orgA.deadlineId).first(),
+            deadline: await knex('checklist_items').where('id', orgA.deadlineId).first(),
             profile: await knex('organization_profiles').where('organization_id', ORG_A).first(),
             runCount: (await knex('analysis_runs').where('document_id', orgA.documentId).count('* as n').first()).n,
             documentCount: (await knex('grant_documents').where('agency_id', ORG_A).count('* as n').first()).n,
@@ -172,19 +187,19 @@ describe('A-13 organization isolation and authorization', () => {
 
         orgA = await seedOrg(ORG_A, 1, userIds.aStaff, 'A');
         orgB = await seedOrg(ORG_B, 2, userIds.bStaff, 'B');
-        const [sibling] = await knex('checklist_items_placeholder').insert({
-            agency_id: ORG_A_SIBLING, category: 'reporting', description: 'a13 sibling deadline', due_date: '2026-12-20', verification_status: 'verified',
-        }).returning('*');
-        siblingDeadlineId = sibling.id;
+        // the sibling agency needs its own document so its checklist item belongs to agency 400
+        const siblingDocument = await insertDocument(ORG_A_SIBLING, userIds.aSiblingStaff, 'sibling', 'a13-sibling.pdf');
+        siblingDocumentId = siblingDocument.id;
+        siblingDeadlineId = (await insertChecklistItem(siblingDocumentId, 'a13 sibling deadline', '2026-12-20')).id;
 
         server = await makeTestServer();
     });
 
     after(async () => {
-        await knex('checklist_items_placeholder').whereIn('id', [orgA.deadlineId, orgB.deadlineId, siblingDeadlineId]).del();
+        await knex('checklist_items').whereIn('id', [orgA.deadlineId, orgB.deadlineId, siblingDeadlineId]).del();
         await knex('grant_briefs').whereIn('document_id', [orgA.documentId, orgB.documentId]).del();
         await knex('analysis_runs').whereIn('document_id', [orgA.documentId, orgB.documentId]).del();
-        await knex('grant_documents').whereIn('id', [orgA.documentId, orgB.documentId]).del();
+        await knex('grant_documents').whereIn('id', [orgA.documentId, orgB.documentId, siblingDocumentId]).del();
         await knex('organization_profiles').whereIn('organization_id', [ORG_A, ORG_B]).del();
         await knex('ai_audit_records').where('task', 'a13-isolation').del();
         server.stop();

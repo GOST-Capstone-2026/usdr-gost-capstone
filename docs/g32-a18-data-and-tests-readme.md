@@ -1,6 +1,6 @@
 # A-18: Data and test README
 
-Allison Cerna, November 4, 2026
+Allison Cerna, Updated November 21, 2026
 
 What data our project adds, where it came from, and how to run every test and evaluation.
 
