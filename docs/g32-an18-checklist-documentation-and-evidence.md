@@ -26,7 +26,7 @@ This covers AN-09 through AN-17. The pipeline, in plain terms: a grant notice PD
 docker exec gost-app sh -lc 'cd /app/packages/server && yarn test:lib'
 ```
 
-Result: **592 passing** (1 known exception, see below, not in this subsystem), covering schema, storage, citation validation, checklist/brief generation (including long documents and malformed AI output), and the edit/verify/export API.
+Result: **593 passing**, covering schema, storage, citation validation, checklist/brief generation (including long documents and malformed AI output), and the edit/verify/export API.
 
 ## Fixed since first coded
 
@@ -34,7 +34,7 @@ When the brief and checklist were first coded, if one part of a long notice fail
 
 Two tests in `failureHandling.test.js` recorded the old behavior. Both are updated to check that the document now completes and keeps the good chunks instead of throwing.
 
-One side effect: `evaluateFaithfulness.js` counts an "AI error" by catching a thrown error from `synthesizeGrantBrief`. Since a per-chunk failure no longer throws, that count is now always 0 even on a real failure (`faithfulness-checks.test.js`'s "counts unreadable replies and ai errors instead of crashing" now fails, expected 1, got 0). Likely fix: have the library return which chunks failed, so the evaluator can read that directly.
+One side effect: `evaluateFaithfulness.js` counts an "AI error" by catching a thrown error from `synthesizeGrantBrief`. Since a per-chunk failure no longer throws, that count is now always 0 even on a real failure (`faithfulness-checks.test.js`'s "counts unreadable replies and ai errors instead of crashing" failed, expected 1, got 0). Fixed: the evaluator now records the error when its own AI call fails, so the count is right again and the library didn't need to change.
 
 ## Real end-to-end evidence (not just automated tests)
 

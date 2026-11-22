@@ -134,7 +134,14 @@ async function runDocument(doc, replyFor) {
     const generateText = async (args) => {
         const chunk = chunks[chunkAt];
         chunkAt += 1;
-        const result = await replyFor(doc, chunk, args);
+        let result;
+        try {
+            result = await replyFor(doc, chunk, args);
+        } catch (err) {
+            // noting the error here, since the brief code now skips a failed chunk instead of throwing (AN-17)
+            if (!aiError) aiError = err.code || err.message;
+            throw err;
+        }
         replies.push({ chunkIndex: chunk.chunkIndex, text: result.text });
         if (!parses(result.text)) unparsed += 1;
         if (result.usage) {
@@ -150,7 +157,8 @@ async function runDocument(doc, replyFor) {
             documentId: doc.id, runId: 0, chunks, generateText,
         });
     } catch (err) {
-        aiError = err.code || err.message;
+        // still catching anything else the brief code throws
+        aiError = aiError || err.code || err.message;
     }
 
     const problems = brief ? checkBrief(brief, doc.pages) : [];
