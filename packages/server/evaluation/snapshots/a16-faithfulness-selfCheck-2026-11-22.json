@@ -1,0 +1,1341 @@
+{
+  "evaluation": "a16-faithfulness",
+  "mode": "selfCheck",
+  "generatedAt": "2026-11-22T02:03:54.708Z",
+  "fixtures": "faithfulness-v1",
+  "promptVersion": "grant-brief-v1",
+  "targets": {
+    "supportedFactRate": 0.9,
+    "inventedFacts": 0,
+    "unparsedChunks": 0,
+    "aiErrors": 0
+  },
+  "targetResults": {
+    "supportedFactRate": true,
+    "inventedFacts": true,
+    "unparsedChunks": true,
+    "aiErrors": true
+  },
+  "summary": {
+    "documents": 12,
+    "chunks": 12,
+    "unparsedChunks": 0,
+    "aiErrors": 0,
+    "facts": 54,
+    "supportedFacts": 54,
+    "supportedFactRate": 1,
+    "problemCounts": {},
+    "answerKey": {
+      "outcomes": {
+        "correct": 54,
+        "correctlyEmpty": 4
+      },
+      "byField": {
+        "purpose": {
+          "correct": 11
+        },
+        "eligibility": {
+          "correct": 11,
+          "correctlyEmpty": 1
+        },
+        "fundingRange": {
+          "correct": 9,
+          "correctlyEmpty": 2
+        },
+        "costShare": {
+          "correct": 11,
+          "correctlyEmpty": 1
+        },
+        "keyDates": {
+          "correct": 12
+        }
+      },
+      "recall": 1,
+      "inventedFacts": 0,
+      "wrongValues": 0
+    },
+    "usage": {
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  "checklist": null,
+  "documents": [
+    {
+      "id": "listing-364009",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-364009",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "The purpose of the WCPP is to provide funding to eligible entities for projects seeking to improve safety of the traveling public by reducing the number of wildlife-vehicle collisions (WVC) and, in doing so, improve habitat connectivity for terrestrial and aquatic species.",
+          "sources": [
+            {
+              "documentId": "listing-364009",
+              "pageNumber": 2,
+              "excerpt": "The purpose of the WCPP is to provide funding to eligible entities for projects seeking to improve safety of the traveling public by reducing the number of wildlife-vehicle collisions (WVC) and, in doing so, improve habitat connectivity for terrestrial and aquatic species."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "State governments; City or township governments; County governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Native American tribal governments (Federally recognized)",
+            "sources": [
+              {
+                "documentId": "listing-364009",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: State governments; City or township governments; County governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Native American tribal governments (Federally recognized)"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": null,
+          "maximumAmountCents": 8000000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-364009",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $80,000,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-11-16",
+            "sources": [
+              {
+                "documentId": "listing-364009",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Nov 16, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-364009",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.686Z"
+      }
+    },
+    {
+      "id": "listing-364037",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-364037",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "This is a notice of funding opportunity (NOFO) for the BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism.",
+          "sources": [
+            {
+              "documentId": "listing-364037",
+              "pageNumber": 2,
+              "excerpt": "This is a notice of funding opportunity (NOFO) for the BJA FY 2026 Justice Reinvestment Initiative: Strengthening State and Local Operations to Reduce Crime and Recidivism."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Special district governments; Native American tribal governments (Federally recognized); City or township governments; County governments; State governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)",
+            "sources": [
+              {
+                "documentId": "listing-364037",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Special district governments; Native American tribal governments (Federally recognized); City or township governments; County governments; State governments; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": null,
+          "maximumAmountCents": 400000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-364037",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $4,000,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-11-20",
+            "sources": [
+              {
+                "documentId": "listing-364037",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Nov 20, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": false,
+          "description": "Cost Sharing or Matching Requirement: No",
+          "sources": [
+            {
+              "documentId": "listing-364037",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: No"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.692Z"
+      }
+    },
+    {
+      "id": "listing-364035",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-364035",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "This is a notice of funding opportunity (NOFO) for the OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities program.",
+          "sources": [
+            {
+              "documentId": "listing-364035",
+              "pageNumber": 2,
+              "excerpt": "This is a notice of funding opportunity (NOFO) for the OJJDP FY 2026 Emergency Planning for Juvenile Justice Residential Facilities program."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "County governments; City or township governments; Native American tribal governments (Federally recognized); Special district governments; State governments",
+            "sources": [
+              {
+                "documentId": "listing-364035",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: County governments; City or township governments; Native American tribal governments (Federally recognized); Special district governments; State governments"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": null,
+          "maximumAmountCents": 25000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-364035",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $250,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-11-16",
+            "sources": [
+              {
+                "documentId": "listing-364035",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Nov 16, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": false,
+          "description": "Cost Sharing or Matching Requirement: No",
+          "sources": [
+            {
+              "documentId": "listing-364035",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: No"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.693Z"
+      }
+    },
+    {
+      "id": "listing-363696",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 4,
+      "supportedFacts": 4,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correctlyEmpty"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-363696",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>AmeriCorps improves lives, strengthens communities, and fosters civic engagement through service and volunteering.",
+          "sources": [
+            {
+              "documentId": "listing-363696",
+              "pageNumber": 2,
+              "excerpt": "<p>AmeriCorps improves lives, strengthens communities, and fosters civic engagement through service and volunteering."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Special district governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments; County governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; City or township governments; Public and State controlled institutions of higher education; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); Private institutions of higher education",
+            "sources": [
+              {
+                "documentId": "listing-363696",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Special district governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments; County governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; City or township governments; Public and State controlled institutions of higher education; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); Private institutions of higher education"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": false,
+          "minimumAmountCents": null,
+          "maximumAmountCents": null,
+          "currency": "USD",
+          "sources": []
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2027-01-13",
+            "sources": [
+              {
+                "documentId": "listing-363696",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Jan 13, 2027"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-363696",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "fundingRange",
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.694Z"
+      }
+    },
+    {
+      "id": "listing-361418",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-361418",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>Federally recognized Indian Tribes, local government entities, and nonprofit organizations that are qualified to acquire and manage land may apply for up to $1,000,000 for the fee simple acquisition of private forest land in portions of the Lake Superior Basin of Michigan and Wisconsin.",
+          "sources": [
+            {
+              "documentId": "listing-361418",
+              "pageNumber": 2,
+              "excerpt": "<p>Federally recognized Indian Tribes, local government entities, and nonprofit organizations that are qualified to acquire and manage land may apply for up to $1,000,000 for the fee simple acquisition of private forest land in portions of the Lake Superior Basin of Michigan and Wisconsin."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "County governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal governments (Federally recognized); City or township governments",
+            "sources": [
+              {
+                "documentId": "listing-361418",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: County governments; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal governments (Federally recognized); City or township governments"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": null,
+          "maximumAmountCents": 100000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-361418",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $1,000,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-12-08",
+            "sources": [
+              {
+                "documentId": "listing-361418",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Dec 8, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-361418",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.695Z"
+      }
+    },
+    {
+      "id": "listing-362034",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-362034",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>This announcement supports Executive Order 14276, Restoring America’s Seafood Competitiveness, by soliciting projects that support: workforce development for marine-related professions in marine science, aquaculture/mariculture, and maritime operations; enhancing seafood safety and management through training in seafood best practices, marketing, and fishery management; technological innovation in fishing practices; outreach and education for consumers on quality and sustainability of wild caught fish or products farmed through aquaculture/mariculture; enhanced regionally-specific management of fishery resources based on local knowledge; and strengthening the seafood supply chain through partnerships with industry, researchers, and community organizations to build relationships that increase the sustainability and competitiveness of the marine community in Alaska.",
+          "sources": [
+            {
+              "documentId": "listing-362034",
+              "pageNumber": 2,
+              "excerpt": "<p>This announcement supports Executive Order 14276, Restoring America’s Seafood Competitiveness, by soliciting projects that support: workforce development for marine-related professions in marine science, aquaculture/mariculture, and maritime operations; enhancing seafood safety and management through training in seafood best practices, marketing, and fishery management; technological innovation in fishing practices; outreach and education for consumers on quality and sustainability of wild caught fish or products farmed through aquaculture/mariculture; enhanced regionally-specific management of fishery resources based on local knowledge; and strengthening the seafood supply chain through partnerships with industry, researchers, and community organizations to build relationships that increase the sustainability and competitiveness of the marine community in Alaska."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Private institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Public and State controlled institutions of higher education; Small businesses; State governments; Native American tribal governments (Federally recognized); County governments; For profit organizations other than small businesses; City or township governments; Native American tribal organizations (other than Federally recognized tribal governments); Individuals",
+            "sources": [
+              {
+                "documentId": "listing-362034",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Private institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Public and State controlled institutions of higher education; Small businesses; State governments; Native American tribal governments (Federally recognized); County governments; For profit organizations other than small businesses; City or township governments; Native American tribal organizations (other than Federally recognized tribal governments); Individuals"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": 1500000,
+          "maximumAmountCents": 7500000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-362034",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $75,000 ... Award Floor: $15,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2028-05-01",
+            "sources": [
+              {
+                "documentId": "listing-362034",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: May 1, 2028"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": false,
+          "description": "Cost Sharing or Matching Requirement: No",
+          "sources": [
+            {
+              "documentId": "listing-362034",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: No"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.696Z"
+      }
+    },
+    {
+      "id": "listing-363856",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-363856",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "First awarded in fiscal year (FY) 2001, Recovery Land Acquisition grants promote State and Federal cooperation in listed species conservation by leveraging funds to acquire specific parcels of land, through fee simple or conservation easement, in support of U.S.",
+          "sources": [
+            {
+              "documentId": "listing-363856",
+              "pageNumber": 2,
+              "excerpt": "First awarded in fiscal year (FY) 2001, Recovery Land Acquisition grants promote State and Federal cooperation in listed species conservation by leveraging funds to acquire specific parcels of land, through fee simple or conservation easement, in support of U.S."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "State governments",
+            "sources": [
+              {
+                "documentId": "listing-363856",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: State governments"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": 1000000,
+          "maximumAmountCents": 1416200000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-363856",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $14,162,000 ... Award Floor: $10,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-11-20",
+            "sources": [
+              {
+                "documentId": "listing-363856",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Nov 20, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-363856",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.696Z"
+      }
+    },
+    {
+      "id": "listing-363151",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 4,
+      "supportedFacts": 4,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-363151",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>FMA Swift Current aims to better align the delivery of FMA flood mitigation funding to the disaster survivor experience.",
+          "sources": [
+            {
+              "documentId": "listing-363151",
+              "pageNumber": 2,
+              "excerpt": "<p>FMA Swift Current aims to better align the delivery of FMA flood mitigation funding to the disaster survivor experience."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Native American tribal governments (Federally recognized); Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments",
+            "sources": [
+              {
+                "documentId": "listing-363151",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Native American tribal governments (Federally recognized); Others (see text field entitled \"Additional Information on Eligibility\" for clarification); State governments"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": false,
+          "minimumAmountCents": null,
+          "maximumAmountCents": null,
+          "currency": "USD",
+          "sources": []
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2028-01-31",
+            "sources": [
+              {
+                "documentId": "listing-363151",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Jan 31, 2028"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-363151",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "fundingRange",
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.697Z"
+      }
+    },
+    {
+      "id": "listing-355417",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-355417",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>The National Institute for Occupational Safety and Health (NIOSH), Centers for Disease Control and Prevention (CDC), invites grant applications for Education and Research Centers (ERCs) that are focused on occupational safety and health training.",
+          "sources": [
+            {
+              "documentId": "listing-355417",
+              "pageNumber": 2,
+              "excerpt": "<p>The National Institute for Occupational Safety and Health (NIOSH), Centers for Disease Control and Prevention (CDC), invites grant applications for Education and Research Centers (ERCs) that are focused on occupational safety and health training."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Public and State controlled institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Independent school districts; Unrestricted (i.e., open to any type of entity above), subject to any clarification in text field entitled \"Additional Information on Eligibility\"; For profit organizations other than small businesses; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); State governments; City or township governments; Public housing authorities/Indian housing authorities; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; County governments; Small businesses; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Private institutions of higher education",
+            "sources": [
+              {
+                "documentId": "listing-355417",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Public and State controlled institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification); Special district governments; Independent school districts; Unrestricted (i.e., open to any type of entity above), subject to any clarification in text field entitled \"Additional Information on Eligibility\"; For profit organizations other than small businesses; Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); State governments; City or township governments; Public housing authorities/Indian housing authorities; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; County governments; Small businesses; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Private institutions of higher education"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": 450000000,
+          "maximumAmountCents": 900000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-355417",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $9,000,000 ... Award Floor: $4,500,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2028-10-26",
+            "sources": [
+              {
+                "documentId": "listing-355417",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Oct 26, 2028"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": false,
+          "description": "Cost Sharing or Matching Requirement: No",
+          "sources": [
+            {
+              "documentId": "listing-355417",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: No"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.698Z"
+      }
+    },
+    {
+      "id": "listing-363815",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-363815",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "Modification 000002:",
+          "sources": [
+            {
+              "documentId": "listing-363815",
+              "pageNumber": 2,
+              "excerpt": "Modification 000002:"
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); For profit organizations other than small businesses; State governments; Individuals; County governments; Public and State controlled institutions of higher education; Private institutions of higher education; Independent school districts; City or township governments; Small businesses; Public housing authorities/Indian housing authorities; Special district governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)",
+            "sources": [
+              {
+                "documentId": "listing-363815",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Native American tribal governments (Federally recognized); Native American tribal organizations (other than Federally recognized tribal governments); For profit organizations other than small businesses; State governments; Individuals; County governments; Public and State controlled institutions of higher education; Private institutions of higher education; Independent school districts; City or township governments; Small businesses; Public housing authorities/Indian housing authorities; Special district governments; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; Others (see text field entitled \"Additional Information on Eligibility\" for clarification)"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": 200000000,
+          "maximumAmountCents": 2000000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-363815",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $20,000,000 ... Award Floor: $2,000,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-12-01",
+            "sources": [
+              {
+                "documentId": "listing-363815",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Dec 1, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-363815",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.699Z"
+      }
+    },
+    {
+      "id": "listing-364026",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 5,
+      "supportedFacts": 5,
+      "problems": [],
+      "grades": [
+        {
+          "field": "purpose",
+          "outcome": "correct"
+        },
+        {
+          "field": "eligibility",
+          "outcome": "correct"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correct"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correct"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "listing-364026",
+        "runId": 0,
+        "purpose": {
+          "found": true,
+          "value": "<p>Silicon Carbide Cladding Lead Test Rod Development-Phase 1Research, development, and fabrication of Silicon Carbide cladding specimens for research reactor insertion, irradiation, and post-irradiation examinations by 2030.",
+          "sources": [
+            {
+              "documentId": "listing-364026",
+              "pageNumber": 2,
+              "excerpt": "<p>Silicon Carbide Cladding Lead Test Rod Development-Phase 1Research, development, and fabrication of Silicon Carbide cladding specimens for research reactor insertion, irradiation, and post-irradiation examinations by 2030."
+            }
+          ]
+        },
+        "eligibility": [
+          {
+            "found": true,
+            "value": "Special district governments; County governments; Native American tribal governments (Federally recognized); Public and State controlled institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal organizations (other than Federally recognized tribal governments); City or township governments; Private institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; For profit organizations other than small businesses; Small businesses; State governments",
+            "sources": [
+              {
+                "documentId": "listing-364026",
+                "pageNumber": 1,
+                "excerpt": "Eligible Applicants: Special district governments; County governments; Native American tribal governments (Federally recognized); Public and State controlled institutions of higher education; Nonprofits that do not have a 501(c)(3) status with the IRS, other than institutions of higher education; Native American tribal organizations (other than Federally recognized tribal governments); City or township governments; Private institutions of higher education; Nonprofits having a 501(c)(3) status with the IRS, other than institutions of higher education; For profit organizations other than small businesses; Small businesses; State governments"
+              }
+            ]
+          }
+        ],
+        "fundingRange": {
+          "found": true,
+          "minimumAmountCents": null,
+          "maximumAmountCents": 6250000000,
+          "currency": "USD",
+          "sources": [
+            {
+              "documentId": "listing-364026",
+              "pageNumber": 1,
+              "excerpt": "Award Ceiling: $62,500,000"
+            }
+          ]
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application close",
+            "date": "2026-12-07",
+            "sources": [
+              {
+                "documentId": "listing-364026",
+                "pageNumber": 1,
+                "excerpt": "Close Date for Applications: Dec 7, 2026"
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": true,
+          "required": true,
+          "description": "Cost Sharing or Matching Requirement: Yes",
+          "sources": [
+            {
+              "documentId": "listing-364026",
+              "pageNumber": 1,
+              "excerpt": "Cost Sharing or Matching Requirement: Yes"
+            }
+          ]
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.700Z"
+      }
+    },
+    {
+      "id": "hud-pro-housing-sample",
+      "chunks": 1,
+      "unparsed": 0,
+      "aiError": null,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "facts": 1,
+      "supportedFacts": 1,
+      "problems": [],
+      "grades": [
+        {
+          "field": "eligibility",
+          "outcome": "correctlyEmpty"
+        },
+        {
+          "field": "fundingRange",
+          "outcome": "correctlyEmpty"
+        },
+        {
+          "field": "costShare",
+          "outcome": "correctlyEmpty"
+        },
+        {
+          "field": "keyDates",
+          "outcome": "correct"
+        }
+      ],
+      "brief": {
+        "documentId": "hud-pro-housing-sample",
+        "runId": 0,
+        "purpose": {
+          "found": false,
+          "value": null,
+          "sources": []
+        },
+        "eligibility": [],
+        "fundingRange": {
+          "found": false,
+          "minimumAmountCents": null,
+          "maximumAmountCents": null,
+          "currency": "USD",
+          "sources": []
+        },
+        "keyDates": [
+          {
+            "found": true,
+            "label": "application due",
+            "date": "2026-08-03",
+            "sources": [
+              {
+                "documentId": "hud-pro-housing-sample",
+                "pageNumber": 1,
+                "excerpt": "Applications are due by 11:59:59 PM Eastern Time on 08/03/2026."
+              }
+            ]
+          }
+        ],
+        "costShare": {
+          "found": false,
+          "required": null,
+          "description": "Not found in the processed notice.",
+          "sources": []
+        },
+        "keyRequirements": [],
+        "notFoundFields": [
+          "purpose",
+          "eligibility",
+          "fundingRange",
+          "costShare",
+          "keyRequirements"
+        ],
+        "verificationStatus": "unverified",
+        "model": null,
+        "promptVersion": "grant-brief-v1",
+        "generatedAt": "2026-11-22T02:03:54.701Z"
+      }
+    }
+  ]
+}
