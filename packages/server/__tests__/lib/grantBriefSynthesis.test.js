@@ -247,4 +247,66 @@ describe('synthesizeGrantBrief', () => {
         });
         expect(brief.notFoundFields).to.have.length(6);
     });
+
+    it('returns a fully not-found brief, not an error, when every chunk comes back malformed', async () => {
+        const chunks = [chunk(0, 1, 2), chunk(1, 3, 4), chunk(2, 5, 6)];
+        const generateText = fakeAi(['not json', '<html>also not json</html>', '']);
+
+        const brief = await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText,
+        });
+
+        expect(brief.notFoundFields).to.have.length(6);
+        expect(brief.eligibility).to.deep.equal([]);
+        expect(brief.keyDates).to.deep.equal([]);
+    });
+
+    it('skips a chunk whose AI call throws instead of failing the whole document', async () => {
+        const chunks = [chunk(0, 1, 2), chunk(1, 3, 4)];
+        let callIndex = 0;
+        const generateText = async () => {
+            callIndex += 1;
+            if (callIndex === 1) throw new Error('simulated timeout');
+            return {
+                text: JSON.stringify({
+                    purpose: {
+                        found: true, value: 'Found despite an earlier failure', pageNumber: 3, excerpt: 'quote',
+                    },
+                }),
+            };
+        };
+
+        const brief = await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText,
+        });
+
+        expect(brief.purpose.found).to.equal(true);
+        expect(brief.purpose.value).to.equal('Found despite an earlier failure');
+    });
+
+    it('collects facts scattered across a long document of many chunks', async () => {
+        const chunkCount = 25;
+        const chunks = Array.from({ length: chunkCount }, (_, i) => chunk(i, i + 1, i + 1));
+        // Only chunks 0, 12, and 24 (first, middle, last) report a fact; every other chunk finds
+        // nothing, the common case for a long document where obligations are sparse.
+        const responses = Array.from({ length: chunkCount }, (_, i) => {
+            if (i === 0) {
+                return JSON.stringify({ eligibility: [{ value: 'First-chunk rule', pageNumber: 1, excerpt: 'e1' }] });
+            }
+            if (i === 12) {
+                return JSON.stringify({ eligibility: [{ value: 'Middle-chunk rule', pageNumber: 13, excerpt: 'e2' }] });
+            }
+            if (i === 24) {
+                return JSON.stringify({ eligibility: [{ value: 'Last-chunk rule', pageNumber: 25, excerpt: 'e3' }] });
+            }
+            return JSON.stringify({});
+        });
+        const generateText = fakeAi(responses);
+
+        const brief = await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText,
+        });
+
+        expect(brief.eligibility.map((e) => e.value)).to.deep.equal(['First-chunk rule', 'Middle-chunk rule', 'Last-chunk rule']);
+    });
 });
