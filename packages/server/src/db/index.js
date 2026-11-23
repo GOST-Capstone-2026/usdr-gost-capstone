@@ -1925,8 +1925,13 @@ function deadlineChecklistItemsQuery(agencyId) {
     return knex(TABLES.checklist_items)
         .join(TABLES.grant_documents, `${TABLES.grant_documents}.id`, `${TABLES.checklist_items}.document_id`)
         .where(`${TABLES.grant_documents}.agency_id`, agencyId)
+        .leftJoin(TABLES.users, `${TABLES.users}.id`, `${TABLES.checklist_items}.verified_by`)
         .whereNot(`${TABLES.checklist_items}.verification_status`, 'rejected')
-        .select(`${TABLES.checklist_items}.*`, `${TABLES.grant_documents}.grant_id`);
+        .select(
+            `${TABLES.checklist_items}.*`,
+            `${TABLES.grant_documents}.grant_id`,
+            knex.raw(`coalesce(${TABLES.users}.name, ${TABLES.users}.email) as verified_by_name`),
+        );
 }
 
 async function getDeadlineChecklistItem({ id, agencyId }) {
@@ -2001,7 +2006,9 @@ async function updateDeadlineChecklistItem({
 
     if (completionStatus !== undefined) {
         updates.completion_status = completionStatus;
-        updates.completed_at = completionStatus === 'completed' ? new Date() : null;
+        updates.completed_at = completionStatus === 'completed'
+            ? knex.raw('CASE WHEN completion_status = ? THEN completed_at ELSE now() END', ['completed'])
+            : null;
     }
 
     const [updated] = await knex(TABLES.checklist_items)
