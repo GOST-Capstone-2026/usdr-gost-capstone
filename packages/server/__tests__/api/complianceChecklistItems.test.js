@@ -568,3 +568,105 @@ describe('checklist export API', () => {
         expect(response.status).to.equal(404);
     });
 });
+
+// AN-17 follow-up (Connor's report): a retry after a partially-failed analysis run must be able
+// to add the obligations it missed the first time, without duplicating what already saved
+// successfully or touching anything a person has since edited or verified.
+describe('addMissingChecklistItems (AN-17 follow-up retry behavior)', () => {
+    const agencyId = 0;
+    let server;
+    let cookie;
+    let documentId;
+
+    before(async function beforeHook() {
+        this.timeout(15000);
+        cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
+        server = await makeTestServer();
+
+        const uploadResponse = await server.post(`/api/organizations/${agencyId}/compliance/documents`)
+            .set('Cookie', cookie)
+            .field('grantId', '335255')
+            .attach('file', FIXTURE_PDF_PATH);
+        documentId = uploadResponse.body.document.id;
+    });
+
+    after(async () => {
+        if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+            await knex('grant_documents').where({ id: documentId }).del();
+        }
+        server.stop();
+    });
+
+    it('adds only the items a retry found that an earlier, incomplete run missed', async () => {
+        const [reporting] = await knex('checklist_items').insert({
+            document_id: documentId,
+            category: 'reporting',
+            description: 'Submit quarterly performance reports within 30 days after each quarter.',
+            found: true,
+            sources: JSON.stringify([{ documentId, pageNumber: 1, excerpt: 'Quarterly reports are due...' }]),
+            verification_status: 'verified',
+        }).returning('*');
+
+        const saved = await db.addMissingChecklistItems({
+            documentId,
+            items: [
+                buildChecklistItem({
+                    // Same category and cited page as the existing item: treated as the same
+                    // obligation the first run already found, not added again.
+                    category: 'reporting',
+                    description: 'Submit quarterly performance reports within 30 days after each quarter.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 1, excerpt: 'Quarterly reports must be submitted...' }],
+                }),
+                buildChecklistItem({
+                    // A different category and page: the obligation the first, incomplete run
+                    // never reached.
+                    category: 'recordRetention',
+                    description: 'Retain records for three years after closeout.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 5, excerpt: 'Records must be retained for three years' }],
+                }),
+            ],
+        });
+
+        expect(saved).to.have.length(1);
+        expect(saved[0].category).to.equal('recordRetention');
+
+        const allItems = await db.getChecklistItemsForDocument({ documentId, agencyId });
+        expect(allItems).to.have.length(2);
+
+        const unchangedReporting = allItems.find((item) => item.id === reporting.id);
+        expect(unchangedReporting.version).to.equal(reporting.version);
+        expect(unchangedReporting.verification_status).to.equal('verified');
+        expect(unchangedReporting.description).to.equal(reporting.description);
+    });
+
+    it('adds nothing and returns an empty array when every candidate duplicates an item already on file', async () => {
+        const saved = await db.addMissingChecklistItems({
+            documentId,
+            items: [
+                buildChecklistItem({
+                    category: 'recordRetention',
+                    description: 'A reworded version of the same retention obligation.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 5, excerpt: 'different excerpt, same page' }],
+                }),
+            ],
+        });
+
+        expect(saved).to.deep.equal([]);
+        const allItems = await db.getChecklistItemsForDocument({ documentId, agencyId });
+        expect(allItems).to.have.length(2);
+    });
+
+    it('returns an empty array for a document that does not exist, instead of throwing', async () => {
+        const saved = await db.addMissingChecklistItems({
+            documentId: 999999999,
+            items: [buildChecklistItem({
+                category: 'deadline', description: 'Should never be saved.', found: true, sources: [{ documentId: 999999999, pageNumber: 1, excerpt: 'x' }],
+            })],
+        });
+        expect(saved).to.deep.equal([]);
+    });
+});

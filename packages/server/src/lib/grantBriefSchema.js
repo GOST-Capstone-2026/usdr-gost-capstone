@@ -70,8 +70,22 @@ function computeNotFoundFields(brief) {
     });
 }
 
+/**
+ * True when a brief found nothing at all, i.e. every field is still in notFoundFields. Used to
+ * tell a document with a genuinely empty notice apart from a brief a retry should not use to
+ * overwrite an earlier, usable one (AN-17 follow-up: a full provider outage returns a brief like
+ * this instead of throwing).
+ *
+ * @param {object} brief a brief shaped like createEmptyBrief()'s return value
+ * @returns {boolean}
+ */
+function isBriefFullyEmpty(brief) {
+    return Array.isArray(brief.notFoundFields) && brief.notFoundFields.length === BRIEF_FIELD_NAMES.length;
+}
+
 module.exports = {
     BRIEF_FIELD_NAMES,
     createEmptyBrief,
     computeNotFoundFields,
+    isBriefFullyEmpty,
 };

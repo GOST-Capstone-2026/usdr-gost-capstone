@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const {
-    BRIEF_FIELD_NAMES, createEmptyBrief, computeNotFoundFields,
+    BRIEF_FIELD_NAMES, createEmptyBrief, computeNotFoundFields, isBriefFullyEmpty,
 } = require('../../src/lib/grantBriefSchema');
 
 describe('createEmptyBrief', () => {
@@ -67,5 +67,21 @@ describe('computeNotFoundFields', () => {
         };
         expect(computeNotFoundFields(brief)).to.include('eligibility');
         expect(computeNotFoundFields(brief)).to.include('fundingRange');
+    });
+});
+
+describe('isBriefFullyEmpty', () => {
+    it('is true for a brand new brief, before anything has been found', () => {
+        const brief = createEmptyBrief({ documentId: 27, runId: 81 });
+        expect(isBriefFullyEmpty(brief)).to.equal(true);
+    });
+
+    it('is false once even one field has been found', () => {
+        const brief = createEmptyBrief({ documentId: 27, runId: 81 });
+        brief.notFoundFields = computeNotFoundFields({
+            ...brief,
+            purpose: { found: true, value: 'Supports eligible local stormwater projects.', sources: [] },
+        });
+        expect(isBriefFullyEmpty(brief)).to.equal(false);
     });
 });

@@ -127,14 +127,18 @@ function mergeKeyDates(target, candidateList, documentId) {
 }
 
 /**
- * @param {{documentId: number, runId: number, chunks: Array, generateText: Function}} args
+ * @param {{documentId: number, runId: number, chunks: Array, generateText: Function, runStats?: object}} args
  *   generateText matches Allison's AI adapter's shape: async ({ system, prompt }) => ({ text })
+ *   runStats, if passed, is filled in with { chunkCount, failedChunkCount } so the caller can
+ *   tell a brief that found nothing because the notice says nothing apart from one that found
+ *   nothing because every chunk failed (AN-17 follow-up).
  * @returns {Promise<object>} a brief shaped like grantBriefSchema.js's createEmptyBrief()
  */
 async function synthesizeGrantBrief({
-    documentId, runId, chunks, generateText,
+    documentId, runId, chunks, generateText, runStats = {},
 }) {
     let brief = createEmptyBrief({ documentId, runId });
+    let failedChunkCount = 0;
 
     // eslint-disable-next-line no-restricted-syntax
     for (const chunk of chunks) {
@@ -147,6 +151,7 @@ async function synthesizeGrantBrief({
             // call to fail transiently (timeout, rate limit). Losing the whole brief over one bad
             // call would be worse than just missing what that chunk alone could have found.
             log.warn({ documentId, chunkIndex: chunk.chunkIndex, err }, 'AI call failed for chunk, skipping it');
+            failedChunkCount += 1;
             // eslint-disable-next-line no-continue
             continue;
         }
@@ -154,6 +159,7 @@ async function synthesizeGrantBrief({
 
         if (!candidate) {
             log.warn({ documentId, chunkIndex: chunk.chunkIndex }, 'could not parse AI response for chunk, skipping it');
+            failedChunkCount += 1;
             // eslint-disable-next-line no-continue
             continue;
         }
@@ -172,6 +178,9 @@ async function synthesizeGrantBrief({
     brief.keyRequirements = removeUnqualifiedCertificationDuplicates(brief.keyRequirements);
     brief.notFoundFields = computeNotFoundFields(brief);
     brief.generatedAt = new Date().toISOString();
+
+    runStats.chunkCount = chunks.length;
+    runStats.failedChunkCount = failedChunkCount;
     return brief;
 }
 

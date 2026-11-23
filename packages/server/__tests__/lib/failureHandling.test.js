@@ -313,10 +313,11 @@ describe('A-17 failure handling', () => {
         // checklistError defaults to briefError, since both steps use the same ai provider
         function setup({
             s3Error, pdfError, quality = 'good', briefError, checklistError = briefError,
+            existingChecklistItems = [], documentAnalysisIncomplete = false,
         } = {}) {
             const mod = rewire('../../src/lib/analysisRuns');
             const calls = {
-                started: 0, completed: [], failed: [], briefs: [], checklists: [], aiCalls: 0, errors: [],
+                started: 0, completed: [], failed: [], briefs: [], checklists: [], addedMissing: [], aiCalls: 0, errors: [], incomplete: [],
             };
             mod.__set__('db', {
                 knex: {},
@@ -324,9 +325,12 @@ describe('A-17 failure handling', () => {
                 completeAnalysisRun: async (a) => { calls.completed.push(a); },
                 failAnalysisRun: async (a) => { calls.failed.push(a); },
                 saveDocumentAnalysisResults: async () => {},
+                setDocumentAnalysisIncomplete: async (a) => { calls.incomplete.push(a); },
                 createGrantBrief: async (a) => { calls.briefs.push(a); },
-                getChecklistItemsForDocument: async () => [],
+                getLatestGrantBrief: async () => null,
+                getChecklistItemsForDocument: async () => existingChecklistItems,
                 createInitialChecklistItems: async (a) => { calls.checklists.push(a); },
+                addMissingChecklistItems: async (a) => { calls.addedMissing.push(a); },
             });
             mod.__set__('generateChecklistItems', async () => {
                 calls.aiCalls += 1;
@@ -354,7 +358,7 @@ describe('A-17 failure handling', () => {
                 info: quiet, warn: quiet, error: (o) => calls.errors.push(o), debug: quiet,
             });
             const document = {
-                id: 7, agency_id: 1, grant_id: '364009', storage_bucket: 'gost-docs', storage_key: 'org-1/doc-7.pdf',
+                id: 7, agency_id: 1, grant_id: '364009', storage_bucket: 'gost-docs', storage_key: 'org-1/doc-7.pdf', analysis_incomplete: documentAnalysisIncomplete,
             };
             return { run: () => mod.runAnalysis({ id: 3 }, document, { userId: 1, tenantId: 1 }), calls };
         }
@@ -396,6 +400,10 @@ describe('A-17 failure handling', () => {
             expect(calls.briefs).to.have.length(0);
             expect(calls.checklists).to.have.length(0);
             expect(calls.errors.some((e) => e.err && e.err.code === 'budget')).to.equal(true);
+            // AN-17 follow-up: a run where both steps errored outright is incomplete, the same
+            // signal a chunk-level failure inside synthesizeGrantBrief/generateChecklistItems
+            // would report through runStats.
+            expect(calls.incomplete.map((c) => c.incomplete)).to.deep.equal([true]);
         });
 
         it('still completes the run when the ai provider is misconfigured (no key)', async () => {
@@ -418,6 +426,31 @@ describe('A-17 failure handling', () => {
             const { run, calls } = setup({ quality: 'unreadable' });
             await run();
             expect(calls.checklists).to.have.length(0);
+        });
+
+        it('marks a fully successful run complete, not incomplete', async () => {
+            const { run, calls } = setup();
+            await run();
+            expect(calls.incomplete.map((c) => c.incomplete)).to.deep.equal([false]);
+        });
+
+        // AN-17 follow-up (Connor's report): once a document has checklist items, a plain rerun
+        // must not call the ai again for nothing, but a rerun after a run that was marked
+        // incomplete must retry, so a missed obligation actually gets a chance to be added.
+        it('does not call the ai for the checklist again once items exist and the last run was complete', async () => {
+            const { run, calls } = setup({ existingChecklistItems: [{ id: 1 }], documentAnalysisIncomplete: false });
+            await run();
+            expect(calls.aiCalls).to.equal(1); // the brief step only
+            expect(calls.checklists).to.have.length(0);
+            expect(calls.addedMissing).to.have.length(0);
+        });
+
+        it('retries the checklist step, adding through addMissingChecklistItems, when the last run was incomplete', async () => {
+            const { run, calls } = setup({ existingChecklistItems: [{ id: 1 }], documentAnalysisIncomplete: true });
+            await run();
+            expect(calls.aiCalls).to.equal(2); // brief, then checklist
+            expect(calls.checklists).to.have.length(0);
+            expect(calls.addedMissing).to.have.length(1);
         });
     });
 
