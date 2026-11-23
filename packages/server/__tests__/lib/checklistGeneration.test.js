@@ -263,6 +263,57 @@ describe('generateChecklistItems', () => {
         expect(items[0].category).to.equal('submission');
     });
 
+    it('reports every chunk as failed in runStats when none of them parse', async () => {
+        const chunks = [
+            chunk(0, [{ pageNumber: 1, text: 'page one' }]),
+            chunk(1, [{ pageNumber: 2, text: 'page two' }]),
+        ];
+        const generateText = fakeAi(['not json', '{ "category": "submission" }']);
+        const runStats = {};
+
+        await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 2, failedChunkCount: 2 });
+    });
+
+    it('counts only the chunks that actually failed in runStats, not the ones that succeeded', async () => {
+        const chunks = [
+            chunk(0, [{ pageNumber: 1, text: 'page one' }]),
+            chunk(1, [{ pageNumber: 2, text: 'Submit the attached form.' }]),
+        ];
+        let callIndex = 0;
+        const generateText = async () => {
+            callIndex += 1;
+            if (callIndex === 1) throw new Error('simulated timeout');
+            return {
+                text: JSON.stringify([{
+                    category: 'submission', description: 'Submit the attached form.', dueDate: null, pageNumber: 2, excerpt: 'Submit the attached form.',
+                }]),
+            };
+        };
+        const runStats = {};
+
+        await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 2, failedChunkCount: 1 });
+    });
+
+    it('reports a failedChunkCount of zero when every chunk parses, even if none name an obligation', async () => {
+        const chunks = [chunk(0, [{ pageNumber: 1, text: 'This page is background information only.' }])];
+        const generateText = fakeAi([JSON.stringify([])]);
+        const runStats = {};
+
+        await generateChecklistItems({
+            documentId: 27, grantId: '335255', chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 1, failedChunkCount: 0 });
+    });
+
     it('collects obligations scattered across a long document of many chunks', async () => {
         const chunkCount = 25;
         const chunks = Array.from({ length: chunkCount }, (_, i) => chunk(i, [{ pageNumber: i + 1, text: `page ${i + 1}` }]));

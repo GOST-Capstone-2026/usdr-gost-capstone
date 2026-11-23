@@ -45,6 +45,7 @@ function serializeDocument(row) {
         pageCount: row.page_count,
         sourceUrl: row.source_url,
         extractionQuality: row.extraction_quality,
+        analysisIncomplete: row.analysis_incomplete,
         uploadedBy: row.uploaded_by,
         uploadedAt: row.uploaded_at,
     };

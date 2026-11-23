@@ -454,11 +454,14 @@ The server verifies the MIME type and PDF signature, enforces the configured siz
     "pageCount": null,
     "sourceUrl": "https://www.grants.gov/example",
     "extractionQuality": "unknown",
+    "analysisIncomplete": false,
     "uploadedBy": 7,
     "uploadedAt": "2026-09-09T18:25:00.000Z"
   }
 }
 ```
+
+`analysisIncomplete` is `false` until the first analysis run finishes, then reports whether that run's most recent attempt got a usable AI response for every chunk while building the brief and checklist. `true` means a provider failure (timeout, rate limit, outage) skipped at least one chunk: the brief and checklist reflect whatever did succeed, not a full read of the document, and starting another analysis run will try again to fill in whatever was missed, without duplicating or overwriting anything a person has already edited or verified.
 
 Storage bucket names, object keys, credentials, and provider-specific identifiers are not returned to the browser.
 

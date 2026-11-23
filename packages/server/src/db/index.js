@@ -1136,6 +1136,15 @@ async function saveDocumentAnalysisResults({
     });
 }
 
+// Records whether the most recent analysis run got a usable response for every chunk (AN-17
+// follow-up), so a later retry knows whether there's anything left to fill in, and the document
+// contract can tell a client its result may be partial.
+async function setDocumentAnalysisIncomplete({ documentId, incomplete }) {
+    return knex(TABLES.grant_documents)
+        .where({ id: documentId })
+        .update({ analysis_incomplete: incomplete });
+}
+
 async function createAnalysisRun({ documentId }) {
     const [row] = await knex(TABLES.analysis_runs)
         .insert({ document_id: documentId, status: 'queued' })
@@ -1250,6 +1259,35 @@ async function createInitialChecklistItems({ documentId, items }) {
             return [];
         }
         return createChecklistItems({ documentId, items }, trx);
+    });
+}
+
+// A retry after a partially-failed analysis run (AN-17 follow-up): adds only the obligations a
+// new generation pass found that an earlier, incomplete run missed. An item is treated as a
+// duplicate of one already on file, and left out, when they share a category and at least one
+// cited page: that's coarser than comparing full citation text, deliberately, since asking the
+// AI again rarely phrases the same obligation identically. This never updates or removes an
+// existing row, so an item a person has already edited, verified, or rejected is never touched.
+async function addMissingChecklistItems({ documentId, items }) {
+    if (items.length === 0) {
+        return [];
+    }
+    return knex.transaction(async (trx) => {
+        const document = await trx(TABLES.grant_documents)
+            .where({ id: documentId })
+            .forUpdate()
+            .first('id');
+        if (!document) {
+            return [];
+        }
+        const existingItems = await trx(TABLES.checklist_items)
+            .where({ document_id: documentId });
+        const existingKeys = new Set(existingItems.flatMap((item) => (item.sources || [])
+            .map((source) => `${item.category}:${source.pageNumber}`)));
+        const newItems = items.filter((item) => !item.sources.some(
+            (source) => existingKeys.has(`${item.category}:${source.pageNumber}`),
+        ));
+        return createChecklistItems({ documentId, items: newItems }, trx);
     });
 }
 
@@ -2027,6 +2065,7 @@ module.exports = {
     createGrantDocument,
     getGrantDocument,
     saveDocumentAnalysisResults,
+    setDocumentAnalysisIncomplete,
     createAnalysisRun,
     getAnalysisRun,
     startAnalysisRun,
@@ -2036,6 +2075,7 @@ module.exports = {
     getLatestGrantBrief,
     createChecklistItems,
     createInitialChecklistItems,
+    addMissingChecklistItems,
     getChecklistItemsForDocument,
     getChecklistItem,
     getDeadlineChecklistItem,

@@ -284,6 +284,47 @@ describe('synthesizeGrantBrief', () => {
         expect(brief.purpose.value).to.equal('Found despite an earlier failure');
     });
 
+    it('reports every chunk as failed in runStats when none of them parse', async () => {
+        const chunks = [chunk(0, 1, 2), chunk(1, 3, 4)];
+        const generateText = fakeAi(['not json', '<html>also not json</html>']);
+        const runStats = {};
+
+        await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 2, failedChunkCount: 2 });
+    });
+
+    it('counts only the chunks that actually failed in runStats, not the ones that succeeded', async () => {
+        const chunks = [chunk(0, 1, 2), chunk(1, 3, 4), chunk(2, 5, 6)];
+        let callIndex = 0;
+        const generateText = async () => {
+            callIndex += 1;
+            if (callIndex === 2) throw new Error('simulated timeout');
+            return { text: JSON.stringify({}) };
+        };
+        const runStats = {};
+
+        await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 3, failedChunkCount: 1 });
+    });
+
+    it('reports a failedChunkCount of zero when every chunk parses, even if none find anything', async () => {
+        const chunks = [chunk(0, 1, 2)];
+        const generateText = fakeAi([JSON.stringify({})]);
+        const runStats = {};
+
+        await synthesizeGrantBrief({
+            documentId: 27, runId: 5, chunks, generateText, runStats,
+        });
+
+        expect(runStats).to.deep.equal({ chunkCount: 1, failedChunkCount: 0 });
+    });
+
     it('collects facts scattered across a long document of many chunks', async () => {
         const chunkCount = 25;
         const chunks = Array.from({ length: chunkCount }, (_, i) => chunk(i, i + 1, i + 1));

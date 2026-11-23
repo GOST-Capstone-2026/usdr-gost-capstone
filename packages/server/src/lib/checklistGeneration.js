@@ -55,16 +55,20 @@ function parseChunkResponse(text) {
 }
 
 /**
- * @param {{documentId: number, grantId: string|number, chunks: Array, lowTextPages?: number[], generateText: Function}} args
+ * @param {{documentId: number, grantId: string|number, chunks: Array, lowTextPages?: number[], generateText: Function, runStats?: object}} args
  *   chunks come from documentChunking.js's chunkPages(). lowTextPages are page numbers
  *   extractionQuality.js (AN-06) flagged as low-text, used to set possiblyAffectedByQualityIssue.
  *   generateText matches Allison's AI adapter's shape: async ({ system, prompt }) => ({ text })
+ *   runStats, if passed, is filled in with { chunkCount, failedChunkCount } so the caller can
+ *   tell "no obligations in this document" apart from "some chunks never actually ran"
+ *   (AN-17 follow-up).
  * @returns {Promise<Array>} items shaped like checklistItemSchema.js's createChecklistItem()
  */
 async function generateChecklistItems({
-    documentId, grantId, chunks, lowTextPages = [], generateText,
+    documentId, grantId, chunks, lowTextPages = [], generateText, runStats = {},
 }) {
     const items = [];
+    let failedChunkCount = 0;
 
     // eslint-disable-next-line no-restricted-syntax
     for (const chunk of chunks) {
@@ -77,6 +81,7 @@ async function generateChecklistItems({
             // call to fail transiently (timeout, rate limit). Losing every obligation already
             // found over one bad call would be worse than just missing what that chunk could add.
             log.warn({ documentId, chunkIndex: chunk.chunkIndex, err }, 'AI call failed for chunk, skipping it');
+            failedChunkCount += 1;
             // eslint-disable-next-line no-continue
             continue;
         }
@@ -84,6 +89,7 @@ async function generateChecklistItems({
 
         if (!candidates) {
             log.warn({ documentId, chunkIndex: chunk.chunkIndex }, 'could not parse AI response for chunk, skipping it');
+            failedChunkCount += 1;
             // eslint-disable-next-line no-continue
             continue;
         }
@@ -116,6 +122,8 @@ async function generateChecklistItems({
         });
     }
 
+    runStats.chunkCount = chunks.length;
+    runStats.failedChunkCount = failedChunkCount;
     return items;
 }
 

@@ -74,6 +74,11 @@ describe('grant document analysis-runs API', () => {
         const documentResponse = await server.get(`${baseUrl}/documents/${documentId}`).set('Cookie', cookie);
         expect(documentResponse.body.document.pageCount).to.equal(2);
         expect(documentResponse.body.document.extractionQuality).to.equal('readable');
+        // The dev/test environment's mock AI provider never returns real JSON (see the comment
+        // below), so every chunk fails to parse on both the brief and the checklist step: this
+        // run is genuinely incomplete, the same signal AN-17's follow-up uses to let a later
+        // retry add what it missed instead of silently doing nothing.
+        expect(documentResponse.body.document.analysisIncomplete).to.equal(true);
 
         const pageRows = await knex('grant_document_pages').where({ document_id: documentId }).orderBy('page_number');
         expect(pageRows).to.have.length(2);

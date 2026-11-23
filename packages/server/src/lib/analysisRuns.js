@@ -14,6 +14,7 @@ const { assessExtractionQuality } = require('./extractionQuality');
 const { chunkPages } = require('./documentChunking');
 const { synthesizeGrantBrief } = require('./grantBriefSynthesis');
 const { generateChecklistItems } = require('./checklistGeneration');
+const { BRIEF_FIELD_NAMES, isBriefFullyEmpty } = require('./grantBriefSchema');
 const { generateTextAudited } = require('./ai-audit');
 const { log } = require('./logging');
 const db = require('../db');
@@ -69,10 +70,17 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
             extractionQuality: assessment.quality,
         });
 
+        // True once anything below hits a chunk that errored or came back unparseable, so a run
+        // that only partly succeeded is still visibly distinct from one that fully did (AN-17
+        // follow-up: Connor's report that a retry could neither fill in a missed obligation nor
+        // tell a person the result was incomplete in the first place).
+        let incomplete = false;
+
         // A document rated unreadable has essentially no real text for the AI to read, so there
         // is nothing to synthesize; the checklist can explain why using extractionQuality alone.
         if (assessment.quality !== 'unreadable') {
             try {
+                const briefStats = {};
                 const brief = await synthesizeGrantBrief({
                     documentId: document.id,
                     runId: analysisRun.id,
@@ -84,8 +92,27 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
                         args,
                         { knex: db.knex },
                     ),
+                    runStats: briefStats,
                 });
-                await db.createGrantBrief({ documentId: document.id, runId: analysisRun.id, brief });
+
+                // A brief with nothing found at all, right after a chunk actually failed, is most
+                // likely a full provider outage (every chunk unreadable to the AI), not a notice
+                // that genuinely says nothing. If a usable brief already exists, keep it instead
+                // of overwriting it with this empty one.
+                const existingBrief = isBriefFullyEmpty(brief) && briefStats.failedChunkCount > 0
+                    ? await db.getLatestGrantBrief({ documentId: document.id })
+                    : null;
+                const keepPreviousBrief = existingBrief
+                    && existingBrief.not_found_fields.length < BRIEF_FIELD_NAMES.length;
+
+                if (keepPreviousBrief) {
+                    log.warn({
+                        documentId: document.id, analysisRunId: analysisRun.id,
+                    }, 'brief synthesis found nothing on this run after a chunk failed; keeping the previously saved brief instead of overwriting it with an empty one');
+                } else {
+                    await db.createGrantBrief({ documentId: document.id, runId: analysisRun.id, brief });
+                }
+                incomplete = incomplete || briefStats.failedChunkCount > 0;
             } catch (briefErr) {
                 // Extraction and chunking already succeeded, so one failed brief attempt should
                 // not erase that work or fail the whole run. GET .../brief simply has nothing to
@@ -93,13 +120,20 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
                 log.error({
                     err: briefErr, documentId: document.id, analysisRunId: analysisRun.id,
                 }, 'grant brief synthesis failed');
+                incomplete = true;
             }
 
             try {
                 const existingItems = await db.getChecklistItemsForDocument({
                     documentId: document.id, agencyId: document.agency_id,
                 });
-                if (existingItems.length === 0) {
+
+                // Once items exist, only try again if the run that created them was itself
+                // incomplete: otherwise a fully-successful document would call the AI again on
+                // every rerun for nothing. A retry here only ever adds items a previous run
+                // missed; it never touches an item a person has since edited or verified.
+                if (existingItems.length === 0 || document.analysis_incomplete) {
+                    const checklistStats = {};
                     const items = await generateChecklistItems({
                         documentId: document.id,
                         grantId: document.grant_id,
@@ -112,8 +146,14 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
                             args,
                             { knex: db.knex },
                         ),
+                        runStats: checklistStats,
                     });
-                    await db.createInitialChecklistItems({ documentId: document.id, items });
+                    if (existingItems.length === 0) {
+                        await db.createInitialChecklistItems({ documentId: document.id, items });
+                    } else {
+                        await db.addMissingChecklistItems({ documentId: document.id, items });
+                    }
+                    incomplete = incomplete || checklistStats.failedChunkCount > 0;
                 }
             } catch (checklistErr) {
                 // Same reasoning as the grant-brief catch above: a failed generation attempt should
@@ -121,11 +161,14 @@ async function runAnalysis(analysisRun, document, requestedBy = {}) {
                 log.error({
                     err: checklistErr, documentId: document.id, analysisRunId: analysisRun.id,
                 }, 'checklist generation failed');
+                incomplete = true;
             }
         }
 
+        await db.setDocumentAnalysisIncomplete({ documentId: document.id, incomplete });
+
         log.info({
-            documentId: document.id, analysisRunId: analysisRun.id, chunkCount: chunks.length,
+            documentId: document.id, analysisRunId: analysisRun.id, chunkCount: chunks.length, incomplete,
         }, 'analysis run completed');
         await db.completeAnalysisRun({ runId: analysisRun.id, chunkCount: chunks.length });
     } catch (err) {
