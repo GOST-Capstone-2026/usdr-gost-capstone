@@ -582,6 +582,8 @@ The server sets `isUserEdited`, `verifiedBy`, `verifiedAt`, `updatedAt`, and the
 
 Deadlines are a read and update view over non-rejected `checklist_items`; there is no duplicate deadline table. Only verified, dated items form the published portfolio. Unverified or undated items are returned in a separate `reviewNeeded` group so they stay visible without counting as trusted deadlines. Rejected items are excluded from both groups.
 
+Every deadline route returns `404 FEATURE_DISABLED` unless `ENABLE_GRANT_COMPLIANCE`, `ENABLE_GRANT_DOCUMENT_ANALYSIS`, `ENABLE_COMPLIANCE_CHECKLISTS`, and `ENABLE_COMPLIANCE_DEADLINES` are all `true` on the server.
+
 ### Endpoints
 
 | Method | Route | Result |
@@ -633,6 +635,7 @@ Each array element is a full deadline response item, abbreviated above.
   "completionStatus": "inProgress",
   "verificationStatus": "verified",
   "verifiedBy": 7,
+  "verifiedByName": "Alex Allain",
   "verifiedAt": "2026-09-09T19:00:00.000Z",
   "source": {
     "pageNumber": 14,
@@ -640,6 +643,8 @@ Each array element is a full deadline response item, abbreviated above.
   }
 }
 ```
+
+`verifiedByName` is the reviewer's display name (their email when no name is set), or `null` when the item is not verified.
 
 The dashboard and calendar call the same endpoint so they cannot calculate conflicting statuses.
 
@@ -677,6 +682,7 @@ A single resource is returned directly under its resource name, per the standard
     "completedAt": "2026-12-30T19:00:00.000Z",
     "verificationStatus": "unverified",
     "verifiedBy": null,
+    "verifiedByName": null,
     "verifiedAt": null,
     "source": {
       "pageNumber": 14,

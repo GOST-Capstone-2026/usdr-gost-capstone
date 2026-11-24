@@ -1,6 +1,6 @@
 # A-17: External-service and malformed-output failure tests
 
-Allison Cerna, updated November 14, 2026
+Allison Cerna, updated November 21, 2026
 
 ## What this is
 
@@ -24,11 +24,11 @@ Result: **45 passing** (was 35 before the checklist and cloud storage changes we
 | Bad AI replies in the grant brief | plain text, cut-off JSON, a list, `null`, an empty reply, wrong field types, a huge reply | ✅ ignored, every field shows "not found" |
 | AI replies that *look* fine but aren't | a fact with no quote, a fake page number, a made-up quote, "mid-November" as a date, "80 million" as an amount, an amount off by 100x | ⚠️ the brief code saves them, but the A-16 checks catch every one |
 | Long documents | one part gets a junk reply | ✅ the good parts are kept |
-| | one part's AI call fails | ⚠️ the whole brief is lost (see "Still open") |
+| | one part's AI call fails | ✅ that part is skipped, the rest is kept (fixed in AN-17) |
 | Bad AI replies in the checklist (AN-14) | a made-up quote, a fake page number, no quote, a category outside the contract | ✅ the item is dropped |
 | | "mid-November" as a due date | ✅ saved with no date instead |
 | | one part gets a junk reply | ✅ the good parts are kept |
-| | one part's AI call fails | ⚠️ the whole checklist is lost (see "Still open") |
+| | one part's AI call fails | ✅ that part is skipped, the rest is kept (fixed in AN-17) |
 | File storage (S3) and PDF reading | missing file, storage down, not a real PDF | ✅ the run is marked failed, not stuck on "processing" |
 | AI step during an analysis run | budget used up, no API key set | ✅ the run still finishes, just without a brief or checklist |
 | | only the checklist step fails | ✅ the brief is still saved |
@@ -44,11 +44,11 @@ Connor's tests already cover the local ranking model (missing, tampered with, or
 
 - **Bad checklist items get dropped.** Anthony's checklist code (AN-14) checks every quote against the real page (his AN-13 check) and drops anything that doesn't match. The tests confirm it catches made-up quotes, fake pages, missing quotes, and bad dates.
 - **Users don't see raw errors on the page.** Connor's C-15 page shows "Analysis failed. Choose Start Analysis to retry…" instead of the internal error.
+- **One failed part no longer loses the whole result.** Anthony's AN-17 (PR #53) catches an AI error for each part of a long notice and skips just that part, for both the brief and the checklist. He updated my two tests for this to check the good parts are kept.
 
 **Still open (small)**
 
-- **Brief quotes aren't checked yet.** The brief doesn't run the same quote check the checklist does, so a made-up quote can still get saved there. The A-16 checks catch it afterward. Easy fix: reuse the AN-13 check in the brief code.
-- **One failed part loses the whole result.** If one part of a long notice fails (like an AI timeout), the brief or checklist from the parts that worked is lost too. Fix: catch the error for each part and keep the rest.
+- **Brief quotes aren't checked yet.** The brief doesn't run the same quote check the checklist does, so a made-up quote can still get saved there. The A-16 checks catch it afterward. Easy fix: reuse the AN-13 check in the brief code. Anthony lists this as a possible follow-up in his AN-18 doc too.
 - **The API still sends the raw error text** as `errorMessage`. The page hides it, but it's still in the API response. Low priority.
 
 **Not ours, low risk:** in the original GOST code, a Grants.gov feed message with no `detail` field crashes the importer. Real messages always have it, so this is just good to know.

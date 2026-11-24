@@ -18,7 +18,7 @@ This covers AN-09 through AN-17. The pipeline, in plain terms: a grant notice PD
 | AN-14 | Turns the AI's findings into individual checklist items, each still carrying its citation | `src/lib/checklistGeneration.js` |
 | AN-15 | The screen a grants manager uses: edit, annotate, change status, verify, or reject, with protection against two people editing the same item at once | `src/routes/compliance.js`, `packages/client/src/components/ChecklistItems.vue` |
 | AN-16 | One-click CSV export of the full checklist | `src/routes/compliance.js` (`checklist-export`) |
-| AN-17 | Tests for long documents and malformed AI output, plus a real fix (see "Fixed since Allison's A-17 doc" below) | `src/lib/documentChunking.js`, `src/lib/grantBriefSynthesis.js`, `src/lib/checklistGeneration.js` |
+| AN-17 | Tests for long documents and malformed AI output, plus a real fix (see "Fixed since first coded" below) | `src/lib/documentChunking.js`, `src/lib/grantBriefSynthesis.js`, `src/lib/checklistGeneration.js` |
 
 ## How to verify it
 
@@ -26,15 +26,15 @@ This covers AN-09 through AN-17. The pipeline, in plain terms: a grant notice PD
 docker exec gost-app sh -lc 'cd /app/packages/server && yarn test:lib'
 ```
 
-Result: **592 passing** (1 known exception, see below, not in this subsystem), covering schema, storage, citation validation, checklist/brief generation (including long documents and malformed AI output), and the edit/verify/export API.
+Result: **593 passing**, covering schema, storage, citation validation, checklist/brief generation (including long documents and malformed AI output), and the edit/verify/export API.
 
-## Fixed since Allison's A-17 doc
+## Fixed since first coded
 
-Her `g32-a17-failure-tests.md` (Nov 14) listed, as still open: *"One failed part loses the whole result. If one part of a long notice fails (like an AI timeout), the brief or checklist from the parts that worked is lost too."* AN-17 (merged Nov 21, pull request #53) fixes exactly this: a failed AI call on one chunk is now logged and skipped, the same way an unparseable response already was, instead of losing the whole document. Her doc's "still open" list should drop that line.
+When the brief and checklist were first coded, if one part of a long notice failed (like an AI timeout), the results from the parts that worked were lost too. AN-17 (merged Nov 21, pull request #53) fixes this: a failed AI call on one chunk is now logged and skipped, the same way an unparseable response already was, instead of losing the whole document.
 
-Her `failureHandling.test.js` had two tests written specifically to document the old behavior, predicted in her own doc to need an update once fixed. Updated both to assert the document now completes and keeps the good chunks instead of throwing.
+Two tests in `failureHandling.test.js` recorded the old behavior. Both are updated to check that the document now completes and keeps the good chunks instead of throwing.
 
-One side effect this fix surfaced: her `evaluateFaithfulness.js` counts an "AI error" by catching a thrown error from `synthesizeGrantBrief`. Since a per-chunk failure no longer throws, that count is now always 0 even on a real failure (`faithfulness-checks.test.js`'s "counts unreadable replies and ai errors instead of crashing" now fails, expected 1, got 0). Flagged to Allison; the fix is on her side (likely having the library return which chunks failed, so her evaluator can read that directly).
+One side effect: `evaluateFaithfulness.js` counts an "AI error" by catching a thrown error from `synthesizeGrantBrief`. Since a per-chunk failure no longer throws, that count is now always 0 even on a real failure (`faithfulness-checks.test.js`'s "counts unreadable replies and ai errors instead of crashing" failed, expected 1, got 0). Fixed: the evaluator now records the error when its own AI call fails, so the count is right again and the library didn't need to change.
 
 ## Real end-to-end evidence (not just automated tests)
 

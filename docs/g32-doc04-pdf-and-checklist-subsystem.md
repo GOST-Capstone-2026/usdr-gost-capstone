@@ -48,7 +48,7 @@ Individual test files for this subsystem, if you want to run just one:
 - `__tests__/api/complianceAnalysisRuns.test.js`, `complianceChecklistItems.test.js`, `complianceDeadlines.test.js`, `complianceGrantBrief.test.js`, `complianceProfile.test.js` (API layer for steps 7-10)
 - `packages/client/src/components/ChecklistItems.spec.js` (step 10, including the edit/verify/reload behavior)
 
-The one known failure in `yarn test:lib` is in Allison's `faithfulness-checks.test.js`, not this subsystem's own tests. It's a side effect of the AN-17 fix (a per-chunk AI failure is now skipped instead of thrown, so her evaluator's error count reads 0 instead of 1). Already flagged to her, see `docs/g32-an18-checklist-documentation-and-evidence.md`.
+`yarn test:lib` passes fully (593). The AN-17 fix briefly broke the AI error count in `faithfulness-checks.test.js`; that's fixed now, see `docs/g32-an18-checklist-documentation-and-evidence.md`.
 
 ## T-05 and T-07 (cross-team testing tasks)
 

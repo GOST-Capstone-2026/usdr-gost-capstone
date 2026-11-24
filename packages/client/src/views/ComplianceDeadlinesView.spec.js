@@ -279,6 +279,53 @@ describe('ComplianceDeadlinesView.vue', () => {
     });
   });
 
+  describe('labels kept under each obligation for narrow screens', () => {
+    const rowMeta = (key) => section(key).get('[data-testid="deadline-row-meta"]').text();
+
+    beforeEach(async () => {
+      await mountView({
+        portfolioItems: [
+          makeItem({ title: 'Overdue verified report', status: 'overdue' }),
+          makeItem({
+            title: 'Late finished report', status: 'completedLate', completionStatus: 'completed', completedAt: '2026-09-12T15:00:00.000Z',
+          }),
+        ],
+        reviewNeededItems: [makeItem({
+          title: 'Overdue plan', status: 'overdueUnverified', verificationStatus: 'unverified', verifiedBy: null, verifiedAt: null,
+        })],
+      });
+    });
+
+    it('shows the due date, status and verification of an overdue unverified item', () => {
+      expect(rowMeta('reviewNeeded')).toContain('Due Oct 15, 2026');
+      expect(rowMeta('reviewNeeded')).toContain('Overdue Unverified');
+      expect(rowMeta('reviewNeeded')).toContain('Unverified');
+    });
+
+    it('shows the due date and verification of an item in a dated section, whose heading already gives its status', () => {
+      expect(rowMeta('overdue')).toContain('Due Oct 15, 2026');
+      expect(rowMeta('overdue')).toContain('Verified');
+      expect(rowMeta('overdue')).not.toContain('Overdue');
+    });
+
+    it('says when an item has no due date', async () => {
+      await mountView({
+        portfolioItems: [],
+        reviewNeededItems: [makeItem({
+          title: 'Undated records', dueDate: null, status: 'reviewNeeded', verificationStatus: 'unverified', verifiedAt: null,
+        })],
+      });
+      expect(rowMeta('reviewNeeded')).toContain('No due date');
+    });
+
+    it('shows the status and completion time of a completed-late item', async () => {
+      await section('completed').get('button').trigger('click');
+
+      expect(rowMeta('completed')).toContain('Complete (Was Overdue)');
+      expect(rowMeta('completed')).toContain('Completed Sep 12, 2026');
+    });
+  });
+
   describe('when an item is not applicable', () => {
     beforeEach(async () => {
       await mountView({

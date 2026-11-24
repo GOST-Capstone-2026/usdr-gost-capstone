@@ -233,8 +233,8 @@ describe('A-17 failure handling', () => {
         });
 
         it('keeps the facts from earlier chunks when a later chunk\'s ai call errors (AN-17 fix)', async () => {
-            // AN-17 fixed the gap the A-17 doc flagged: a thrown AI error now just skips that
-            // chunk, the same way an unparseable reply already did, instead of losing the brief.
+            // fixed since first coded (AN-17): a thrown ai error now just skips that chunk,
+            // the same way an unparseable reply already did, instead of losing the brief
             let i = 0;
             const generateText = async () => {
                 i += 1;

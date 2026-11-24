@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { DateTime } = require('luxon');
+const sinon = require('sinon');
 const { getSessionCookie, makeTestServer, knex } = require('./utils');
 
 describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', () => {
@@ -18,6 +19,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
     let testServer;
     let fetchApi;
     let seedDocumentId;
+    const deadlineFlags = ['ENABLE_GRANT_COMPLIANCE', 'ENABLE_GRANT_DOCUMENT_ANALYSIS', 'ENABLE_COMPLIANCE_CHECKLISTS', 'ENABLE_COMPLIANCE_DEADLINES'];
+    const oldFlags = {};
+    const restoreFlags = () => deadlineFlags.forEach((flag) => {
+        if (oldFlags[flag] === undefined) delete process.env[flag];
+        else process.env[flag] = oldFlags[flag];
+    });
 
     const insertChecklistItems = (documentId, rows) => knex('checklist_items').insert(rows.map((row) => ({
         document_id: documentId,
@@ -30,6 +37,10 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
     before(async function beforeHook() {
         this.timeout(9000);
+        deadlineFlags.forEach((flag) => {
+            oldFlags[flag] = process.env[flag];
+            process.env[flag] = 'true';
+        });
         fetchOptions.admin.headers.cookie = await getSessionCookie('alex@usdigitalresponse.org');
         const seedDocument = await knex('grant_documents').where({ filename: 'seed-sample-grant-notice.pdf' }).first();
         seedDocumentId = seedDocument.id;
@@ -39,7 +50,28 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
     });
 
     after(() => {
+        restoreFlags();
         testServer.stop();
+    });
+
+    context('when the deadline feature is turned off', () => {
+        deadlineFlags.forEach((flag) => {
+            it(`refuses every deadline route while ${flag} is off`, async () => {
+                process.env[flag] = 'false';
+                try {
+                    const responses = await Promise.all([
+                        fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin),
+                        fetchApi('/compliance/deadlines/1', usdrAgencyId, { ...fetchOptions.admin, method: 'PATCH', body: JSON.stringify({ completionStatus: 'completed' }) }),
+                        fetchApi('/compliance/deadlines/1/verification', usdrAgencyId, { ...fetchOptions.admin, method: 'PATCH', body: JSON.stringify({ expectedVersion: 1 }) }),
+                    ]);
+                    expect(responses.map((response) => response.status)).to.deep.equal([404, 404, 404]);
+                    const bodies = await Promise.all(responses.map((response) => response.json()));
+                    expect(bodies.map(({ error }) => error.code)).to.deep.equal(['FEATURE_DISABLED', 'FEATURE_DISABLED', 'FEATURE_DISABLED']);
+                } finally {
+                    process.env[flag] = 'true';
+                }
+            });
+        });
     });
 
     context('GET /compliance/deadlines', () => {
@@ -83,6 +115,55 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(invalid.status).to.equal(400);
             const missing = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '999999999' });
             expect(missing.status).to.equal(404);
+        });
+
+        it('turns a deadline from due today to overdue when midnight passes in Eastern Time', async () => {
+            const [row] = await insertChecklistItems(seedDocumentId, [{
+                description: 'M-13 midnight boundary report',
+                due_date: '2026-03-10',
+                verification_status: 'verified',
+            }]);
+            const statusAt = async (isoInstant) => {
+                const clock = sinon.useFakeTimers({ now: new Date(isoInstant), toFake: ['Date'] });
+                try {
+                    const { data } = await getDeadlines({ perPage: 500 });
+                    return data.portfolio.find((deadline) => deadline.checklistItemId === row.id).status;
+                } finally {
+                    clock.restore();
+                }
+            };
+            try {
+                expect(await statusAt('2026-03-11T03:59:00Z')).to.equal('dueToday');
+                expect(await statusAt('2026-03-11T04:00:00Z')).to.equal('overdue');
+            } finally {
+                await knex('checklist_items').where({ id: row.id }).del();
+            }
+        });
+
+        it('returns every deadline exactly once, in the group and status the dashboard and calendar both read (T-08)', async () => {
+            const full = await getDeadlines({ perPage: 500 });
+            const all = [...full.data.portfolio, ...full.data.reviewNeeded];
+            const ids = all.map(({ checklistItemId }) => checklistItemId);
+            expect(new Set(ids).size).to.equal(ids.length);
+            expect(full.pagination.portfolio.total).to.equal(full.data.portfolio.length);
+            expect(full.pagination.reviewNeeded.total).to.equal(full.data.reviewNeeded.length);
+            full.data.portfolio.forEach((deadline) => {
+                expect(deadline.verificationStatus).to.equal('verified');
+                expect(deadline.dueDate).to.not.equal(null);
+                expect(deadline.status).to.not.match(/Unverified$|^reviewNeeded$/);
+            });
+            full.data.reviewNeeded.forEach((deadline) => {
+                expect(deadline.verificationStatus === 'unverified' || deadline.dueDate === null).to.equal(true);
+            });
+
+            const statuses = [...new Set(all.map(({ status }) => status))];
+            expect(statuses.length).to.be.greaterThan(3);
+            await Promise.all(statuses.map(async (status) => {
+                const filtered = await getDeadlines({ perPage: 500, status });
+                const filteredIds = [...filtered.data.portfolio, ...filtered.data.reviewNeeded].map(({ checklistItemId }) => checklistItemId).sort();
+                const expectedIds = all.filter((deadline) => deadline.status === status).map(({ checklistItemId }) => checklistItemId).sort();
+                expect(filteredIds).to.deep.equal(expectedIds);
+            }));
         });
 
         it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {
@@ -342,6 +423,13 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(json.error.code).to.equal('VALIDATION_ERROR');
         });
 
+        it('rejects malformed from and through filters instead of failing in the database', async () => {
+            const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { from: '2026-13-01', through: 'soon' });
+            expect(response.status).to.equal(400);
+            const json = await response.json();
+            expect(json.error.details.map(({ field }) => field)).to.deep.equal(['from', 'through']);
+        });
+
         it('filters results by status when requested', async () => {
             const response = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { status: 'overdue' });
             expect(response.status).to.equal(200);
@@ -418,9 +506,12 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             });
             expect(deadline.verifiedBy).to.be.a('number');
             expect(deadline.verifiedAt).to.be.a('string');
+            const reviewer = await knex('users').where({ id: deadline.verifiedBy }).first();
+            expect(deadline.verifiedByName).to.equal(reviewer.name || reviewer.email);
             const result = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId });
             const { data } = await result.json();
             expect(data.portfolio.map(({ checklistItemId }) => checklistItemId)).to.deep.equal([item.id]);
+            expect(data.portfolio[0].verifiedByName).to.equal(deadline.verifiedByName);
             expect(data.reviewNeeded).to.deep.equal([]);
 
             const repeat = await verify(usdrAgencyId, deadline.version);
@@ -484,6 +575,7 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(deadline.dueDate).to.equal('2031-06-01');
             expect(deadline.verificationStatus).to.equal('unverified');
             expect(deadline.verifiedBy).to.equal(null);
+            expect(deadline.verifiedByName).to.equal(null);
             expect(deadline.verifiedAt).to.equal(null);
             expect(deadline.source.pageNumber).to.equal(14);
         });
@@ -530,6 +622,11 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
         it('rejects a malformed due date', async () => {
             const response = await patchDeadline(usdrAgencyId, anyChecklistItemId, { dueDate: '06/01/2031' });
+            expect(response.status).to.equal(400);
+        });
+
+        it('rejects a due date in year 0000, which the database cannot store', async () => {
+            const response = await patchDeadline(usdrAgencyId, anyChecklistItemId, { dueDate: '0000-01-01' });
             expect(response.status).to.equal(400);
         });
 
@@ -594,6 +691,11 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(response.status).to.equal(400);
         });
 
+        it('rejects a checklistItemId too large for the database', async () => {
+            const response = await patchDeadline(usdrAgencyId, '99999999999', { completionStatus: 'completed' });
+            expect(response.status).to.equal(400);
+        });
+
         it('completing a verified item leaves it verified, matching a subsequent GET', async () => {
             const id = await findIdByDescription('Submit quarterly financial status report');
 
@@ -639,6 +741,18 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
 
             const rowAfter = await knex('checklist_items').where({ id }).first();
             expect(rowAfter.version).to.equal(rowBefore.version + 1);
+        });
+
+        it('keeps the original completedAt when an already-completed item is marked complete again', async () => {
+            const id = await findIdByDescription('Submit close-out financial report');
+            const completedAt = new Date('2026-01-05T15:00:00Z');
+            await knex('checklist_items').where({ id }).update({ completion_status: 'completed', completed_at: completedAt });
+
+            const response = await patchDeadline(usdrAgencyId, id, { completionStatus: 'completed' });
+            expect(response.status).to.equal(200);
+
+            const { deadline } = await response.json();
+            expect(deadline.completedAt).to.equal(completedAt.toISOString());
         });
 
         it('marks the item user-edited only when its due date changes', async () => {

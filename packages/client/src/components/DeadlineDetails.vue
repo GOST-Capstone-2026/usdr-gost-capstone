@@ -14,6 +14,14 @@
         v-else
         class="text-muted"
       >Source not found</span>
+      <router-link
+        v-if="documentLocation"
+        :to="documentLocation"
+        class="d-inline-block mt-1"
+        data-testid="deadline-document-link"
+      >
+        Open document
+      </router-link>
     </dd>
     <dt>Verification</dt>
     <dd data-testid="deadline-verification">
@@ -64,7 +72,7 @@
           class="btn btn-sm btn-outline-primary"
           :disabled="saving"
           data-testid="action-reopen"
-          @click="setCompletion('notStarted')"
+          @click="reopen"
         >
           Reopen
         </button>
@@ -134,6 +142,9 @@
 <script>
 import { mapActions } from 'vuex';
 import { formatDate } from '@/helpers/dates';
+import { formatEasternDate } from '@/helpers/deadlineStatus';
+import { grantDocumentAnalysisEnabled } from '@/helpers/featureFlags';
+import { grantDocumentLocation, recordId } from '@/helpers/grantDocumentHandoff';
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -141,6 +152,7 @@ const COMPLETION_MESSAGES = {
   completed: (title) => `Marked "${title}" complete.`,
   notApplicable: (title) => `Marked "${title}" not applicable.`,
   notStarted: (title) => `Reopened "${title}".`,
+  inProgress: (title) => `Reopened "${title}" as in progress.`,
 };
 
 export default {
@@ -167,11 +179,22 @@ export default {
       if (this.item.sources?.length) return this.item.sources;
       return this.item.source ? [this.item.source] : [];
     },
+    documentLocation() {
+      const documentId = recordId(this.item.documentId);
+      if (documentId === null || !grantDocumentAnalysisEnabled()) return null;
+      const location = grantDocumentLocation(this.item.grantId, this.$store?.getters?.['users/selectedAgencyId']);
+      if (!location) return null;
+      location.query.documentId = String(documentId);
+      location.query.checklistItemId = String(this.item.checklistItemId);
+      return location;
+    },
     verificationText() {
       if (this.item.verificationStatus !== 'verified') {
         return 'Not yet verified';
       }
-      return this.item.verifiedAt ? `Verified on ${formatDate(this.item.verifiedAt)}` : 'Verified';
+      const by = this.item.verifiedByName ? ` by ${this.item.verifiedByName}` : '';
+      const on = this.item.verifiedAt ? ` on ${formatEasternDate(this.item.verifiedAt)}` : '';
+      return `Verified${by}${on}`;
     },
     isClosed() {
       return this.item.completionStatus === 'completed' || this.item.completionStatus === 'notApplicable';
@@ -209,6 +232,9 @@ export default {
     setCompletion(completionStatus) {
       return this.save({ completionStatus }, COMPLETION_MESSAGES[completionStatus](this.item.title));
     },
+    reopen() {
+      return this.setCompletion(this.item.completionStatus === 'completed' ? 'inProgress' : 'notStarted');
+    },
     verifyItem() {
       return this.save(
         { expectedVersion: this.item.version },
@@ -226,9 +252,12 @@ export default {
       this.errorMessage = null;
     },
     saveDueDate() {
+      const followUp = this.item.verificationStatus === 'verified'
+        ? 'It needs to be verified again.'
+        : 'It still needs to be verified.';
       return this.save(
         { dueDate: this.newDueDate },
-        `Changed the due date of "${this.item.title}" to ${formatDate(this.newDueDate)}. It needs to be verified again.`,
+        `Changed the due date of "${this.item.title}" to ${formatDate(this.newDueDate)}. ${followUp}`,
       );
     },
   },
