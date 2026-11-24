@@ -251,7 +251,7 @@
                         <span
                           v-if="hasColumn(card, 'completedAt') && item.completionStatus !== 'notApplicable'"
                           class="dl-cell-sub"
-                        >{{ item.completedAt ? `Completed ${formatDateTime(item.completedAt)}` : 'Completion time not recorded' }}</span>
+                        >{{ item.completedAt ? `Completed ${formatEasternDateTime(item.completedAt)}` : 'Completion time not recorded' }}</span>
                       </span>
                     </template>
                     <template v-else-if="column.key === 'dueDate'">
@@ -280,7 +280,7 @@
                       <span
                         v-if="item.verificationStatus === 'verified' && item.verifiedAt"
                         class="dl-cell-sub"
-                      >{{ formatDate(item.verifiedAt) }}</span>
+                      >{{ formatEasternDate(item.verifiedAt) }}</span>
                     </template>
                     <template v-else-if="column.key === 'completedAt'">
                       <span
@@ -290,7 +290,7 @@
                       <span
                         v-else
                         class="dl-date"
-                      >{{ item.completedAt ? formatDateTime(item.completedAt) : 'Not recorded' }}</span>
+                      >{{ item.completedAt ? formatEasternDateTime(item.completedAt) : 'Not recorded' }}</span>
                     </template>
                   </td>
                   <td class="dl-col-action">
@@ -328,8 +328,10 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
-import { formatDate, formatDateTime } from '@/helpers/dates';
-import { CLOSED_STATUSES, statusLabel } from '@/helpers/deadlineStatus';
+import { formatDate } from '@/helpers/dates';
+import {
+  CLOSED_STATUSES, statusLabel, formatEasternDate, formatEasternDateTime,
+} from '@/helpers/deadlineStatus';
 import ComplianceDeadlinesCalendar from '@/components/ComplianceDeadlinesCalendar.vue';
 import DeadlineDetails from '@/components/DeadlineDetails.vue';
 import { organizationId } from '@/helpers/matchRunApi';
@@ -509,7 +511,8 @@ export default {
     },
     statusLabel,
     formatDate,
-    formatDateTime,
+    formatEasternDate,
+    formatEasternDateTime,
   },
 };
 </script>

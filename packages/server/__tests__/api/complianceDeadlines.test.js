@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { DateTime } = require('luxon');
+const sinon = require('sinon');
 const { getSessionCookie, makeTestServer, knex } = require('./utils');
 
 describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', () => {
@@ -114,6 +115,29 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(invalid.status).to.equal(400);
             const missing = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '999999999' });
             expect(missing.status).to.equal(404);
+        });
+
+        it('turns a deadline from due today to overdue when midnight passes in Eastern Time', async () => {
+            const [row] = await insertChecklistItems(seedDocumentId, [{
+                description: 'M-13 midnight boundary report',
+                due_date: '2026-03-10',
+                verification_status: 'verified',
+            }]);
+            const statusAt = async (isoInstant) => {
+                const clock = sinon.useFakeTimers({ now: new Date(isoInstant), toFake: ['Date'] });
+                try {
+                    const { data } = await getDeadlines({ perPage: 500 });
+                    return data.portfolio.find((deadline) => deadline.checklistItemId === row.id).status;
+                } finally {
+                    clock.restore();
+                }
+            };
+            try {
+                expect(await statusAt('2026-03-11T03:59:00Z')).to.equal('dueToday');
+                expect(await statusAt('2026-03-11T04:00:00Z')).to.equal('overdue');
+            } finally {
+                await knex('checklist_items').where({ id: row.id }).del();
+            }
         });
 
         it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {

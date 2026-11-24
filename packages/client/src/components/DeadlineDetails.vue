@@ -142,6 +142,7 @@
 <script>
 import { mapActions } from 'vuex';
 import { formatDate } from '@/helpers/dates';
+import { formatEasternDate } from '@/helpers/deadlineStatus';
 import { grantDocumentAnalysisEnabled } from '@/helpers/featureFlags';
 import { grantDocumentLocation, recordId } from '@/helpers/grantDocumentHandoff';
 
@@ -192,7 +193,7 @@ export default {
         return 'Not yet verified';
       }
       const by = this.item.verifiedByName ? ` by ${this.item.verifiedByName}` : '';
-      const on = this.item.verifiedAt ? ` on ${formatDate(this.item.verifiedAt)}` : '';
+      const on = this.item.verifiedAt ? ` on ${formatEasternDate(this.item.verifiedAt)}` : '';
       return `Verified${by}${on}`;
     },
     isClosed() {
