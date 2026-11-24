@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { DateTime } = require('luxon');
+const sinon = require('sinon');
 const { getSessionCookie, makeTestServer, knex } = require('./utils');
 
 describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', () => {
@@ -114,6 +115,55 @@ describe('`/api/organizations/:organizationId/compliance/deadlines` endpoint', (
             expect(invalid.status).to.equal(400);
             const missing = await fetchApi('/compliance/deadlines', usdrAgencyId, fetchOptions.admin, { documentId: '999999999' });
             expect(missing.status).to.equal(404);
+        });
+
+        it('turns a deadline from due today to overdue when midnight passes in Eastern Time', async () => {
+            const [row] = await insertChecklistItems(seedDocumentId, [{
+                description: 'M-13 midnight boundary report',
+                due_date: '2026-03-10',
+                verification_status: 'verified',
+            }]);
+            const statusAt = async (isoInstant) => {
+                const clock = sinon.useFakeTimers({ now: new Date(isoInstant), toFake: ['Date'] });
+                try {
+                    const { data } = await getDeadlines({ perPage: 500 });
+                    return data.portfolio.find((deadline) => deadline.checklistItemId === row.id).status;
+                } finally {
+                    clock.restore();
+                }
+            };
+            try {
+                expect(await statusAt('2026-03-11T03:59:00Z')).to.equal('dueToday');
+                expect(await statusAt('2026-03-11T04:00:00Z')).to.equal('overdue');
+            } finally {
+                await knex('checklist_items').where({ id: row.id }).del();
+            }
+        });
+
+        it('returns every deadline exactly once, in the group and status the dashboard and calendar both read (T-08)', async () => {
+            const full = await getDeadlines({ perPage: 500 });
+            const all = [...full.data.portfolio, ...full.data.reviewNeeded];
+            const ids = all.map(({ checklistItemId }) => checklistItemId);
+            expect(new Set(ids).size).to.equal(ids.length);
+            expect(full.pagination.portfolio.total).to.equal(full.data.portfolio.length);
+            expect(full.pagination.reviewNeeded.total).to.equal(full.data.reviewNeeded.length);
+            full.data.portfolio.forEach((deadline) => {
+                expect(deadline.verificationStatus).to.equal('verified');
+                expect(deadline.dueDate).to.not.equal(null);
+                expect(deadline.status).to.not.match(/Unverified$|^reviewNeeded$/);
+            });
+            full.data.reviewNeeded.forEach((deadline) => {
+                expect(deadline.verificationStatus === 'unverified' || deadline.dueDate === null).to.equal(true);
+            });
+
+            const statuses = [...new Set(all.map(({ status }) => status))];
+            expect(statuses.length).to.be.greaterThan(3);
+            await Promise.all(statuses.map(async (status) => {
+                const filtered = await getDeadlines({ perPage: 500, status });
+                const filteredIds = [...filtered.data.portfolio, ...filtered.data.reviewNeeded].map(({ checklistItemId }) => checklistItemId).sort();
+                const expectedIds = all.filter((deadline) => deadline.status === status).map(({ checklistItemId }) => checklistItemId).sort();
+                expect(filteredIds).to.deep.equal(expectedIds);
+            }));
         });
 
         it('splits items into a verified, dated portfolio group and a reviewNeeded group', async () => {

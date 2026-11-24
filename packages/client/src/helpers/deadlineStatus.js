@@ -1,3 +1,7 @@
+import { DateTime } from 'luxon';
+
+export const DEADLINE_TIME_ZONE = 'America/New_York';
+
 export const STATUS_DISPLAY = {
   overdue: { label: 'Overdue', variant: 'danger' },
   overdueUnverified: { label: 'Overdue Unverified', variant: 'danger' },
@@ -28,4 +32,12 @@ export function statusVariant(status) {
 
 export function isClosedStatus(status) {
   return CLOSED_STATUSES.includes(status.replace(/Unverified$/, ''));
+}
+
+export function formatEasternDate(isoInstant) {
+  return DateTime.fromISO(isoInstant).setZone(DEADLINE_TIME_ZONE).toLocaleString(DateTime.DATE_MED);
+}
+
+export function formatEasternDateTime(isoInstant) {
+  return `${DateTime.fromISO(isoInstant).setZone(DEADLINE_TIME_ZONE).toLocaleString(DateTime.DATETIME_MED)} ET`;
 }

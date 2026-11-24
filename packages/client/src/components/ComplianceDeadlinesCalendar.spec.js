@@ -2,6 +2,7 @@ import {
   describe, beforeEach, afterEach, it, expect, vi,
 } from 'vitest';
 import { h } from 'vue';
+import { Settings } from 'luxon';
 import { mount } from '@vue/test-utils';
 import ComplianceDeadlinesCalendar from '@/components/ComplianceDeadlinesCalendar.vue';
 
@@ -249,6 +250,22 @@ describe('ComplianceDeadlinesCalendar.vue', () => {
       mountCalendar();
       expect(day('2026-10-13').classes()).toContain('deadline-calendar-today');
       expect(day('2026-10-14').classes()).not.toContain('deadline-calendar-today');
+    });
+
+    ['Pacific/Auckland', 'Asia/Tokyo', 'America/Los_Angeles'].forEach((zone) => {
+      it(`uses Eastern Time for today and places deadlines on their due dates when the browser is in ${zone}`, () => {
+        const originalZone = Settings.defaultZone;
+        Settings.defaultZone = zone;
+        try {
+          vi.setSystemTime(new Date('2026-10-14T02:30:00Z'));
+          mountCalendar();
+          expect(day('2026-10-13').classes()).toContain('deadline-calendar-today');
+          expect(titlesOn('2026-10-20')).toEqual(['Quarterly report']);
+          expect(titlesOn('2026-10-05')).toEqual(['Audit filing']);
+        } finally {
+          Settings.defaultZone = originalZone;
+        }
+      });
     });
 
     it('opens on the Eastern Time month when UTC has already moved to the next month', () => {
