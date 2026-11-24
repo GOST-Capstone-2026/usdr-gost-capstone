@@ -23,6 +23,7 @@ const knex = require('./connection');
 const { TABLES } = require('./constants');
 const emailConstants = require('../lib/email/constants');
 const { fundingActivityCategoriesByCode } = require('../lib/fieldConfigs/fundingActivityCategories');
+const { describesSameObligation } = require('../lib/checklistItemSchema');
 const helpers = require('./helpers');
 
 async function getUsers(tenantId) {
@@ -1263,11 +1264,14 @@ async function createInitialChecklistItems({ documentId, items }) {
 }
 
 // A retry after a partially-failed analysis run (AN-17 follow-up): adds only the obligations a
-// new generation pass found that an earlier, incomplete run missed. An item is treated as a
-// duplicate of one already on file, and left out, when they share a category and at least one
-// cited page: that's coarser than comparing full citation text, deliberately, since asking the
-// AI again rarely phrases the same obligation identically. This never updates or removes an
-// existing row, so an item a person has already edited, verified, or rejected is never touched.
+// new generation pass found that an earlier, incomplete run missed. A candidate is treated as a
+// duplicate of one already on file, and left out, when they share a category, share at least one
+// cited page, AND describesSameObligation says their wording most likely names the same
+// obligation. Category and page alone are too coarse: a single page can genuinely state two
+// different obligations in the same category (e.g. two different submission requirements), and
+// matching on category and page alone would drop the second one as a false duplicate of the
+// first. This never updates or removes an existing row, so an item a person has already edited,
+// verified, or rejected is never touched.
 async function addMissingChecklistItems({ documentId, items }) {
     if (items.length === 0) {
         return [];
@@ -1282,11 +1286,19 @@ async function addMissingChecklistItems({ documentId, items }) {
         }
         const existingItems = await trx(TABLES.checklist_items)
             .where({ document_id: documentId });
-        const existingKeys = new Set(existingItems.flatMap((item) => (item.sources || [])
-            .map((source) => `${item.category}:${source.pageNumber}`)));
-        const newItems = items.filter((item) => !item.sources.some(
-            (source) => existingKeys.has(`${item.category}:${source.pageNumber}`),
-        ));
+        const existingByKey = new Map();
+        existingItems.forEach((item) => {
+            (item.sources || []).forEach((source) => {
+                const key = `${item.category}:${source.pageNumber}`;
+                if (!existingByKey.has(key)) existingByKey.set(key, []);
+                existingByKey.get(key).push(item);
+            });
+        });
+        const newItems = items.filter((item) => !item.sources.some((source) => {
+            const key = `${item.category}:${source.pageNumber}`;
+            const candidates = existingByKey.get(key) || [];
+            return candidates.some((existing) => describesSameObligation(existing.description, item.description));
+        }));
         return createChecklistItems({ documentId, items: newItems }, trx);
     });
 }

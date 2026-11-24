@@ -23,6 +23,7 @@ const document = (overrides = {}) => ({
   filename: 'selected-notice.pdf',
   pageCount: null,
   extractionQuality: null,
+  analysisIncomplete: false,
   ...overrides,
 });
 const deferred = () => { let resolve; const promise = new Promise((done) => { resolve = done; }); return { promise, resolve }; };
@@ -221,6 +222,25 @@ describe('C-12 selected grant document workflow', () => {
     expect(wrapper.text()).toContain('Page count: 17');
     expect(wrapper.text()).not.toContain('could not be loaded');
     expect(api.post).toHaveBeenCalledTimes(1);
+  });
+  it('warns when a completed run is marked incomplete, and offers a retry (AN-17 follow-up)', async () => {
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document({ analysisIncomplete: true }) });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).toContain('This analysis is incomplete');
+    expect(wrapper.text()).toContain('Choose Start Analysis to retry');
+  });
+  it('does not show the incomplete warning for a fully successful run', async () => {
+    await render({ documentId: '7' });
+    await startButton().trigger('click'); await flushPromises();
+    api.get
+      .mockResolvedValueOnce({ analysisRun: { id: 12, documentId: 7, status: 'completed' } })
+      .mockResolvedValueOnce({ document: document({ analysisIncomplete: false }) });
+    await vi.advanceTimersByTimeAsync(1500); await flushPromises();
+    expect(wrapper.text()).not.toContain('This analysis is incomplete');
   });
   it('gives a recovery action for a completed run on an unreadable PDF', async () => {
     await render({ documentId: '7' });

@@ -319,8 +319,12 @@ export default {
       delete rest[id];
       this.itemErrors = rest;
     },
+    // Called after any analysis run completes (AN-17 follow-up), including a retry on a document
+    // that already had items: reloads so items a retry recovered actually show up, without first
+    // requiring a manual page reload. Skipped while someone is mid-edit, so a reload never
+    // clobbers an edit in progress.
     refreshAfterAnalysis() {
-      if (!this.items.length) this.load();
+      if (!this.editingId) this.load();
     },
     async load() {
       if (!Number.isInteger(this.documentId)) { this.items = []; return; }

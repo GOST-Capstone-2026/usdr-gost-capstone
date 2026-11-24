@@ -69,6 +69,52 @@ function createChecklistItem({
     };
 }
 
+// A retry (AN-17 follow-up) can find the same real-world obligation worded slightly differently
+// than an earlier run did, since the AI rarely repeats an exact phrasing. These words are common
+// enough in grant notices that sharing them says nothing about whether two descriptions name the
+// same obligation.
+const STOPWORDS = new Set([
+    'the', 'and', 'for', 'that', 'with', 'this', 'from', 'must', 'shall', 'will', 'are', 'all',
+    'any', 'their', 'each', 'within', 'than', 'then', 'into', 'upon', 'such', 'have', 'has',
+]);
+
+function significantWords(text) {
+    return new Set(
+        String(text || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .split(/\s+/)
+            .filter((word) => word.length > 3 && !STOPWORDS.has(word)),
+    );
+}
+
+// Picked empirically: high enough that two distinct obligations sharing a page and category (e.g.
+// two different submission requirements cited from the same page) don't share enough meaningful
+// words to pass, but low enough that a reworded repeat of the same obligation still does.
+const DUPLICATE_WORD_OVERLAP_THRESHOLD = 0.6;
+
+/**
+ * True when two checklist item descriptions most likely name the same real-world obligation,
+ * judged by how much of their meaningful wording overlaps rather than requiring an exact match.
+ * Used to tell a retry's rephrased repeat of an existing item apart from a different obligation
+ * that merely shares that item's category and cited page (AN-17 follow-up).
+ *
+ * @param {string} descriptionA
+ * @param {string} descriptionB
+ * @returns {boolean}
+ */
+function describesSameObligation(descriptionA, descriptionB) {
+    const wordsA = significantWords(descriptionA);
+    const wordsB = significantWords(descriptionB);
+    if (wordsA.size === 0 || wordsB.size === 0) return false;
+    const shared = [...wordsA].filter((word) => wordsB.has(word));
+    return (shared.length / Math.min(wordsA.size, wordsB.size)) >= DUPLICATE_WORD_OVERLAP_THRESHOLD;
+}
+
 module.exports = {
-    CHECKLIST_CATEGORIES, COMPLETION_STATUSES, VERIFICATION_STATUSES, createChecklistItem,
+    CHECKLIST_CATEGORIES,
+    COMPLETION_STATUSES,
+    VERIFICATION_STATUSES,
+    createChecklistItem,
+    describesSameObligation,
 };

@@ -648,7 +648,10 @@ describe('addMissingChecklistItems (AN-17 follow-up retry behavior)', () => {
             items: [
                 buildChecklistItem({
                     category: 'recordRetention',
-                    description: 'A reworded version of the same retention obligation.',
+                    // Worded differently than the saved "Retain records for three years after
+                    // closeout.", but still describing the same obligation: shares enough of its
+                    // meaningful wording (records, three, years, closeout) to count as a dup.
+                    description: 'Records related to this award must be kept for a period of three years following closeout.',
                     found: true,
                     sources: [{ documentId, pageNumber: 5, excerpt: 'different excerpt, same page' }],
                 }),
@@ -668,5 +671,77 @@ describe('addMissingChecklistItems (AN-17 follow-up retry behavior)', () => {
             })],
         });
         expect(saved).to.deep.equal([]);
+    });
+});
+
+// Connor's bug report on pull request #57: a long page split across two chunks can state two
+// different obligations in the same category. When one chunk fails and a retry later succeeds on
+// both, the old category+page-only dedup key treated both as duplicates of the one obligation
+// already on file and dropped the second, genuinely new one. Isolated in its own document rather
+// than reusing the block above's, since that block's tests depend on each other's exact item
+// counts.
+describe('addMissingChecklistItems (distinguishes two obligations sharing a page and category)', () => {
+    const agencyId = 0;
+    let server;
+    let cookie;
+    let documentId;
+
+    before(async function beforeHook() {
+        this.timeout(15000);
+        cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
+        server = await makeTestServer();
+
+        const uploadResponse = await server.post(`/api/organizations/${agencyId}/compliance/documents`)
+            .set('Cookie', cookie)
+            .field('grantId', '335255')
+            .attach('file', FIXTURE_PDF_PATH);
+        documentId = uploadResponse.body.document.id;
+    });
+
+    after(async () => {
+        if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+            await knex('grant_documents').where({ id: documentId }).del();
+        }
+        server.stop();
+    });
+
+    it('keeps a second, different obligation on the same page and category instead of dropping it alongside a true duplicate', async () => {
+        await knex('checklist_items').insert({
+            document_id: documentId,
+            category: 'submission',
+            description: 'Submit the original signed SF-424 application form with an original ink signature.',
+            found: true,
+            sources: JSON.stringify([{ documentId, pageNumber: 8, excerpt: 'Submit the signed SF-424...' }]),
+        });
+
+        const saved = await db.addMissingChecklistItems({
+            documentId,
+            items: [
+                buildChecklistItem({
+                    // Same obligation as the item already on file, reworded: the chunk that
+                    // already succeeded on the first, incomplete run finding it again.
+                    category: 'submission',
+                    description: 'Submit the signed SF-424 application form in ink, not a copy.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 8, excerpt: 'Submit the signed SF-424...' }],
+                }),
+                buildChecklistItem({
+                    // A genuinely different obligation, sharing only the category and page: the
+                    // one the earlier run's failed chunk never reached.
+                    category: 'submission',
+                    description: 'Include a certificate of insurance covering the full project period.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 8, excerpt: 'A certificate of insurance...' }],
+                }),
+            ],
+        });
+
+        expect(saved).to.have.length(1);
+        expect(saved[0].description).to.equal('Include a certificate of insurance covering the full project period.');
+
+        const allItems = await db.getChecklistItemsForDocument({ documentId, agencyId });
+        const submissionItems = allItems.filter((item) => item.category === 'submission');
+        expect(submissionItems).to.have.length(2);
     });
 });

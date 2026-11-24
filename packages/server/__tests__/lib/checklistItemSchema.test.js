@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const {
-    CHECKLIST_CATEGORIES, COMPLETION_STATUSES, createChecklistItem,
+    CHECKLIST_CATEGORIES, COMPLETION_STATUSES, createChecklistItem, describesSameObligation,
 } = require('../../src/lib/checklistItemSchema');
 
 const baseArgs = {
@@ -69,5 +69,34 @@ describe('COMPLETION_STATUSES', () => {
         expect(COMPLETION_STATUSES).to.deep.equal([
             'notStarted', 'inProgress', 'completed', 'notApplicable',
         ]);
+    });
+});
+
+describe('describesSameObligation', () => {
+    it('treats a reworded repeat of the same obligation as the same obligation', () => {
+        expect(describesSameObligation(
+            'Retain records for three years after closeout.',
+            'Records related to this award must be kept for a period of three years following closeout.',
+        )).to.equal(true);
+    });
+
+    it('treats two different obligations sharing a page and category as different', () => {
+        expect(describesSameObligation(
+            'Submit the original signed SF-424 application form with an original ink signature.',
+            'Include a certificate of insurance covering the full project period.',
+        )).to.equal(false);
+    });
+
+    it('is not fooled by two different obligations that happen to share a few common words', () => {
+        expect(describesSameObligation(
+            'Submit a certified audit report within 90 days of the project end date.',
+            'Submit a certificate of insurance within 30 days of the award start date.',
+        )).to.equal(false);
+    });
+
+    it('returns false when either description is empty', () => {
+        expect(describesSameObligation('', 'Retain records for three years.')).to.equal(false);
+        expect(describesSameObligation('Retain records for three years.', '')).to.equal(false);
+        expect(describesSameObligation(null, null)).to.equal(false);
     });
 });

@@ -119,6 +119,34 @@ describe('ChecklistItems.vue', () => {
     expect(wrapper.find('[data-testid="checklist-description-input"]').exists()).toBe(false);
   });
 
+  describe('refreshAfterAnalysis (AN-17 follow-up)', () => {
+    it('reloads items a retry recovered, not only when the list was empty', async () => {
+      const wrapper = await mountList([makeItem()]);
+      api.get.mockResolvedValueOnce({
+        data: [makeItem(), makeItem({ id: 105, description: 'Retain records for three years after closeout.' })],
+        pagination: paginationFor(2),
+      });
+
+      await wrapper.vm.refreshAfterAnalysis();
+      await flushPromises();
+
+      expect(api.get).toHaveBeenCalledTimes(2);
+      expect(wrapper.text()).toContain('Retain records for three years after closeout.');
+    });
+
+    it('does not reload while an item is mid-edit, so an in-progress edit is not lost', async () => {
+      const wrapper = await mountList([makeItem()]);
+      await wrapper.get('[data-testid="action-edit"]').trigger('click');
+      api.get.mockClear();
+
+      await wrapper.vm.refreshAfterAnalysis();
+      await flushPromises();
+
+      expect(api.get).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="checklist-description-input"]').exists()).toBe(true);
+    });
+  });
+
   it('cancels editing without saving', async () => {
     const wrapper = await mountList();
     await wrapper.get('[data-testid="action-edit"]').trigger('click');
