@@ -84,8 +84,16 @@ function significantWords(text) {
             .toLowerCase()
             .replace(/[^a-z0-9\s]/g, ' ')
             .split(/\s+/)
-            .filter((word) => word.length > 3 && !STOPWORDS.has(word)),
+            // A number is kept regardless of length: two descriptions built from the same
+            // boilerplate pattern but a different day count, percentage, or year (a quarterly
+            // report due in 30 days vs. an annual report due in 90 days) are different
+            // obligations, and the day count is often the only thing that says so.
+            .filter((word) => (word.length > 3 && !STOPWORDS.has(word)) || /^\d+$/.test(word)),
     );
+}
+
+function distinguishingNumbers(text) {
+    return new Set(String(text || '').match(/\d+/g) || []);
 }
 
 // Picked empirically: high enough that two distinct obligations sharing a page and category (e.g.
@@ -94,18 +102,26 @@ function significantWords(text) {
 const DUPLICATE_WORD_OVERLAP_THRESHOLD = 0.6;
 
 /**
- * True when two checklist item descriptions most likely name the same real-world obligation,
- * judged by how much of their meaningful wording overlaps rather than requiring an exact match.
- * Used to tell a retry's rephrased repeat of an existing item apart from a different obligation
- * that merely shares that item's category and cited page (AN-17 follow-up).
+ * True when two checklist item descriptions, or two source excerpts, most likely name or quote
+ * the same real-world obligation, judged by how much of their meaningful wording overlaps rather
+ * than requiring an exact match. Used to tell a retry's rephrased repeat of an existing item apart
+ * from a different obligation that merely shares that item's category and cited page, and to
+ * recognize an item by its original source citation even after a person has reworded its
+ * description beyond recognition (AN-17 follow-up).
  *
- * @param {string} descriptionA
- * @param {string} descriptionB
+ * @param {string} textA
+ * @param {string} textB
  * @returns {boolean}
  */
-function describesSameObligation(descriptionA, descriptionB) {
-    const wordsA = significantWords(descriptionA);
-    const wordsB = significantWords(descriptionB);
+function describesSameObligation(textA, textB) {
+    const numbersA = distinguishingNumbers(textA);
+    const numbersB = distinguishingNumbers(textB);
+    if (numbersA.size > 0 && numbersB.size > 0 && ![...numbersA].some((number) => numbersB.has(number))) {
+        return false;
+    }
+
+    const wordsA = significantWords(textA);
+    const wordsB = significantWords(textB);
     if (wordsA.size === 0 || wordsB.size === 0) return false;
     const shared = [...wordsA].filter((word) => wordsB.has(word));
     return (shared.length / Math.min(wordsA.size, wordsB.size)) >= DUPLICATE_WORD_OVERLAP_THRESHOLD;

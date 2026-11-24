@@ -242,6 +242,22 @@ describe('C-12 selected grant document workflow', () => {
     await vi.advanceTimersByTimeAsync(1500); await flushPromises();
     expect(wrapper.text()).not.toContain('This analysis is incomplete');
   });
+  it('keeps showing the incomplete warning on reopening a document, even with no active analysis run this session', async () => {
+    api.get.mockImplementation(async (url) => {
+      if (url.endsWith('/brief')) throw Object.assign(new Error('Not found'), { response: { status: 404 } });
+      if (url.endsWith('/checklist-items')) {
+        return {
+          data: [],
+          pagination: {
+            currentPage: 1, perPage: 1, total: 0, lastPage: 1,
+          },
+        };
+      }
+      return { document: document({ analysisIncomplete: true }) };
+    });
+    await render({ documentId: '7' });
+    expect(wrapper.text()).toContain('This analysis is incomplete');
+  });
   it('gives a recovery action for a completed run on an unreadable PDF', async () => {
     await render({ documentId: '7' });
     await startButton().trigger('click'); await flushPromises();

@@ -99,4 +99,28 @@ describe('describesSameObligation', () => {
         expect(describesSameObligation('Retain records for three years.', '')).to.equal(false);
         expect(describesSameObligation(null, null)).to.equal(false);
     });
+
+    // Connor's follow-up report on pull request #57: a quarterly report due in 30 days and an
+    // annual report due in 90 days, both built from the same boilerplate pattern, were wrongly
+    // treated as a duplicate. The day count is often the only thing distinguishing them.
+    it('treats a difference in a numeric deadline as a different obligation, even with heavy shared boilerplate', () => {
+        expect(describesSameObligation(
+            'Submit a quarterly performance report to the awarding agency within 30 days after the end of each calendar quarter during the project period.',
+            'Submit an annual performance report to the awarding agency within 90 days after the end of the project period.',
+        )).to.equal(false);
+    });
+
+    it('does not let a shared number alone force a match when the surrounding wording still differs', () => {
+        expect(describesSameObligation(
+            'Submit a certified audit report within 30 days of the project end date.',
+            'Submit a certificate of insurance within 30 days of the award start date.',
+        )).to.equal(false);
+    });
+
+    it('still recognizes a reworded repeat when both mention the same number', () => {
+        expect(describesSameObligation(
+            'Retain records for 3 years after closeout.',
+            'Records related to this award must be kept for a period of 3 years following closeout.',
+        )).to.equal(true);
+    });
 });

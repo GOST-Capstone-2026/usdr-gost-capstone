@@ -94,6 +94,13 @@
         <p>{{ document.filename }} · Document {{ document.id }} · Grant {{ document.grantId }}</p>
         <p>Page count: {{ document.pageCount ?? 'Not analyzed yet' }}</p>
         <p>Extraction quality: {{ document.extractionQuality || 'Not analyzed yet' }}</p>
+        <p
+          v-if="document.analysisIncomplete"
+          role="alert"
+          class="alert alert-warning"
+        >
+          This analysis is incomplete: at least one part of the document could not be read on its last run. The brief and checklist below reflect only what succeeded. Choose Start Analysis to retry; a retry fills in whatever was missed without losing any edits or verification already saved.
+        </p>
         <button
           class="btn btn-primary"
           :disabled="busy || isRunActive"
@@ -143,13 +150,6 @@
           </p>
           <p v-else>
             Processing completed. Page count: {{ document.pageCount ?? 'Unknown' }}. Chunk count: {{ analysisRun.chunkCount ?? 'Unknown' }}.
-          </p>
-          <p
-            v-if="!documentRefreshError && document.analysisIncomplete"
-            role="alert"
-            class="alert alert-warning"
-          >
-            This analysis is incomplete: at least one part of the document could not be read on this run. The brief and checklist below reflect only what succeeded. Choose Start Analysis to retry; a retry fills in whatever was missed without losing any edits or verification already saved.
           </p>
           <p>Processing completion does not verify the extracted content. Review its source before relying on it.</p>
         </template>

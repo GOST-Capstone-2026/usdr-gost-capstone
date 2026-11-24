@@ -1263,15 +1263,29 @@ async function createInitialChecklistItems({ documentId, items }) {
     });
 }
 
+// A candidate matches an existing item (AN-17 follow-up) either by its current description, or
+// by its original source citation. The description check alone misses a retry's rephrased repeat
+// of an item a person has since reworded past recognition: editing only ever changes description,
+// due date, and notes, never sources, so the original AI citation is still there to recognize it
+// by even when the description no longer resembles it at all.
+function isLikelyDuplicateChecklistItem(existing, candidate) {
+    if (describesSameObligation(existing.description, candidate.description)) {
+        return true;
+    }
+    return (existing.sources || []).some((existingSource) => (candidate.sources || []).some(
+        (candidateSource) => describesSameObligation(existingSource.excerpt, candidateSource.excerpt),
+    ));
+}
+
 // A retry after a partially-failed analysis run (AN-17 follow-up): adds only the obligations a
 // new generation pass found that an earlier, incomplete run missed. A candidate is treated as a
 // duplicate of one already on file, and left out, when they share a category, share at least one
-// cited page, AND describesSameObligation says their wording most likely names the same
-// obligation. Category and page alone are too coarse: a single page can genuinely state two
-// different obligations in the same category (e.g. two different submission requirements), and
-// matching on category and page alone would drop the second one as a false duplicate of the
-// first. This never updates or removes an existing row, so an item a person has already edited,
-// verified, or rejected is never touched.
+// cited page, AND isLikelyDuplicateChecklistItem says they're most likely the same obligation.
+// Category and page alone are too coarse: a single page can genuinely state two different
+// obligations in the same category (e.g. two different submission requirements), and matching on
+// category and page alone would drop the second one as a false duplicate of the first. This never
+// updates or removes an existing row, so an item a person has already edited, verified, or
+// rejected is never touched.
 async function addMissingChecklistItems({ documentId, items }) {
     if (items.length === 0) {
         return [];
@@ -1297,7 +1311,7 @@ async function addMissingChecklistItems({ documentId, items }) {
         const newItems = items.filter((item) => !item.sources.some((source) => {
             const key = `${item.category}:${source.pageNumber}`;
             const candidates = existingByKey.get(key) || [];
-            return candidates.some((existing) => describesSameObligation(existing.description, item.description));
+            return candidates.some((existing) => isLikelyDuplicateChecklistItem(existing, item));
         }));
         return createChecklistItems({ documentId, items: newItems }, trx);
     });

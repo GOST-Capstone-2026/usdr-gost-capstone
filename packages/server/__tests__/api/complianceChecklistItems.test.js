@@ -745,3 +745,91 @@ describe('addMissingChecklistItems (distinguishes two obligations sharing a page
         expect(submissionItems).to.have.length(2);
     });
 });
+
+// Connor's second round of feedback on pull request #57: two more retry cases the first fix
+// missed. Isolated in its own document for the same reason as the block above.
+describe('addMissingChecklistItems (edited items and numeric deadlines)', () => {
+    const agencyId = 0;
+    let server;
+    let cookie;
+    let documentId;
+
+    before(async function beforeHook() {
+        this.timeout(15000);
+        cookie = await getSessionCookie('grant-admin@usdigitalresponse.org');
+        server = await makeTestServer();
+
+        const uploadResponse = await server.post(`/api/organizations/${agencyId}/compliance/documents`)
+            .set('Cookie', cookie)
+            .field('grantId', '335255')
+            .attach('file', FIXTURE_PDF_PATH);
+        documentId = uploadResponse.body.document.id;
+    });
+
+    after(async () => {
+        if (documentId) {
+            await knex('checklist_items').where({ document_id: documentId }).del();
+            await knex('grant_documents').where({ id: documentId }).del();
+        }
+        server.stop();
+    });
+
+    it('recognizes an item by its original source citation after a person has reworded it past recognition', async () => {
+        const [edited] = await knex('checklist_items').insert({
+            document_id: documentId,
+            category: 'reporting',
+            // Reworded by a person into their own words, nothing like the AI's original phrasing.
+            description: 'Already checked, we file this one on time every quarter.',
+            found: true,
+            sources: JSON.stringify([{ documentId, pageNumber: 3, excerpt: 'Quarterly performance reports are due within 30 days after each quarter.' }]),
+            verification_status: 'verified',
+            is_user_edited: true,
+        }).returning('*');
+
+        const saved = await db.addMissingChecklistItems({
+            documentId,
+            items: [
+                buildChecklistItem({
+                    category: 'reporting',
+                    description: 'Submit quarterly performance reports to the awarding agency within 30 days after each quarter.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 3, excerpt: 'Quarterly reports must be submitted within 30 days of each quarter.' }],
+                }),
+            ],
+        });
+
+        expect(saved).to.deep.equal([]);
+
+        const allItems = await db.getChecklistItemsForDocument({ documentId, agencyId });
+        expect(allItems).to.have.length(1);
+        expect(allItems[0].id).to.equal(edited.id);
+        expect(allItems[0].description).to.equal(edited.description);
+        expect(allItems[0].verification_status).to.equal('verified');
+        expect(allItems[0].version).to.equal(edited.version);
+    });
+
+    it('keeps a different obligation with a different numeric deadline instead of treating it as a duplicate', async () => {
+        await knex('checklist_items').insert({
+            document_id: documentId,
+            category: 'reporting',
+            description: 'Submit a quarterly performance report to the awarding agency within 30 days after the end of each calendar quarter.',
+            found: true,
+            sources: JSON.stringify([{ documentId, pageNumber: 9, excerpt: 'Quarterly reports are due within 30 days.' }]),
+        });
+
+        const saved = await db.addMissingChecklistItems({
+            documentId,
+            items: [
+                buildChecklistItem({
+                    category: 'reporting',
+                    description: 'Submit an annual performance report to the awarding agency within 90 days after the end of the project period.',
+                    found: true,
+                    sources: [{ documentId, pageNumber: 9, excerpt: 'An annual report is due within 90 days.' }],
+                }),
+            ],
+        });
+
+        expect(saved).to.have.length(1);
+        expect(saved[0].description).to.equal('Submit an annual performance report to the awarding agency within 90 days after the end of the project period.');
+    });
+});
